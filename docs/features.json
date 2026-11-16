@@ -292,36 +292,59 @@
       "id": "p4.stripe",
       "phase": "P4",
       "title": "Stripe test-mode checkout with signed, idempotent webhooks",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "apps/web/src/lib/payments/stripe.ts builds a BDT Checkout Session body and extracts paid sessions from checkout.session.completed",
+        "apps/web/src/app/api/payments/stripe/webhook/route.ts verifies the raw-body signature before calling markOrderPaid",
+        "verifySignedPayload has 4 tests for fresh, tampered, stale and malformed headers; a signed fixture event returned duplicate:false then duplicate:true",
+        "Real Stripe redirect remains owner-gated: docs/OWNER_TODO.md item 2 lists the sandbox key steps; checkout disables the button and says so until the keys exist"
+      ]
     },
     {
       "id": "p4.paybridge",
       "phase": "P4",
       "title": "PayBridge gateway: hosted checkout, HMAC webhooks, retries, refunds, ledger",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "apps/paybridge is a standalone Next.js gateway with an authenticated POST /api/v1/checkout/sessions merchant API",
+        "Hosted /checkout/[id] page validates the 4242 test card and records charge, receipt and ledger exactly once",
+        "HMAC-SHA256 signed webhooks with a 3-attempt retry, stored delivery state and a manual retry; browser test moved a delivery from failed to delivered",
+        "Refund action posts a signed payment.refunded event; Pathshala order became refunded and the instructor/platform ledger reversed"
+      ]
     },
     {
       "id": "p4.paybridge-dashboard",
       "phase": "P4",
       "title": "PayBridge merchant dashboard and API keys",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Password-gated merchant dashboard shows net test balance, sessions, ledger, webhook deliveries and the API key prefix",
+        "API keys are stored as SHA-256 hashes; rotate creates a new key and shows the plaintext once on /dashboard/key/[id]",
+        "Refund and webhook retry actions are browser-verified; session and delivery rows are scoped to the signed-in merchant"
+      ]
     },
     {
       "id": "p4.orders",
       "phase": "P4",
       "title": "Orders, coupons, receipts and instructor earnings ledger",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "packages/db/src/models has Order, Coupon, Payment, LedgerEntry and WebhookEvent with unique idempotency keys",
+        "createOrder, quoteCoupon, setOrderProvider, markOrderPaid and markOrderRefunded share one state machine and integer-paisa split",
+        "Browser paid ৳960 with EARLYBIRD from ৳1,200, got receipt RCPT-20261116-52EE67, active enrolment, and ৳768/৳192 ledger split",
+        "Student dashboard /dashboard/orders lists paid, pending and refunded orders; instructor studio shows ledger earnings"
+      ]
     },
     {
       "id": "p4.test-mode",
       "phase": "P4",
       "title": "Every payment surface states test mode",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Course detail, checkout, orders, PayBridge checkout and PayBridge dashboard all display a test-mode notice",
+        "The Stripe button is disabled with an explicit missing-key message rather than pretending checkout exists",
+        "Receipts state the provider as Stripe (test) or PayBridge (test) and no payment surface promises real charging"
+      ]
     },
     {
       "id": "p5.sessions",

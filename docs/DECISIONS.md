@@ -331,3 +331,20 @@ Enrolment, progress, notes, Q&A, reviews and wishlist all use server actions gua
 on public catalogue, health and the coming payment webhooks. This avoids inventing a second
 session protocol for user-scoped writes before there is an independent consumer.
 Revisit: if a mobile client needs the learning endpoints.
+
+## 2026-11-16 — Orders fulfil only after a signed webhook
+
+A browser return is a hint, not proof of payment. Both rails redirect back with `paid=1`, but
+orders move to paid only inside `markOrderPaid`, called from a raw-body signature-verified
+webhook. Unique `(provider, eventId)` and `(provider, providerRef)` rows plus a guarded
+`status: {$ne: 'paid'}` update make replays harmless. Receipts are generated at that moment.
+Revisit: never; a redirect-only fulfilment is a fraud hole.
+
+## 2026-11-16 — PayBridge is a separate app with its own merchant boundary
+
+`apps/paybridge` runs on its own port and Vercel project. It stores hashed merchant API keys,
+hosted checkout sessions, a gateway ledger and webhook deliveries; the Pathshala order never
+trusts the browser return. The gateway uses the same MongoDB locally but its own collections
+prefixed `PayBridge`. It is deliberately a sandbox: the only accepted card is 4242 4242 4242
+4242 and every screen says test mode.
+Revisit: if the gateway needs its own database in production; Atlas can hold a separate one.

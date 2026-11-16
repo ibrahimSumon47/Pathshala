@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import {
   Category,
+  Coupon,
   Course,
   Enrolment,
   Lesson,
@@ -339,6 +340,24 @@ export async function seedDatabase(): Promise<void> {
     );
   }
   await Course.findByIdAndUpdate(programming._id, { ratingAverage: 5, ratingCount: 1 });
+
+  const adminId = userIds.get('admin@pathshala.dev');
+  if (adminId) {
+    await Coupon.findOneAndUpdate(
+      { code: 'EARLYBIRD' },
+      {
+        code: 'EARLYBIRD',
+        type: 'percent',
+        value: 20,
+        minAmountPaisa: 0,
+        maxRedemptions: 100,
+        active: true,
+        createdBy: adminId,
+        expiresAt: new Date('2027-12-31T23:59:59Z'),
+      },
+      { upsert: true, returnDocument: 'after' },
+    );
+  }
 }
 
 if (process.argv[1]?.endsWith('seed.ts')) {

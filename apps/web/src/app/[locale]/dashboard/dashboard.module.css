@@ -52,6 +52,13 @@
   margin-top: var(--space-2);
 }
 
+.ordersLink {
+  display: inline-block;
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 .signOut {
   margin-top: var(--space-6);
 }

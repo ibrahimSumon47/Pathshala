@@ -184,7 +184,12 @@ describe('Order', () => {
       new Order({
         user: ids.student,
         course: ids.course,
+        instructor: ids.instructor,
+        orderNumber: 'PS-20261116-AAAAAAAA',
+        courseSlug: 'javascript-first-steps',
+        courseTitle: { bn: 'জাভাস্ক্রিপ্ট', en: 'JavaScript' },
         amountPaisa: 120_000,
+        totalPaisa: 120_000,
         provider: 'paybridge',
         status: 'pending',
       }),
@@ -196,7 +201,13 @@ describe('Order', () => {
     const base = {
       user: ids.student,
       course: ids.course,
+      instructor: ids.instructor,
+      orderNumber: 'PS-20261116-BBBBBBBB',
+      courseSlug: 'javascript-first-steps',
+      courseTitle: { bn: 'জাভাস্ক্রিপ্ট', en: 'JavaScript' },
       amountPaisa: 120_000,
+      discountPaisa: 0,
+      totalPaisa: 120_000,
       idempotencyKey: 'checkout-1',
       status: 'paid',
     };

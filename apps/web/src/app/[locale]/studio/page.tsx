@@ -1,4 +1,4 @@
-import { listAuthorCourses, listCategories } from '@pathshala/db';
+import { getInstructorEarnings, listAuthorCourses, listCategories } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -25,9 +25,10 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
   const { error, saved } = await searchParams;
   const user = await requireRole('instructor', 'admin');
   const copy = studioCopy(locale === 'en' ? 'en' : 'bn');
-  const [courses, categories] = await Promise.all([
+  const [courses, categories, earnings] = await Promise.all([
     listAuthorCourses(user.id, user.roles.includes('admin')),
     listCategories(),
+    getInstructorEarnings(user.id),
   ]);
 
   return (
@@ -36,6 +37,10 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
         <p className={styles.eyebrow}>{copy.eyebrow}</p>
         <h1 className={styles.title}>{copy.title}</h1>
         <p className={styles.lede}>{copy.lede}</p>
+        <p className={styles.meta} style={{ marginTop: '0.75rem' }}>
+          {locale === 'en' ? 'Earnings' : 'আয়'}: {formatPaisa(earnings.totalPaisa, locale as Locale)} · {earnings.sales}{' '}
+          {locale === 'en' ? 'paid sales' : 'টি পরিশোধিত বিক্রয়'}
+        </p>
         {error ? <Alert tone="error">{error}</Alert> : null}
         {saved ? <Alert tone="success">{copy.saved}</Alert> : null}
 

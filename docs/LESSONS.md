@@ -169,3 +169,19 @@ query API when the set is small.
 A test expected a 5/10 quiz to pass, but `scoreQuiz` requires 60 percent. The code was right
 and the test was wrong. Lesson: assert the boundary with numbers that actually sit on it
 (6/10), not numbers that merely feel close.
+
+## 2026-11-16 — Session cookies are host-scoped; keep local origins identical
+
+The PayBridge return URL used `localhost` while the browser session was opened on
+`127.0.0.1`. The return page lost the session even though both names reach the same dev
+server. Local origins are now consistently `127.0.0.1` in `APP_URL`, `PAYBRIDGE_BASE_URL`
+and `PAYBRIDGE_PUBLIC_URL`. Lesson: a redirect between hostnames is a different cookie jar.
+
+## 2026-11-16 — A webhook that creates its dedupe row before failing blocks the retry
+
+The first PayBridge delivery was accepted by signature verification but the handler looked up
+`PS-…` with `findById`, which expects an ObjectId. It recorded the webhook event id and then
+failed, so the retry was treated as a duplicate. `markOrderPaid` now resolves either a Mongo
+id or our order number, and the event row is written in the same guarded path as the order
+update. Lesson: write the idempotency marker and the state change as one unit, or make the
+marker lookup tolerant of both gateway and local identifiers.

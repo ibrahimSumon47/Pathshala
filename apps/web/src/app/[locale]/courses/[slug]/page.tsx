@@ -8,6 +8,7 @@ import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { getCourseReviews, getCourseViewerState } from '@/lib/learning';
+import { startCheckoutAction } from '../../checkout/[orderNumber]/actions';
 import { enrolAction, submitReviewAction, toggleWishlistAction } from '../../learn/[slug]/actions';
 import styles from './course.module.css';
 
@@ -42,7 +43,8 @@ const COPY = {
     rating: 'রেটিং',
     reviewBody: 'কী ভালো লাগল, কী আরও ভালো হতে পারত',
     submitReview: 'মতামত সংরক্ষণ করুন',
-    paymentSoon: 'এই কোর্সটি পরিশোধিত; চেকআউট পেমেন্ট ধাপে চালু হবে।',
+    buy: 'কোর্সটি কিনুন',
+    testNote: 'চেকআউট পরীক্ষা মোডে; আসল টাকা কাটা হবে না।',
   },
   en: {
     by: 'Teacher',
@@ -69,7 +71,8 @@ const COPY = {
     rating: 'Rating',
     reviewBody: 'What worked, and what could be better',
     submitReview: 'Save review',
-    paymentSoon: 'This is a paid course; checkout opens in the payment phase.',
+    buy: 'Buy this course',
+    testNote: 'Checkout runs in test mode; no real money is charged.',
   },
 } as const;
 
@@ -200,7 +203,14 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                 {copy.continue}
               </Link>
             ) : course.pricePaisa > 0 ? (
-              <p className={styles.note}>{copy.paymentSoon}</p>
+              <form action={startCheckoutAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="slug" value={course.slug} />
+                <Button type="submit" className={styles.fullButton}>
+                  {copy.buy}
+                </Button>
+              </form>
             ) : (
               <form action={enrolAction}>
                 <input type="hidden" name="locale" value={locale} />
@@ -221,7 +231,7 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                 </Button>
               </form>
             ) : null}
-            <p className={styles.note}>{copy.note}</p>
+            <p className={styles.note}>{course.pricePaisa > 0 ? copy.testNote : copy.note}</p>
           </Card>
         </div>
       </div>

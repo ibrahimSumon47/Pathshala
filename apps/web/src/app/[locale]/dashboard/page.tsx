@@ -37,6 +37,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                 </Badge>
               ))}
             </div>
+            <Link href="/dashboard/orders" className={styles.ordersLink}>
+              {t('orders')}
+            </Link>
             <form action={signOutAction} className={styles.signOut}>
               <button type="submit" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
                 {t('signOut')}

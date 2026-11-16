@@ -10,15 +10,23 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderDoc = {
   user: Types.ObjectId;
   course: Types.ObjectId;
+  instructor: Types.ObjectId;
+  orderNumber: string;
+  courseSlug: string;
+  courseTitle: { bn?: string; en?: string };
+  // Subtotal before the coupon, then the discount, then what the reader actually pays.
   amountPaisa: number;
+  discountPaisa: number;
+  totalPaisa: number;
   currency: 'BDT';
-  provider: PaymentProvider;
-  providerRef?: string;
+  provider: PaymentProvider | null;
+  providerRef?: string | undefined;
   idempotencyKey: string;
   status: OrderStatus;
-  receiptNumber?: string;
-  couponCode?: string;
+  receiptNumber?: string | undefined;
+  couponCode?: string | undefined;
   paidAt: Date | null;
+  refundedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -27,6 +35,13 @@ const orderSchema = new Schema<OrderDoc>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+    instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    orderNumber: { type: String, required: true, unique: true, trim: true },
+    courseSlug: { type: String, required: true, trim: true },
+    courseTitle: {
+      bn: { type: String, trim: true },
+      en: { type: String, trim: true },
+    },
     amountPaisa: {
       type: Number,
       required: true,
@@ -36,8 +51,18 @@ const orderSchema = new Schema<OrderDoc>(
         message: 'Amount must be a whole number of paisa',
       },
     },
+    discountPaisa: { type: Number, default: 0, min: 0 },
+    totalPaisa: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: {
+        validator: (value: number) => Number.isInteger(value),
+        message: 'Total must be a whole number of paisa',
+      },
+    },
     currency: { type: String, enum: ['BDT'], default: 'BDT' },
-    provider: { type: String, enum: PAYMENT_PROVIDERS, required: true },
+    provider: { type: String, enum: PAYMENT_PROVIDERS, default: null },
     providerRef: { type: String, trim: true },
     // Supplied by the client per checkout attempt; a retry must not create a second order.
     idempotencyKey: { type: String, required: true, trim: true, unique: true },
@@ -45,11 +70,14 @@ const orderSchema = new Schema<OrderDoc>(
     receiptNumber: { type: String, trim: true, unique: true, sparse: true },
     couponCode: { type: String, trim: true, uppercase: true },
     paidAt: { type: Date, default: null },
+    refundedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
 
 // Payment webhooks look orders up by the gateway's own reference.
 orderSchema.index({ provider: 1, providerRef: 1 });
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ instructor: 1, status: 1, paidAt: -1 });
 
 export const Order = (models.Order as Model<OrderDoc> | undefined) ?? model<OrderDoc>('Order', orderSchema);

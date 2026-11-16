@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons, take quizzes, keep notes, ask questions and review; instructors build quizzes. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-mode checkout, PayBridge is a working standalone gateway, and orders, coupons, receipts and ledgers reconcile. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -13,7 +13,7 @@ Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons
 | P1 | API hosting spike | done — 2026-11-16, cold 1.411s, warm 0.674s |
 | P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-16 |
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-16 |
-| P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | not started |
+| P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-16 (real Stripe redirect waits on owner keys) |
 | P5 | Live classes, attendance, reminders, calendar files | not started |
 | P6 | Certificates, analytics, admin area, audit log | not started |
 | P7 | Seed data, production e2e, a11y, performance, security review | not started |
@@ -38,8 +38,16 @@ Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons
   attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses wait
   for P4 checkout. Access comes from an enrolment, course ownership or the admin role.
 - Learner surfaces: course detail has enrol, wishlist and review forms; the dashboard lists
-  enrolled courses with progress and saved courses. Models: Enrolment, QuizQuestion,
-  QuizAttempt, Note, Question, Review, Wishlist.
+  enrolled courses with progress, saved courses, receipts and orders. Models: Enrolment,
+  QuizQuestion, QuizAttempt, Note, Question, Review, Wishlist, Order, Coupon, Payment,
+  LedgerEntry, WebhookEvent.
+- Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test
+  rails. `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook
+  events, payment references and order status guards. Signed webhooks live at
+  `/api/payments/stripe/webhook` and `/api/payments/paybridge/webhook`.
+- `apps/paybridge`: a separate Next.js sandbox gateway with merchant API keys, hosted
+  checkout, signed webhooks with retry, refunds, a ledger and a password-gated dashboard.
+  It reads the same local memory MongoDB; its deployment waits on Atlas.
 - `apps/web`: Next.js 16 with next-intl. Bangla lives at `/` and English at `/en`; pages
   are server-rendered because the header reads the session. Routes: landing, catalogue,
   sign-in, dashboard, admin and the Auth.js handler.
@@ -60,9 +68,9 @@ Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (92 tests: 12 tokens, 21 models, 10 shared,
-  32 web, 17 API) and `pnpm build` all exit 0 locally. The API integration tests boot
-  `mongodb-memory-server`; no Atlas credentials are needed.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (107 tests: 12 tokens, 27 db, 10 shared,
+  41 web, 17 API) and `pnpm build` all exit 0 locally, including the PayBridge build. The
+  API integration tests boot `mongodb-memory-server`; no Atlas credentials are needed.
 - Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
   admin at 1440px in light and dark; earlier phone pass at 390px and a 320px overflow
   check. This pass found and fixed two real theme defects: a soft language switch dropped
@@ -91,8 +99,15 @@ Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons
   note persisted after redirect; a lesson question appeared in the thread; updating a review
   changed the text and kept the rating count; wishlist toggled both ways. Quiz scoring has
   four unit tests and progress rounding has three.
-- Not verified yet: a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in,
-  cross-instance rate limiting, and axe / Lighthouse passes.
+- Phase 4 browser flow: EARLYBIRD took a ৳1,200 course to ৳960; PayBridge hosted checkout
+  accepted the 4242 card, delivered a signed webhook and Pathshala showed receipt
+  RCPT-20261116-52EE67 with an active enrolment. The ledger had ৳768 instructor and ৳192
+  platform; a refund reversed both and set the enrolment to refunded. The failed delivery
+  retry moved to delivered. A signed Stripe fixture event fulfilled another order and the
+  replay returned `duplicate: true`.
+- Not verified yet: a real Stripe redirect and signature (test keys absent; fixture path is
+  proven), a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in, cross-instance
+  rate limiting, and axe / Lighthouse passes.
 
 ## Environment facts
 
