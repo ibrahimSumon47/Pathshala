@@ -504,22 +504,32 @@
       "id": "p8.readme",
       "phase": "P8",
       "title": "Portfolio README with live URL, architecture and screenshots",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "README.md documents the product, architecture, stack, screenshots, local setup, measured checks and limitations",
+        "Screenshots: English landing, Bangla landing, course catalogue and the public certificate with QR in docs/screenshots",
+        "Live link is the verified API at https://pathshala-api-lake.vercel.app/health; the README states the web deployment waits on Atlas instead of claiming a broken demo URL"
+      ]
     },
     {
       "id": "p8.demo",
       "phase": "P8",
       "title": "Demo script",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "docs/DEMO.md is a six-minute path from the bilingual catalogue through learning, live room, test checkout, instructor analytics and admin audit export",
+        "It lists the exact local commands, demo accounts, the EARLYBIRD coupon and the 4242 test card, and states clearly that no real money moves"
+      ]
     },
     {
       "id": "p8.deploy",
       "phase": "P8",
       "title": "Deployment guide",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "docs/DEPLOY.md covers Atlas seeding, the live API, Vercel web and PayBridge projects, every environment variable name, post-deploy checks, E2E_BASE_URL and rollback",
+        "It records the free-tier caveats and keeps all secret values in private/; no value appears in the guide"
+      ]
     }
   ]
 }

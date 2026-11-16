@@ -1,10 +1,13 @@
 # Handoff
 
-Updated: 2026-11-16, after the P7 quality slice.
+Updated: 2026-11-16, after the P8 package.
 
 ## Where we are
 
-P7 is complete. Eight Playwright tests run against the production build, axe reports zero
+All phases are complete: 47/47 features have evidence and the feature gate exits 0. The
+portfolio README, six-minute demo script and deployment guide are in place.
+
+P7 remains complete. Eight Playwright tests run against the production build, axe reports zero
 violations on the four key pages, and Lighthouse records 99/97 performance on landing and
 catalogue with 100 accessibility, best practices and SEO. The OWASP review lives in
 `docs/SECURITY.md`; deployed-origin execution and Atlas verification remain owner-gated.
@@ -56,16 +59,17 @@ Demo accounts are on by default in development and off in production unless
 
 ## Exact next step
 
-The final package, P8:
+Only the owner can unblock the deployed web demo:
 
-1. Write the portfolio README with the architecture, screenshots, measured checks and the
-   live API URL; mark the web deployment as waiting on `MONGODB_URI` rather than inventing a
-   working demo.
-2. Write `docs/DEMO.md` as a six-minute click path: catalogue, checkout with EARLYBIRD and
-   4242, learning, live room, certificate, then studio and admin.
-3. Write `docs/DEPLOY.md` for Atlas, Vercel web/API/PayBridge, secrets and the post-deploy
-   verification, including `E2E_BASE_URL`.
-4. Run the final gate, update this file and `PROJECT_STATE`, then push the last slice.
+1. Run the Atlas steps in `docs/OWNER_TODO.md` and put `MONGODB_URI` in
+   `private/.env.local`.
+2. Seed Atlas with `pnpm db:seed` and deploy the API, web and PayBridge by following
+   `docs/DEPLOY.md`.
+3. Run `E2E_BASE_URL=https://<web-domain> pnpm test:e2e` and record the production result in
+   `PROJECT_STATE.md`.
+
+No tracked feature remains open; do not weaken the feature gate or the tests to make the
+deployed run pass.
 
 ## Local commands
 
@@ -121,6 +125,5 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P7 are complete
-and the project is 44/47, with the three P8 packaging features left. The gate must exit 0
-before the final handover.
+`node scripts/check-done.mjs` reports **47/47 — every feature is done with evidence**. The
+remaining deployment is owner-gated, not a code gap.

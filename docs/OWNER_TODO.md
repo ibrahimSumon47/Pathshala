@@ -23,7 +23,7 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
    catalogue stops returning `database_unavailable`. Seeded demo users replace the public
    demo list at that point.
 
-## 2. Stripe — a dedicated sandbox (needed in P4)
+## 2. Stripe — a dedicated sandbox (implemented with fixtures; real redirect waits)
 
 1. https://dashboard.stripe.com → **Sandboxes** → **Create sandbox** → name `Pathshala`.
 2. Open the sandbox → **Developers → API keys** → copy the **secret key** (`sk_test_…`)
@@ -34,7 +34,7 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
 5. The webhook signing secret (`STRIPE_WEBHOOK_SECRET`) comes later, once the endpoint
    exists; the CLI can create it and I will read it from there.
 
-## 3. Google Cloud — OAuth client for sign-in (needed in P1)
+## 3. Google Cloud — OAuth client for sign-in (optional; credentials sign-in works)
 
 1. https://console.cloud.google.com → project selector → **New project** → `pathshala-auth`
    → **Create**.
@@ -53,13 +53,13 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
    `AUTH_GOOGLE_SECRET`. The Google button appears only when both are set; without Atlas the
    session gets the student role and no stored user, so connect Atlas first for real accounts.
 
-## 4. Email sender (optional, P5)
+## 4. Email sender (optional; in-app reminders already ship)
 
-No sender is configured. When P5 starts, sign up for a free transactional sender (Resend
-is the current candidate) with no card, create an API key named `pathshala`, and put it in
-`private/.env.local` as `RESEND_API_KEY`. I will verify the free tier and record the date
-in `DECISIONS.md` before anything depends on it. If it is not free at that moment, P5
-ships with in-app reminders and `.ics` files only.
+No sender is configured. To turn on the optional email leg, sign up for a free transactional
+sender (Resend is the current candidate) with no card, create an API key named `pathshala`,
+verify one sender domain, and put both values in `private/.env.local` as `RESEND_API_KEY`
+and `REMINDER_EMAIL_FROM`. The free tier has to be rechecked before relying on it; without
+it, in-app reminders and `.ics` files work fully.
 
 ## 5. Vercel — API deployed (done 2026-11-16)
 
@@ -69,9 +69,10 @@ The API is live at `https://pathshala-api-lake.vercel.app` in project `pathshala
 configured. Three Hobby deployments were used: the first two failed on module resolution
 and the third, a self-contained bundle, is live.
 
-Remaining owner action: item 1 (Atlas). Once `MONGODB_URI` is in `private/.env.local`, I
-will set it on the Vercel project, redeploy and verify a Mongo-backed `/courses` 200. Do
-not spend another deployment before the URI exists.
+Remaining owner action: item 1 (Atlas). Once `MONGODB_URI` is in `private/.env.local`, the
+web, API and PayBridge deployments follow `docs/DEPLOY.md`, then I will verify a Mongo-backed
+`/courses` 200, a complete sign-in/checkout flow and the production Playwright suite. Do not
+spend another deployment before the URI exists.
 
 ## 6. Secrets distribution (I do this, not you)
 

@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 7 complete. The seeded product passes production-build Playwright flows, axe reports zero violations and Lighthouse records 97-99 performance with 100 accessibility, best practices and SEO. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 8 complete. The build, quality suite, portfolio README, demo script and deployment guide are finished; `node scripts/check-done.mjs` is 47/47. Only the owner's Atlas URI and the resulting web deployment remain.
 
 ## Phase status
 
@@ -17,7 +17,7 @@ Snapshot: 2026-11-16, Phase 7 complete. The seeded product passes production-bui
 | P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-16 (optional email waits on a sender key) |
 | P6 | Certificates, analytics, admin area, audit log | done — 2026-11-16 |
 | P7 | Seed data, production e2e, a11y, performance, security review | done — 2026-11-16 (deployed-origin pass waits on Atlas) |
-| P8 | Portfolio README, demo script, deploy guide | not started |
+| P8 | Portfolio README, demo script, deploy guide | done — 2026-11-16 |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -129,6 +129,10 @@ Snapshot: 2026-11-16, Phase 7 complete. The seeded product passes production-bui
   50% completion, 1 attendance and per-course rows. The admin unpublished and republished
   Studio Smoke Course, granted and revoked the student's instructor role, saw both audit
   rows and downloaded a 200 `text/csv` export with a BOM.
+- Phase 8 package: README has architecture, four screenshots, measured checks and the
+  live-API link; `docs/DEMO.md` is a six-minute walkthrough; `docs/DEPLOY.md` covers Atlas,
+  Vercel web/API/PayBridge, secrets, post-deploy checks and rollback. No secret value is in
+  any tracked file.
 - Phase 7 quality pass: 8 Playwright tests pass against the production build on
   `127.0.0.1:59802`, including catalogue search, student learning, live room, certificate,
   student/admin boundary and admin audit export. axe reports zero violations on landing,
@@ -172,4 +176,6 @@ Snapshot: 2026-11-16, Phase 7 complete. The seeded product passes production-bui
 
 ## Next action
 
-See `docs/HANDOFF.md`.
+All 47 tracked features are done. The only remaining work is owner-gated: create the Atlas
+M0 cluster (`docs/OWNER_TODO.md`), then follow `docs/DEPLOY.md` for the web app, PayBridge
+and the production Playwright run. See `docs/HANDOFF.md`.
