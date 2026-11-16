@@ -1,0 +1,18 @@
+#!/bin/sh
+# Local guard: the owner is the only author, so commit messages must be their own words.
+# Blocks tool credits and trailers before the commit object can be created.
+set -eu
+
+message_file="${1:-}"
+[ -f "$message_file" ] || exit 0
+
+blocked='(co-authored-by|co-authored|generated[ -]with|assisted-by|reviewed-by|signed-off-by|claude|chatgpt|openai|anthropic|copilot|cursor|windsurf|codebuff|freebuff|buffy|gemini|devin|aider|gpt-[0-9])'
+
+if grep -Eiq "$blocked" "$message_file"; then
+  echo "commit-msg: commit blocked." >&2
+  echo "Write the message in your own words: no tool credits and no trailers." >&2
+  grep -Ein "$blocked" "$message_file" >&2 || true
+  exit 1
+fi
+
+exit 0

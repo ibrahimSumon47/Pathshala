@@ -1,0 +1,52 @@
+# --- Secrets and private notes (never committed) -------------------------
+.env
+.env.*
+!.env.example
+private/
+*.pem
+*.key
+service-account*.json
+credentials*.json
+
+# --- Dependencies --------------------------------------------------------
+node_modules/
+.pnpm-store/
+
+# --- Build output --------------------------------------------------------
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# --- Local tool state ----------------------------------------------------
+.vercel
+.freebuff/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# --- Test artifacts ------------------------------------------------------
+playwright-report/
+test-results/
+blob-report/
+.nyc_output/
+
+# --- Logs ----------------------------------------------------------------
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# --- Local data, dumps and user uploads ----------------------------------
+uploads/
+dumps/
+temp/
+tmp/
+*.dump
+*.bson
+*.pem.tmp
