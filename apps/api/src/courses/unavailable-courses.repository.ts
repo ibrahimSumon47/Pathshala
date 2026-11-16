@@ -1,5 +1,5 @@
 import { ServiceUnavailableException } from '@nestjs/common';
-import type { CoursesRepository, PublishedCourse } from './courses.repository';
+import type { CoursesRepository, PublishedCourse } from './courses.repository.js';
 
 /**
  * Used until MONGODB_URI is configured. Returning an empty list would look like a

@@ -106,3 +106,29 @@ After a programmatic scroll the capture surface stayed on the first frame or cro
 old phone width. Layout measurements (rects, `scrollWidth`) and accessibility snapshots were
 reliable evidence; screenshots were only trusted at the top of a page. Lesson: choose the
 instrument that matches the question instead of repeating a flaky capture.
+
+## 2026-11-16 — A prebuilt Vercel function carries no workspace node_modules
+
+The first deployed function failed on an extensionless ESM import. After adding `.js`
+extensions it failed again, this time on `reflect-metadata` from
+`/var/task/apps/api/src/serverless.js`. A local copied-output harness passed only because a
+parent `node_modules` happened to resolve it. The prebuilt layout contained no dependency
+tree the function could use. Bundling the handler into one CJS file with esbuild removed the
+resolution surface entirely. Lesson: test a serverless artifact in a directory with no
+ancestor `node_modules`, or bundle it so the question cannot arise.
+
+## 2026-11-16 — React owns <html>; script-set attributes do not survive navigation
+
+The dark theme looked correct on first paint, then a language switch reset it to light.
+The boot script had set `data-theme` on `<html>`, but React re-rendered the layout with its
+own props and removed the attribute. The `next/script` boot also still warned because the
+locale layout is not the true root layout. A server-read cookie rendered as a React prop
+fixed both. Lesson: if an attribute must survive client navigation, React must own it, not
+a boot script.
+
+## 2026-11-16 — Generated deploy output poisons lint
+
+`pnpm lint` suddenly reported 1859 problems from `.vercel/output` and the 6.3 MB
+`apps/api/api/index.cjs` bundle. Neither is source, but ESLint does not read `.gitignore`.
+Explicit ignores for `**/.vercel/**` and the generated bundle restored a clean run. Lesson:
+lint configuration needs the same exclusions as the repository.

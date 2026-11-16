@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { CoursesController } from './courses.controller';
-import { COURSES_REPOSITORY, type CoursesRepository } from './courses.repository';
-import { CoursesService } from './courses.service';
-import { MongoCoursesRepository } from './mongo-courses.repository';
-import { UnavailableCoursesRepository } from './unavailable-courses.repository';
+import { CoursesController } from './courses.controller.js';
+import { COURSES_REPOSITORY, type CoursesRepository } from './courses.repository.js';
+import { CoursesService } from './courses.service.js';
+import { MongoCoursesRepository } from './mongo-courses.repository.js';
+import { UnavailableCoursesRepository } from './unavailable-courses.repository.js';
 
 @Module({
   controllers: [CoursesController],

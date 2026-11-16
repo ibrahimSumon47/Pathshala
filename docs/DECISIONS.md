@@ -22,14 +22,15 @@ The web app is server-rendered for SEO and built-in image/font handling. Hobby h
 deployment cap, so deploys are batched per finished slice.
 Revisit: never for hosting; only the deployment cadence.
 
-## 2026-11-16 — NestJS API: Vercel serverless first, free host as fallback (open spike)
+## 2026-11-16 — NestJS API: Vercel serverless first, free host as fallback (closed: Vercel)
 
 NestJS gives the OOP/SOLID structure the brief asks for. It is wrapped as a single
 serverless handler on Vercel first. If cold starts or request limits make that unsuitable,
 the fallback is another free-forever host with a persistent process; Render is excluded
-because its free instance hours are already committed elsewhere. The spike result and its
-date are recorded here in P1.
-Revisit: end of P1.
+because its free instance hours are already committed elsewhere.
+Result: Vercel stays. The live function answered `/health` in 1.411s on an idle first
+request and 0.674s warm. The result is recorded again below with its deployment evidence.
+Revisit: if a Mongo-backed route pushes cold or warm latency past the budget in P7.
 
 ## 2026-11-16 — MongoDB Atlas M0 with Mongoose
 
@@ -162,7 +163,7 @@ sign. Both are downloaded at build by `next/font` and served from our own origin
 is no third-party font request at runtime.
 Revisit: only if the build environment loses access to Google Fonts.
 
-## 2026-11-16 — The document is the theme store
+## 2026-11-16 — The document is the theme store (superseded by the cookie entry below)
 
 An inline boot script applies `data-theme` before paint; the toggle writes the changed
 attribute and localStorage, and React reads it through `useSyncExternalStore`. This avoids
@@ -249,16 +250,49 @@ their module identity.
 ## 2026-11-16 — API as one Vercel function, run locally by tsx
 
 `apps/api/api/index.ts` boots Nest once per function instance and strips Vercel's `/api`
-prefix, so the same controllers answer at `/health` locally and behind the rewrite. There is
-no compiled dist: the function bundles workspace TypeScript, and decorator metadata is not
-needed because controller dependencies use explicit `@Inject`.
-Revisit: if Vercel cold start or the workspace TS bundle fails, move to a persistent Node
-host; the hosting spike stays open until measured.
+prefix, so the same controllers answer at `/health` locally and behind the rewrite. The
+first prebuilt attempt shipped the source tree and failed to resolve workspace modules, so
+the final function is a self-contained esbuild CJS bundle (see the bundle entry below).
+Decorator metadata is not needed because controller dependencies use explicit `@Inject`.
+Revisit: if the bundle or cold start fails in practice; both are now measured.
 
-## 2026-11-16 — Theme boot moves to next/script
+## 2026-11-16 — Theme boot moves to next/script (superseded by the cookie entry below)
 
 An inline `<script>` in the root layout produced React's "scripts inside components are never
-executed" error on client navigation. `<Script strategy="beforeInteractive">` keeps the
-pre-hydration theme read without the warning; the toggle and localStorage contract are
-unchanged.
-Revisit: if themes become server-rendered per account, replace localStorage with a cookie.
+executed" error on client navigation. `<Script strategy="beforeInteractive">` kept the
+pre-hydration theme read, but it still warned on soft navigation because the locale layout
+is not the true root layout, and React dropped the script-set `data-theme` attribute.
+Revisit: never in this form; the cookie entry below replaces it.
+
+## 2026-11-16 — Vercel hosting spike result: keep the serverless API
+
+The deployed adapter is one function at `https://pathshala-api-lake.vercel.app`, region
+`iad1`. On 2026-11-16 from Dhaka, an idle `/health` request took 1.411s total with
+`uptime: 0` (a fresh process), and the next request took 0.674s. `/courses` returns 503
+`database_unavailable`, `limit=99` returns the 400 envelope and an unknown route returns
+404, so routing, validation and error handling survive the platform. Three Hobby
+deployments were used: two failed on module resolution and the third is live. The Mongo
+runtime path is still unproven because Atlas is blocked on the owner.
+Revisit: if a real catalogue read makes cold start or p95 unusable, or if a shared rate
+limit is needed across instances.
+
+## 2026-11-16 — The API ships as a self-contained esbuild CJS bundle
+
+A prebuilt Vercel function does not install the workspace's `node_modules`; the first
+deploy failed on an extensionless ESM import and the second on `reflect-metadata` imported
+from the copied source tree. The API now bundles `api/index.ts` into `api/index.cjs` with
+esbuild (6.3 MB), leaving only optional Nest and Mongo natives external. `vercel.json`
+builds that file, and the bundle is gitignored and regenerated before every deploy. This
+keeps local `tsx`, tests and the deployed runtime on one source file.
+Revisit: if the bundle outgrows the function limit or a native dependency cannot be
+externalised safely.
+
+## 2026-11-16 — The theme is a server-read cookie
+
+React owns `<html>`, so on a soft navigation it re-applied its own props and removed the
+`data-theme` attribute that a script had set; the page reverted to light. A `next/script`
+boot in `[locale]/layout.tsx` also still produced React's script warning because that is
+not the true root layout. The layout now reads the `pathshala-theme` cookie, renders
+`data-theme` itself before paint, and the toggle updates the attribute and the cookie. This
+keeps the no-flash result, survives soft navigation and removes the boot script entirely.
+Revisit: if themes become per-account settings, store the preference on the user instead.

@@ -2,9 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useSyncExternalStore } from 'react';
+import { THEME_COOKIE, type Theme } from '@/lib/theme';
 import styles from './theme-toggle.module.css';
-
-type Theme = 'light' | 'dark';
 
 // The document is the source of truth, so a custom event is enough to notify React.
 const THEME_EVENT = 'pathshala:theme';
@@ -34,25 +33,28 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener(THEME_EVENT, onChange);
 }
 
-/** Read the theme the boot script already applied to the document. */
+/** Read the theme the server rendered onto the document. */
 function readTheme(): Theme {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
-/** The server cannot see the stored preference, so it assumes the light default. */
-function readServerTheme(): Theme {
-  return 'light';
-}
+type ThemeToggleProps = {
+  initialTheme: Theme;
+};
 
-/** Lets the reader flip the theme; the choice is stored locally for the next visit. */
-export function ThemeToggle() {
+/**
+ * Lets the reader flip the theme. The cookie is the source of truth so a full reload and
+ * a soft navigation both keep the attribute the server rendered.
+ */
+export function ThemeToggle({ initialTheme }: ThemeToggleProps) {
   const t = useTranslations('Theme');
-  const theme = useSyncExternalStore(subscribe, readTheme, readServerTheme);
+  const theme = useSyncExternalStore(subscribe, readTheme, () => initialTheme);
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     document.documentElement.dataset.theme = next;
-    window.localStorage.setItem('pathshala-theme', next);
+    document.cookie = `${THEME_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
     window.dispatchEvent(new Event(THEME_EVENT));
   }
 

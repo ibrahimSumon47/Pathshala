@@ -1,8 +1,8 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
-import { ZodValidationPipe } from '../common/zod-validation.pipe';
-import { coursesQuerySchema, type CoursesQuery } from './courses-query.schema';
-import type { PublishedCourse } from './courses.repository';
-import { CoursesService } from './courses.service';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { coursesQuerySchema, type CoursesQuery } from './courses-query.schema.js';
+import type { PublishedCourse } from './courses.repository.js';
+import { CoursesService } from './courses.service.js';
 
 @Controller('courses')
 export class CoursesController {

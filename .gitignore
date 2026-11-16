@@ -48,6 +48,8 @@ uploads/
 dumps/
 temp/
 tmp/
+# Generated serverless bundle; build with `pnpm --filter @pathshala/api bundle`.
+apps/api/api/index.cjs
 *.dump
 *.bson
 *.pem.tmp

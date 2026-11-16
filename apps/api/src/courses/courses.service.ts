@@ -1,4 +1,4 @@
-import type { CoursesRepository, PublishedCourse } from './courses.repository';
+import type { CoursesRepository, PublishedCourse } from './courses.repository.js';
 
 /** Application logic for the catalogue; the repository decides where the data lives. */
 export class CoursesService {

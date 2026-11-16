@@ -5,7 +5,11 @@ import {
   HttpException,
   Logger,
 } from '@nestjs/common';
-import type { Response } from 'express';
+// The Express response is used structurally so this file does not depend on Express types
+// that the Vercel builder may resolve differently from the local toolchain.
+type JsonResponse = {
+  status(code: number): { json(body: unknown): void };
+};
 
 type ErrorEnvelope = {
   error: {
@@ -88,7 +92,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<Response>();
+    const response = host.switchToHttp().getResponse<JsonResponse>();
     const { status, code, message, details } = describe(exception);
 
     if (status >= 500) {

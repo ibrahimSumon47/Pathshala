@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ApiExceptionFilter } from './common/api-exception.filter';
-import { RateLimitGuard } from './common/rate-limit.guard';
-import { CoursesModule } from './courses/courses.module';
-import { HealthController } from './health/health.controller';
+import { ApiExceptionFilter } from './common/api-exception.filter.js';
+import { RateLimitGuard } from './common/rate-limit.guard.js';
+import { CoursesModule } from './courses/courses.module.js';
+import { HealthController } from './health/health.controller.js';
 
 @Module({
   imports: [CoursesModule],

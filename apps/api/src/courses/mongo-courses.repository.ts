@@ -1,5 +1,5 @@
 import type { CourseDoc } from '@pathshala/db';
-import type { CoursesRepository, PublishedCourse } from './courses.repository';
+import type { CoursesRepository, PublishedCourse } from './courses.repository.js';
 
 type LeanCourse = CourseDoc & { _id: { toString(): string } };
 

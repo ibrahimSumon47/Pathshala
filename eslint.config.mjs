@@ -14,6 +14,8 @@ export default tseslint.config(
       '**/.next/**',
       '**/node_modules/**',
       '**/dist/**',
+      '**/.vercel/**',
+      'apps/api/api/index.cjs',
       '**/coverage/**',
       '**/next-env.d.ts',
       'tools/**',

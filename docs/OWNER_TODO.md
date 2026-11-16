@@ -47,7 +47,8 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
    `Pathshala web`. Authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google`
    - `http://localhost:59800/api/auth/callback/google` (the preview server used this session)
-   - the production callback, which I will give you once the Vercel domain exists.
+   - the production web callback, which I will give you once the web app is deployed
+     (the API domain is not an OAuth callback).
 6. Copy the client ID and client secret into `private/.env.local` as `AUTH_GOOGLE_ID` and
    `AUTH_GOOGLE_SECRET`. The Google button appears only when both are set; without Atlas the
    session gets the student role and no stored user, so connect Atlas first for real accounts.
@@ -60,14 +61,17 @@ is the current candidate) with no card, create an API key named `pathshala`, and
 in `DECISIONS.md` before anything depends on it. If it is not free at that moment, P5
 ships with in-app reminders and `.ics` files only.
 
-## 5. Vercel — approve the API deploy (needed to close P1 hosting)
+## 5. Vercel — API deployed (done 2026-11-16)
 
-The CLI is already signed in on the Hobby plan. The NestJS adapter is ready at
-`apps/api/api/index.ts`; I have not deployed it because that creates an external project and
-spends Hobby deployment quota. Tell me to deploy and I will create the API project, set
-`MONGODB_URI` and `WEB_ORIGIN`, verify `/health` and `/courses`, and record cold start in
-`DECISIONS.md`. Hobby caps deployments per day, and the production domain must be added to
-the Google redirect URIs from item 3 once it exists.
+The API is live at `https://pathshala-api-lake.vercel.app` in project `pathshala-api`
+(Hobby, function region `iad1`). `/health` is verified, including a 1.411s cold start and a
+0.674s warm request. `/courses` correctly returns 503 `database_unavailable` until Atlas is
+configured. Three Hobby deployments were used: the first two failed on module resolution
+and the third, a self-contained bundle, is live.
+
+Remaining owner action: item 1 (Atlas). Once `MONGODB_URI` is in `private/.env.local`, I
+will set it on the Vercel project, redeploy and verify a Mongo-backed `/courses` 200. Do
+not spend another deployment before the URI exists.
 
 ## 6. Secrets distribution (I do this, not you)
 

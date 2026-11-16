@@ -2,12 +2,17 @@ import { getTranslations } from 'next-intl/server';
 import { auth } from '@/auth';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/cn';
+import type { Theme } from '@/lib/theme';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme-toggle';
 import styles from './site-header.module.css';
 
+type SiteHeaderProps = {
+  theme: Theme;
+};
+
 /** Masthead: wordmark, catalogue link, account state and the two reader preferences. */
-export async function SiteHeader() {
+export async function SiteHeader({ theme }: SiteHeaderProps) {
   const t = await getTranslations('Header');
   const session = await auth();
   const signedIn = Boolean(session?.user);
@@ -33,7 +38,7 @@ export async function SiteHeader() {
             {signedIn ? t('dashboard') : t('signIn')}
           </Link>
           <LocaleSwitcher />
-          <ThemeToggle />
+          <ThemeToggle initialTheme={theme} />
         </div>
       </div>
     </header>

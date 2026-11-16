@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 1 complete except the API hosting spike. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the desktop visual pass is done. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -10,7 +10,7 @@ Snapshot: 2026-11-16, Phase 1 complete except the API hosting spike. Update this
 | P0 | Repo hygiene, hooks, CI, workspace, check-done | done — 2026-11-16 |
 | P1 | Design system, i18n, models | done — 2026-11-16 |
 | P1 | Auth with roles, API hardening | done — 2026-11-16 |
-| P1 | API hosting spike | in progress — adapter built, deploy awaits owner |
+| P1 | API hosting spike | done — 2026-11-16, cold 1.411s, warm 0.674s |
 | P2 | Categories, courses, sections, lessons, authoring, catalog | not started |
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | not started |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | not started |
@@ -36,26 +36,39 @@ Snapshot: 2026-11-16, Phase 1 complete except the API hosting spike. Update this
   Demo accounts are bcrypt-hashed in code; setting `MONGODB_URI` switches the same account
   functions to Mongo. `/dashboard` needs a session and `/admin` needs the admin role.
 - `apps/api`: NestJS with health and `GET /courses`, a repository seam, Zod validation, a
-  single error envelope, a per-instance rate limit and one Vercel function adapter.
+  single error envelope and a per-instance rate limit. It ships as one self-contained
+  esbuild CJS bundle and is live at `https://pathshala-api-lake.vercel.app`; the function
+  runs in `iad1`.
+- Theme: `apps/web/src/lib/theme.ts` owns a cookie name; the layout reads it and renders
+  `data-theme` on `<html>`, and the toggle writes the cookie. There is no boot script, so a
+  soft navigation cannot drop the theme.
 - Primitives in `apps/web/src/components/ui`: Button, Field, Select, Card, Badge, Skeleton,
-  EmptyState. Header adds account state, a language switch and a stored light/dark toggle.
+  EmptyState. Header adds account state, a language switch and a cookie-backed toggle.
 - Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
 - Guards, CI and the feature gate from P0 are unchanged and still green.
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (62 tests: 12 tokens, 17 models, 21 web, 12
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (65 tests: 12 tokens, 17 models, 24 web, 12
   API) and `pnpm build` all exit 0 locally.
-- Visual pass on 2026-11-16: landing, sign-in, dashboard and admin at 390px and 1440px in
-  light and dark; no horizontal overflow at 320px; one React warning from the inline theme
-  script was found and fixed by moving the boot to `next/script`.
+- Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
+  admin at 1440px in light and dark; earlier phone pass at 390px and a 320px overflow
+  check. This pass found and fixed two real theme defects: a soft language switch dropped
+  `data-theme` and reverted dark to light, and the `next/script` boot still warned because
+  the locale layout is not the true root layout. The theme now comes from a server-read
+  cookie and the warning is gone.
 - Browser auth flow: student signs in, gets the student dashboard and a 404 on `/admin`;
   sign-out works; admin signs in and sees the account table; a wrong password returns to
   the form with an accessible error.
 - API on `http://localhost:4000`: health 200, courses 503 `database_unavailable`, invalid
   query 400, missing route 404, the 61st request in a minute 429.
-- Not verified yet: a deployed preview, any database read or write, Google sign-in, API
-  cold start on Vercel, and axe / Lighthouse passes.
+- Deployed API on 2026-11-16: `/health` 200; idle first request 1.411s total (`uptime: 0`,
+  so a fresh process), warm second request 0.674s; `/courses` 503
+  `database_unavailable`; `limit=99` 400 `validation_failed`; unknown route 404
+  `not_found`. Three Hobby deployments were used: two failed on module resolution and the
+  third, a self-contained bundle, is live.
+- Not verified yet: any Mongo-backed read or write, a deployed catalogue 200, Google
+  sign-in, cross-instance rate limiting, and axe / Lighthouse passes.
 
 ## Environment facts
 
@@ -67,9 +80,17 @@ Snapshot: 2026-11-16, Phase 1 complete except the API hosting spike. Update this
 
 ## Known risks
 
-- Vercel Hobby daily deployment cap — batch deploys per finished slice.
+- Vercel Hobby daily deployment cap — this slice used three deployments, two of them
+  failed attempts, so batch the next ones.
 - Atlas, Google OAuth and a dedicated Stripe sandbox need the owner; see `OWNER_TODO.md`.
-- The NestJS-on-Vercel decision is still a spike; deployment and cold start are unmeasured.
+- The deployed function has never connected to Mongo, so its bundled Mongoose path is not
+  proven at runtime. `/courses` stays 503 until `MONGODB_URI` is set and redeployed.
+- The in-process rate limit is per function instance, not global; it is not a security
+  boundary across scale-out.
+- A full dev-dependency `pnpm audit` flags the known moderate minimatch 10.2.6 advisory
+  (`GHSA-g3hv-75wg-m249`) through typescript-eslint. It is not in the production tree, and
+  `pnpm audit --prod --audit-level high` (the CI gate) is clean. Revisit when
+  typescript-eslint moves to minimatch 11.
 - Demo accounts are off in production unless `DEMO_AUTH=true`; while enabled their
   credentials are public and admin is read-only. Seed real accounts when Atlas lands, then
   remove the demo flag before any destructive admin action ships.
