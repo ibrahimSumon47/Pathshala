@@ -1,0 +1,74 @@
+import 'server-only';
+import { Course, Lesson, Section, connectToDatabase } from '@pathshala/db';
+
+type StudioLesson = {
+  id: string;
+  title: { bn?: string; en?: string };
+  type: 'reading' | 'video' | 'quiz';
+  bodyHtml: string;
+  attachmentCount: number;
+  videoUrl: string;
+};
+
+type StudioSection = {
+  id: string;
+  title: { bn?: string; en?: string };
+  lessons: StudioLesson[];
+};
+
+export type StudioCourse = {
+  id: string;
+  slug: string;
+  title: { bn?: string; en?: string };
+  subtitle: { bn?: string; en?: string };
+  description: { bn?: string; en?: string };
+  categoryId: string;
+  pricePaisa: number;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  language: 'bn' | 'en';
+  status: 'draft' | 'pending' | 'published' | 'archived';
+  sections: StudioSection[];
+  lessonCount: number;
+};
+
+/** Load one editable course, scoped to its instructor unless the caller is an admin. */
+export async function getStudioCourse(courseId: string, userId: string, isAdmin: boolean): Promise<StudioCourse | null> {
+  if (!/^[a-f0-9]{24}$/i.test(courseId)) return null;
+  await connectToDatabase();
+
+  const course = await Course.findOne(isAdmin ? { _id: courseId } : { _id: courseId, instructor: userId }).lean();
+  if (!course) return null;
+
+  const [sections, lessons] = await Promise.all([
+    Section.find({ course: course._id }).sort({ order: 1 }).lean(),
+    Lesson.find({ course: course._id }).sort({ order: 1 }).lean(),
+  ]);
+
+  return {
+    id: String(course._id),
+    slug: course.slug,
+    title: course.title,
+    subtitle: course.subtitle ?? {},
+    description: course.description ?? {},
+    categoryId: String(course.category),
+    pricePaisa: course.pricePaisa,
+    level: course.level,
+    language: course.language,
+    status: course.status,
+    lessonCount: lessons.length,
+    sections: sections.map((section) => ({
+      id: String(section._id),
+      title: section.title,
+      lessons: lessons
+        .filter((lesson) => String(lesson.section) === String(section._id))
+        .map((lesson) => ({
+          id: String(lesson._id),
+          title: lesson.title,
+          type: lesson.type,
+          bodyHtml: lesson.content.bodyHtml ?? '',
+          attachmentCount: lesson.content.attachments.length,
+          videoUrl: lesson.video?.url ?? '',
+        })),
+    })),
+  };
+}

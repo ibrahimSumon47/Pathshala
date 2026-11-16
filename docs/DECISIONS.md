@@ -296,3 +296,22 @@ not the true root layout. The layout now reads the `pathshala-theme` cookie, ren
 `data-theme` itself before paint, and the toggle updates the attribute and the cookie. This
 keeps the no-flash result, survives soft navigation and removes the boot script entirely.
 Revisit: if themes become per-account settings, store the preference on the user instead.
+
+## 2026-11-16 — Authenticated app writes live in web server actions; public reads and payments in NestJS
+
+The Next.js app already owns the session cookie and guards every page. Authoring, enrolment,
+progress and other signed-in writes run as server actions with `requireUser`/`requireRole`,
+so there is no second auth protocol between web and API. NestJS owns the public catalogue,
+health, checkout and webhook surfaces where a stable HTTP contract matters. Both use the
+same `packages/db` models and catalogue module.
+Revisit: if the web and API are deployed independently and the API needs user-scoped routes;
+then add a signed service token rather than trusting a client header.
+
+## 2026-11-16 — mongodb-memory-server is the local database
+
+Atlas is owner-blocked and Docker is not installed. `pnpm db:dev` runs MongoDB 8.2 from
+`mongodb-memory-server` on port 27018, seeds the demo catalogue and exits cleanly. API
+integration tests boot their own instance. A real `MONGODB_URI` switches every path to
+Atlas without a code branch; memory data is disposable and never used in production.
+Revisit: when Atlas exists, use it for the deployed app and keep the memory server only
+for tests and fresh clones.

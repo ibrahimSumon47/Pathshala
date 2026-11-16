@@ -1,32 +1,22 @@
-import type { CourseDoc } from '@pathshala/db';
-import type { CoursesRepository, PublishedCourse } from './courses.repository.js';
+import { getCourseBySlug, listCatalog, type CatalogPage, type CourseDetail } from '@pathshala/db';
+import type { CoursesQuery } from './courses-query.schema.js';
+import type { CoursesRepository } from './courses.repository.js';
 
-type LeanCourse = CourseDoc & { _id: { toString(): string } };
-
-/** Mongo-backed catalogue. The connection is opened lazily on the first request. */
+/** Mongo-backed catalogue. The connection opens lazily on the first request. */
 export class MongoCoursesRepository implements CoursesRepository {
-  async listPublished(limit: number): Promise<PublishedCourse[]> {
-    const { Course, connectToDatabase } = await import('@pathshala/db');
-    await connectToDatabase();
+  listPublished(query: CoursesQuery): Promise<CatalogPage> {
+    return listCatalog({
+      ...(query.q ? { q: query.q } : {}),
+      ...(query.category ? { category: query.category } : {}),
+      ...(query.level ? { level: query.level } : {}),
+      ...(query.language ? { language: query.language } : {}),
+      price: query.price,
+      page: query.page,
+      pageSize: query.limit,
+    });
+  }
 
-    const documents = (await Course.find({ status: 'published' })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .lean()) as unknown as LeanCourse[];
-
-    return documents.map((document) => ({
-      id: document._id.toString(),
-      slug: document.slug,
-      title: { bn: document.title.bn ?? '', en: document.title.en ?? '' },
-      subtitle: document.subtitle
-        ? { bn: document.subtitle.bn ?? '', en: document.subtitle.en ?? '' }
-        : null,
-      pricePaisa: document.pricePaisa,
-      language: document.language,
-      level: document.level,
-      ratingAverage: document.ratingAverage,
-      enrolmentCount: document.enrolmentCount,
-      publishedAt: document.publishedAt?.toISOString() ?? null,
-    }));
+  getBySlug(slug: string): Promise<CourseDetail | null> {
+    return getCourseBySlug(slug);
   }
 }

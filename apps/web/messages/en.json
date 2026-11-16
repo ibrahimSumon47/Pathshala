@@ -12,7 +12,8 @@
     "navLabel": "Main menu",
     "switchTo": "Change language",
     "signIn": "Sign in",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "studio": "Studio"
   },
   "Theme": {
     "toggle": "Toggle colour theme",

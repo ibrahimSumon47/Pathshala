@@ -132,3 +132,25 @@ a boot script.
 `apps/api/api/index.cjs` bundle. Neither is source, but ESLint does not read `.gitignore`.
 Explicit ignores for `**/.vercel/**` and the generated bundle restored a clean run. Lesson:
 lint configuration needs the same exclusions as the repository.
+
+## 2026-11-16 — A field named `language` becomes a MongoDB text-index override
+
+Seeding a course failed with `language override unsupported: bn`. MongoDB text indexes read
+a field named `language` as the stemming language by default, and the Course model uses
+`language` for the UI locale. The index now sets `language_override: 'textLanguage'` and
+`default_language: 'none'`. Lesson: any schema with a `language` field and a text index needs
+the override named explicitly.
+
+## 2026-11-16 — Mongoose named exports fail under tsx ESM
+
+The API crashed on boot with `The requested module 'mongoose' does not provide an export
+named 'models'`; Vitest had hidden this through its CJS interop. Importing mongoose's
+default export and destructuring `Schema`, `model` and `models` works in both tsx and the
+bundle. Lesson: exercise the real runtime entry point, not only the test runner.
+
+## 2026-11-16 — Memory MongoDB is a 780 MB one-time download
+
+`mongodb-memory-server` postinstall fetched MongoDB 8.2.6 (781 MB) and pnpm blocked the
+script until `allowBuilds` included it. Once cached it starts in under a second. Lesson:
+budget for the binary on a fresh clone and document that `pnpm db:dev` is the only local
+database step.

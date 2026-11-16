@@ -7,12 +7,133 @@
 }
 
 .lede {
-  max-width: 52ch;
+  max-width: 58ch;
   margin-top: var(--space-4);
   color: var(--color-ink-muted);
   font-size: var(--text-lg);
 }
 
-.empty {
-  margin-top: var(--space-7);
+.filters {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.searchLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.searchRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.clear {
+  justify-self: start;
+  font-size: var(--text-sm);
+}
+
+.count {
+  margin-top: var(--space-5);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.price {
+  font-weight: 700;
+}
+
+.courseTitle {
+  font-size: var(--text-xl);
+}
+
+.summary {
+  color: var(--color-ink-muted);
+}
+
+.meta {
+  margin-top: auto;
+  color: var(--color-ink-subtle);
+  font-size: var(--text-sm);
+}
+
+.cardLink {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .grid,
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .searchRow {
+    flex-direction: column;
+  }
 }

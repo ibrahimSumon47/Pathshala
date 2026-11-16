@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the desktop visual pass is done. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is searchable and instructors can author and publish. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -11,7 +11,7 @@ Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the deskto
 | P1 | Design system, i18n, models | done — 2026-11-16 |
 | P1 | Auth with roles, API hardening | done — 2026-11-16 |
 | P1 | API hosting spike | done — 2026-11-16, cold 1.411s, warm 0.674s |
-| P2 | Categories, courses, sections, lessons, authoring, catalog | not started |
+| P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-16 |
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | not started |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | not started |
 | P5 | Live classes, attendance, reminders, calendar files | not started |
@@ -26,9 +26,13 @@ Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the deskto
 - `packages/tokens`: warm paper palette, one deep-teal accent, light and dark roles, a
   4/8 point spacing grid, type scale, radii, shadows and motion durations.
 - `packages/shared`: money in integer paisa with Bangla and English formatting.
-- `packages/db`: Mongoose models for User, Category, Course, Section, Lesson, Enrolment,
-  Order and AuditEvent, with catalogue, ordering and idempotency indexes. No database
-  connection exists yet: Atlas is waiting on the owner.
+- `packages/db`: Mongoose models plus the catalogue query module. `scripts/dev-db.ts`
+  starts a throwaway MongoDB with `mongodb-memory-server` and seeds six bilingual courses;
+  `MONGODB_URI` switches the same code to Atlas when the owner provides it.
+- Catalogue: search, subject/level/language/price filters, bounded pagination and a public
+  detail view. API `/courses` and `/courses/:slug` call the same query module.
+- Authoring: instructor studio at `/studio` with course create/edit, sections, lessons,
+  sanitized HTML, https video slots, validated attachment metadata and draft/publish.
 - `apps/web`: Next.js 16 with next-intl. Bangla lives at `/` and English at `/en`; pages
   are server-rendered because the header reads the session. Routes: landing, catalogue,
   sign-in, dashboard, admin and the Auth.js handler.
@@ -49,8 +53,9 @@ Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the deskto
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (65 tests: 12 tokens, 17 models, 24 web, 12
-  API) and `pnpm build` all exit 0 locally.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (85 tests: 12 tokens, 17 models, 7 shared,
+  32 web, 17 API) and `pnpm build` all exit 0 locally. The API integration tests boot
+  `mongodb-memory-server`; no Atlas credentials are needed.
 - Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
   admin at 1440px in light and dark; earlier phone pass at 390px and a 320px overflow
   check. This pass found and fixed two real theme defects: a soft language switch dropped
@@ -67,8 +72,14 @@ Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the deskto
   `database_unavailable`; `limit=99` 400 `validation_failed`; unknown route 404
   `not_found`. Three Hobby deployments were used: two failed on module resolution and the
   third, a self-contained bundle, is live.
-- Not verified yet: any Mongo-backed read or write, a deployed catalogue 200, Google
-  sign-in, cross-instance rate limiting, and axe / Lighthouse passes.
+- Phase 2 browser flow: instructor sign-in from the seeded Mongo user, studio list,
+  course create, section and lesson add, publish, public detail 200 and catalogue search
+  hit. Admin category form is wired and available.
+- Phase 2 API on the seeded memory DB: `/courses?limit=2&price=free` 200, course detail 200,
+  limit 99 400, unknown slug 404. Catalogue integration tests cover published-only,
+  filters, search and detail.
+- Not verified yet: a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in,
+  cross-instance rate limiting, and axe / Lighthouse passes.
 
 ## Environment facts
 
@@ -83,6 +94,7 @@ Snapshot: 2026-11-16, Phase 1 complete. The API is live on Vercel and the deskto
 - Vercel Hobby daily deployment cap — this slice used three deployments, two of them
   failed attempts, so batch the next ones.
 - Atlas, Google OAuth and a dedicated Stripe sandbox need the owner; see `OWNER_TODO.md`.
+  Local development uses the memory server and resets on restart.
 - The deployed function has never connected to Mongo, so its bundled Mongoose path is not
   proven at runtime. `/courses` stays 503 until `MONGODB_URI` is set and redeployed.
 - The in-process rate limit is per function instance, not global; it is not a security

@@ -1,20 +1,11 @@
-export type LocalizedTitle = { bn: string; en: string };
+import type { CatalogPage, CourseDetail } from '@pathshala/db';
+import type { CoursesQuery } from './courses-query.schema.js';
 
-export type PublishedCourse = {
-  id: string;
-  slug: string;
-  title: LocalizedTitle;
-  subtitle: LocalizedTitle | null;
-  pricePaisa: number;
-  language: 'bn' | 'en';
-  level: 'beginner' | 'intermediate' | 'advanced';
-  ratingAverage: number;
-  enrolmentCount: number;
-  publishedAt: string | null;
-};
+export type { CatalogPage, CourseDetail };
 
 export interface CoursesRepository {
-  listPublished(limit: number): Promise<PublishedCourse[]>;
+  listPublished(query: CoursesQuery): Promise<CatalogPage>;
+  getBySlug(slug: string): Promise<CourseDetail | null>;
 }
 
 export const COURSES_REPOSITORY = Symbol('COURSES_REPOSITORY');

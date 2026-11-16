@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model, type Types } from 'mongoose';
+import mongoose, { type Model, type Types } from 'mongoose';
+const { model, models, Schema } = mongoose;
 
 export const ENROLMENT_STATUSES = ['active', 'completed', 'refunded'] as const;
 export type EnrolmentStatus = (typeof ENROLMENT_STATUSES)[number];

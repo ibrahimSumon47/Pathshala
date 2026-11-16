@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model } from 'mongoose';
+import mongoose, { type Model } from 'mongoose';
+const { model, models, Schema } = mongoose;
 import type { Locale } from '@pathshala/shared';
 
 export const USER_ROLES = ['student', 'instructor', 'admin'] as const;

@@ -39,3 +39,10 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     throw error;
   }
 }
+
+/** Close the pooled connection, mainly for integration tests and scripts. */
+export async function disconnectFromDatabase(): Promise<void> {
+  await mongoose.disconnect();
+  cache.connection = null;
+  cache.pending = null;
+}

@@ -1,10 +1,15 @@
 # Handoff
 
-Updated: 2026-11-16, after the API hosting and desktop visual slice.
+Updated: 2026-11-16, after the P2 catalogue and authoring slice.
 
 ## Where we are
 
-Phase 1 is complete. Auth.js v5 signs in three demo roles with bcrypt-checked passwords,
+P2 is complete. The studio creates, edits and publishes bilingual courses; the public
+catalogue searches the Mongo text index and filters by subject, level, language and price.
+A local `mongodb-memory-server` (`pnpm db:dev`) seeds six courses so no phase waits on
+Atlas. The same `MONGODB_URI` switch runs against Atlas.
+
+Phase 1 remains complete. Auth.js v5 signs in three demo roles with bcrypt-checked passwords,
 carries roles in a JWT, protects `/dashboard` and `/admin`, and switches to MongoDB
 automatically once `MONGODB_URI` exists. The NestJS API is live at
 `https://pathshala-api-lake.vercel.app` as one self-contained bundle: `/health` answered in
@@ -40,9 +45,8 @@ Demo accounts are on by default in development and off in production unless
 2. Once `MONGODB_URI` is in `private/.env.local`, set it on the Vercel project, redeploy the
    API and verify a Mongo-backed `/courses` 200. That redeploy is the next allowed
    deployment; do not spend one before the URI exists.
-3. Start P2: categories, course/section/lesson authoring, instructor UI and the catalogue
-   with search, filters and pagination. The API contract is already deployed and can grow
-   with the catalogue.
+3. Start P3: enrolment and access control, lesson progress, quizzes, Q&A, notes, reviews
+   and wishlist. Reuse the memory server for integration tests; no owner action is needed.
 
 ## Local commands
 
@@ -74,6 +78,6 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1 is 6/6 and the
-project is 13/47, with 34 features still to build. The gate must exit 0 before the final
+`node scripts/check-done.mjs` exits non-zero while features remain open. P1 and P2 are
+complete and the project is 18/47, with 29 features still to build. The gate must exit 0 before the final
 handover, which also means every later phase's evidence exists.

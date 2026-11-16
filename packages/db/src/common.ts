@@ -1,5 +1,7 @@
 import type { Locale } from '@pathshala/shared';
-import { Schema } from 'mongoose';
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 /** Text that can exist in either supported language. */
 export type LocalizedText = Partial<Record<Locale, string>>;

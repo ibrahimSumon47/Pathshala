@@ -49,7 +49,7 @@ export default tseslint.config(
   },
   {
     // Repository scripts report progress on stdout by design.
-    files: ['scripts/**/*.mjs', 'eslint.config.mjs'],
+    files: ['scripts/**/*.{mjs,ts}', 'eslint.config.mjs'],
     rules: { 'no-console': 'off' },
   },
 );

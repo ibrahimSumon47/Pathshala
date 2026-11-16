@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model, type Types } from 'mongoose';
+import mongoose, { type Model, type Types } from 'mongoose';
+const { model, models, Schema } = mongoose;
 
 export const PAYMENT_PROVIDERS = ['stripe', 'paybridge'] as const;
 export const ORDER_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const;

@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model, type Types } from 'mongoose';
+import mongoose, { type Model, type Types } from 'mongoose';
+const { model, models, Schema } = mongoose;
 import type { Locale } from '@pathshala/shared';
 import { localizedTextSchema, localizedTextValidator, SLUG_PATTERN, type LocalizedText } from '../common';
 
@@ -79,6 +80,11 @@ const courseSchema = new Schema<CourseDoc>(
 // Catalogue queries filter on status, category, language and level, then sort by recency.
 courseSchema.index({ status: 1, category: 1, language: 1, level: 1, publishedAt: -1 });
 // One text index per collection; it covers both languages rather than duplicating storage.
-courseSchema.index({ 'title.bn': 'text', 'title.en': 'text', 'subtitle.bn': 'text', 'subtitle.en': 'text' });
+// Course.language stores a UI locale, not a MongoDB stemming language, so the text index
+// must not read it as an override (Mongo rejects "bn" as an unsupported language).
+courseSchema.index(
+  { 'title.bn': 'text', 'title.en': 'text', 'subtitle.bn': 'text', 'subtitle.en': 'text' },
+  { default_language: 'none', language_override: 'textLanguage' },
+);
 
 export const Course = (models.Course as Model<CourseDoc> | undefined) ?? model<CourseDoc>('Course', courseSchema);

@@ -16,6 +16,7 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
   const t = await getTranslations('Header');
   const session = await auth();
   const signedIn = Boolean(session?.user);
+  const canTeach = Boolean(session?.user?.roles.some((role) => role === 'instructor' || role === 'admin'));
 
   return (
     <header className={styles.header}>
@@ -34,6 +35,11 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
         </nav>
 
         <div className={styles.controls}>
+          {canTeach ? (
+            <Link href="/studio" className={styles.account}>
+              {t('studio')}
+            </Link>
+          ) : null}
           <Link href={signedIn ? '/dashboard' : '/sign-in'} className={styles.account}>
             {signedIn ? t('dashboard') : t('signIn')}
           </Link>

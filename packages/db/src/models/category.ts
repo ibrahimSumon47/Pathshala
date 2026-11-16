@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model } from 'mongoose';
+import mongoose, { type Model } from 'mongoose';
+const { model, models, Schema } = mongoose;
 import { localizedTextSchema, localizedTextValidator, SLUG_PATTERN, type LocalizedText } from '../common';
 
 export type CategoryDoc = {

@@ -1,0 +1,215 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+.eyebrow,
+.back {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  text-decoration: none;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  margin-top: var(--space-2);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+}
+
+.lede {
+  max-width: 58ch;
+  margin-top: var(--space-4);
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.courseCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.courseTitle {
+  margin-top: var(--space-2);
+  font-size: var(--text-xl);
+}
+
+.meta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.editLink {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.empty {
+  padding: var(--space-6);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-ink-muted);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.sectionHeading {
+  font-size: var(--text-2xl);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.two,
+.three {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.three {
+  grid-template-columns: 1.2fr 0.7fr 0.8fr;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.sectionBlock {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+}
+
+.lessonList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lessonRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.disclosure {
+  margin-top: var(--space-2);
+}
+
+.disclosure summary {
+  cursor: pointer;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.disclosure .form {
+  margin-top: var(--space-4);
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.fieldset legend {
+  padding-inline: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.textareaField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.textareaLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 760px) {
+  .two,
+  .three {
+    grid-template-columns: 1fr;
+  }
+
+  .courseCard,
+  .titleRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

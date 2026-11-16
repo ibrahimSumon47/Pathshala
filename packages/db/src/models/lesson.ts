@@ -1,4 +1,5 @@
-import { model, models, Schema, type Model, type Types } from 'mongoose';
+import mongoose, { type Model, type Types } from 'mongoose';
+const { model, models, Schema } = mongoose;
 import { attachmentSchema, localizedTextSchema, localizedTextValidator, type Attachment, type LocalizedText } from '../common';
 
 export const LESSON_TYPES = ['reading', 'video', 'quiz'] as const;

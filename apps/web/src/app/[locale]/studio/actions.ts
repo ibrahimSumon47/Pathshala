@@ -1,0 +1,247 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { Category, Course, Lesson, Section, connectToDatabase } from '@pathshala/db';
+import { toPaisa } from '@pathshala/shared';
+import { z } from 'zod';
+import { validateAttachment } from '@/lib/attachments';
+import { requireRole } from '@/lib/auth/guard';
+import { sanitizeLessonHtml } from '@/lib/sanitize';
+
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const courseSchema = z.object({
+  titleBn: z.string().trim().max(200).default(''),
+  titleEn: z.string().trim().max(200).default(''),
+  subtitleBn: z.string().trim().max(200).default(''),
+  subtitleEn: z.string().trim().max(200).default(''),
+  descriptionBn: z.string().trim().max(4000).default(''),
+  descriptionEn: z.string().trim().max(4000).default(''),
+  slug: z.string().trim().max(90).default(''),
+  categoryId: z.string().trim(),
+  priceTaka: z.coerce.number().min(0).max(100000),
+  level: z.enum(['beginner', 'intermediate', 'advanced']),
+  language: z.enum(['bn', 'en']),
+});
+
+const lessonSchema = z.object({
+  courseId: z.string().trim(),
+  sectionId: z.string().trim(),
+  titleBn: z.string().trim().max(200).default(''),
+  titleEn: z.string().trim().max(200).default(''),
+  type: z.enum(['reading', 'video', 'quiz']),
+  bodyHtml: z.string().max(20000).default(''),
+  videoUrl: z.string().trim().max(500).default(''),
+  attachmentName: z.string().trim().max(160).default(''),
+  attachmentUrl: z.string().trim().max(500).default(''),
+  attachmentMime: z.string().trim().default(''),
+  attachmentSize: z.coerce.number().int().min(1).max(20 * 1024 * 1024).default(1),
+});
+
+function text(form: FormData, key: string): string {
+  return String(form.get(key) ?? '');
+}
+
+function localePath(form: FormData, path: string): string {
+  return `${form.get('locale') === 'en' ? '/en' : ''}${path}`;
+}
+
+/** Send the instructor back to the form with one readable message. */
+function fail(form: FormData, path: string, message: string): never {
+  redirect(`${localePath(form, path)}?error=${encodeURIComponent(message)}`);
+}
+
+/** Create a lowercase hyphen slug when the instructor leaves it blank. */
+function makeSlug(input: string, title: string): string {
+  const base = input || title || `course-${Date.now()}`;
+  return base
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+/** Only the owning instructor or an admin may change a course. */
+async function ownedCourse(courseId: string, userId: string, isAdmin: boolean) {
+  if (!OBJECT_ID.test(courseId)) return null;
+  await connectToDatabase();
+  const course = await Course.findById(courseId);
+  if (!course) return null;
+  if (!isAdmin && String(course.instructor) !== userId) return null;
+  if (!isAdmin && !course.instructor) return null;
+  return course;
+}
+
+/** Create a draft course owned by the signed-in instructor. */
+export async function createCourseAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const parsed = courseSchema.safeParse({
+    titleBn: text(form, 'titleBn'),
+    titleEn: text(form, 'titleEn'),
+    subtitleBn: text(form, 'subtitleBn'),
+    subtitleEn: text(form, 'subtitleEn'),
+    descriptionBn: text(form, 'descriptionBn'),
+    descriptionEn: text(form, 'descriptionEn'),
+    slug: text(form, 'slug'),
+    categoryId: text(form, 'categoryId'),
+    priceTaka: text(form, 'priceTaka') || '0',
+    level: text(form, 'level'),
+    language: text(form, 'language'),
+  });
+  if (!parsed.success) fail(form, '/studio', 'Check the course details and try again.');
+  if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, '/studio', 'Add a title in Bangla or English.');
+  if (!OBJECT_ID.test(parsed.data.categoryId)) fail(form, '/studio', 'Choose a category.');
+  if (!SLUG.test(makeSlug(parsed.data.slug, parsed.data.titleEn))) fail(form, '/studio', 'Use a valid slug.');
+
+  await connectToDatabase();
+  const category = await Category.findById(parsed.data.categoryId).lean();
+  if (!category) fail(form, '/studio', 'That category no longer exists.');
+
+  try {
+    const course = await Course.create({
+      title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
+      subtitle: { bn: parsed.data.subtitleBn, en: parsed.data.subtitleEn },
+      description: { bn: parsed.data.descriptionBn, en: parsed.data.descriptionEn },
+      slug: makeSlug(parsed.data.slug, parsed.data.titleEn),
+      category: parsed.data.categoryId,
+      instructor: user.id,
+      language: parsed.data.language,
+      level: parsed.data.level,
+      pricePaisa: toPaisa(parsed.data.priceTaka),
+      status: 'draft',
+      outcomes: [],
+      requirements: [],
+    });
+    revalidatePath('/studio');
+    redirect(localePath(form, `/studio/${course._id}`));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('duplicate key')) {
+      fail(form, '/studio', 'That slug is already in use.');
+    }
+    throw error;
+  }
+}
+
+/** Save course details; publishing requires at least one lesson. */
+export async function updateCourseAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+
+  const parsed = courseSchema.safeParse({
+    titleBn: text(form, 'titleBn'),
+    titleEn: text(form, 'titleEn'),
+    subtitleBn: text(form, 'subtitleBn'),
+    subtitleEn: text(form, 'subtitleEn'),
+    descriptionBn: text(form, 'descriptionBn'),
+    descriptionEn: text(form, 'descriptionEn'),
+    slug: text(form, 'slug'),
+    categoryId: text(form, 'categoryId'),
+    priceTaka: text(form, 'priceTaka') || '0',
+    level: text(form, 'level'),
+    language: text(form, 'language'),
+  });
+  if (!parsed.success) fail(form, `/studio/${courseId}`, 'Check the course details and try again.');
+  if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, `/studio/${courseId}`, 'Add a title.');
+
+  const publish = form.get('publish') === 'on';
+  if (publish) {
+    const lessons = await Lesson.countDocuments({ course: course._id });
+    if (lessons === 0) fail(form, `/studio/${courseId}`, 'Add at least one lesson before publishing.');
+  }
+
+  course.set({
+    title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
+    subtitle: { bn: parsed.data.subtitleBn, en: parsed.data.subtitleEn },
+    description: { bn: parsed.data.descriptionBn, en: parsed.data.descriptionEn },
+    slug: makeSlug(parsed.data.slug, parsed.data.titleEn),
+    category: parsed.data.categoryId,
+    language: parsed.data.language,
+    level: parsed.data.level,
+    pricePaisa: toPaisa(parsed.data.priceTaka),
+    status: publish ? 'published' : course.status === 'published' ? 'published' : 'draft',
+    publishedAt: publish ? (course.publishedAt ?? new Date()) : course.publishedAt,
+  });
+  await course.save();
+  revalidatePath('/studio');
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath('/courses');
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Add the next section at the end of the course. */
+export async function addSectionAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+  const titleBn = text(form, 'titleBn').trim();
+  const titleEn = text(form, 'titleEn').trim();
+  if (!titleBn && !titleEn) fail(form, `/studio/${courseId}`, 'Add a section title.');
+
+  await connectToDatabase();
+  const last = await Section.findOne({ course: course._id }).sort({ order: -1 }).select('order').lean();
+  await Section.create({ course: course._id, title: { bn: titleBn, en: titleEn }, order: (last?.order ?? 0) + 1 });
+  revalidatePath(`/studio/${courseId}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Add a lesson, with a validated attachment and a video slot when supplied. */
+export async function addLessonAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+
+  const parsed = lessonSchema.safeParse({
+    courseId,
+    sectionId: text(form, 'sectionId'),
+    titleBn: text(form, 'titleBn'),
+    titleEn: text(form, 'titleEn'),
+    type: text(form, 'type'),
+    bodyHtml: text(form, 'bodyHtml'),
+    videoUrl: text(form, 'videoUrl'),
+    attachmentName: text(form, 'attachmentName'),
+    attachmentUrl: text(form, 'attachmentUrl'),
+    attachmentMime: text(form, 'attachmentMime'),
+    attachmentSize: text(form, 'attachmentSize') || '1',
+  });
+  if (!parsed.success) fail(form, `/studio/${courseId}`, 'Check the lesson details.');
+  if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, `/studio/${courseId}`, 'Add a lesson title.');
+  if (!OBJECT_ID.test(parsed.data.sectionId)) fail(form, `/studio/${courseId}`, 'Choose a section.');
+
+  await connectToDatabase();
+  const section = await Section.findOne({ _id: parsed.data.sectionId, course: course._id }).lean();
+  if (!section) fail(form, `/studio/${courseId}`, 'That section does not belong to this course.');
+
+  const attachments = [];
+  if (parsed.data.attachmentUrl) {
+    const attachment = validateAttachment({
+      name: parsed.data.attachmentName,
+      url: parsed.data.attachmentUrl,
+      mimeType: parsed.data.attachmentMime,
+      sizeBytes: parsed.data.attachmentSize,
+    });
+    if (!attachment.ok) fail(form, `/studio/${courseId}`, attachment.error);
+    attachments.push(attachment.value);
+  }
+  if (parsed.data.type === 'video' && parsed.data.videoUrl && !parsed.data.videoUrl.startsWith('https://')) {
+    fail(form, `/studio/${courseId}`, 'Video links need https.');
+  }
+
+  const last = await Lesson.findOne({ course: course._id, section: section._id }).sort({ order: -1 }).select('order').lean();
+  await Lesson.create({
+    course: course._id,
+    section: section._id,
+    title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
+    order: (last?.order ?? 0) + 1,
+    type: parsed.data.type,
+    content: { bodyHtml: sanitizeLessonHtml(parsed.data.bodyHtml), attachments },
+    video: parsed.data.type === 'video' && parsed.data.videoUrl ? { url: parsed.data.videoUrl } : null,
+  });
+  revalidatePath(`/studio/${courseId}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
