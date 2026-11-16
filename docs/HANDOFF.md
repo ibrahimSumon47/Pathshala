@@ -1,42 +1,41 @@
 # Handoff
 
-Updated: 2026-11-16, end of P0.
+Updated: 2026-11-16, after the design, i18n and model slice.
 
 ## Where we are
 
-The workspace, guards, CI and feature gate are in place. `apps/web` is a bilingual
-holding page, not the product; `packages/shared` holds the money primitives. Nothing is
-deployed.
+The bilingual shell is real: tokens, primitives, next-intl routing, fonts and the Mongoose
+models all exist and pass 37 tests. The catalogue page is an honest empty state because no
+course authoring exists yet. There is no auth, no API service and no database connection.
 
-## Exact next step — start Phase 1
+## Exact next step — finish Phase 1
 
-1. Ask the owner to finish the first two items in `docs/OWNER_TODO.md` (Atlas re-login and
-   M0 cluster, Google OAuth client). They block the database and sign-in work, not the
-   design system; start on the design system while waiting.
-2. Add `packages/tokens`: warm paper palette, one accent, real type scale, 8-pt spacing,
-   radii, motion durations, and a matching dark set. Then the first primitives (Button,
-   Field, Select, Card, EmptyState, Skeleton, Toast) with Vitest tests where behaviour is
-   non-trivial.
-3. Add next-intl with Bangla as the default locale and English at `/en`; self-host Noto
-   Sans Bengali (and a Latin companion) through `next/font`; move the holding page copy
-   into message files.
-4. Add the MongoDB connection and Mongoose models: User (roles), Category, Course,
-   Section, Lesson (rich text body, attachments, `videoUrl` reserved), Enrolment, Order,
-   AuditEvent. Indexes and validation included.
-5. Add Auth.js v5 (Google + seeded credentials, JWT sessions), role checks and route
-   protection. Seeded demo accounts cover student, instructor and admin.
-6. Spike the API hosting decision: wrap NestJS as one Vercel serverless handler with a
-   health route and one course read, measure cold start, and record the verdict in
-   `DECISIONS.md`. If it fails, choose a free host that is not Render and record why.
-7. Update docs, run every gate below, commit and push once.
+1. Ask the owner to finish `OWNER_TODO.md` items 1 and 3 (Atlas cluster, Google OAuth
+   client). They block the database connection and Google sign-in, not the code below.
+2. Add Auth.js v5:
+   - `apps/web/src/auth.ts` with Google and credentials providers, JWT sessions;
+   - argon2 password hashing for seeded demo accounts; never store plain text;
+   - role helpers (`requireRole`) used by server components and route handlers;
+   - sign-in and sign-up pages using the Field and Button primitives;
+   - session-aware header state (name, sign out) and protected `/(dashboard)` group.
+3. Add `apps/api` (NestJS):
+   - health route plus one course read behind DI and a service interface;
+   - global validation pipe, exception filter with one error envelope, rate limiting;
+   - wrap it as a single Vercel serverless handler and measure cold start;
+   - record the hosting verdict in `DECISIONS.md`; if Vercel is unsuitable, choose a
+     verified free host that is not Render.
+4. Add a Mongo connection helper with a serverless-safe cached promise, and seed three
+   demo accounts (student, instructor, admin) without committing their passwords.
+5. Update docs and `features.json`, run every gate, then push once.
 
-Do not begin P2 (course authoring) before P1 gates are green.
+Do not start P2 (course authoring) until P1 is green.
 
-## Work already done that should not be repeated
+## Files worth knowing
 
-- Hooks, gitleaks, CI, CodeQL and the feature gate.
-- Money handling and its tests.
-- The Next.js build pipeline (Turbopack, Next 16.4.6).
+- `apps/web/src/i18n/{routing,request,navigation}.ts` — locale contract.
+- `apps/web/src/components/ui/*` — primitives and their tests.
+- `packages/tokens/theme.css` — colour and spacing source of truth.
+- `packages/db/src/models/*` — schemas; `Lesson.video` is the reserved video slot.
 
 ## Current gate
 
@@ -52,5 +51,4 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 pnpm audit
 pnpm check:commits
 node scripts/check-done.mjs
-git config --get core.hooksPath        # expect .githooks
 ```

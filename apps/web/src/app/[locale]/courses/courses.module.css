@@ -1,0 +1,18 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+.title {
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+}
+
+.lede {
+  max-width: 52ch;
+  margin-top: var(--space-4);
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+}
+
+.empty {
+  margin-top: var(--space-7);
+}

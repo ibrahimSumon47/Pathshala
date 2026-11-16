@@ -26,6 +26,34 @@ The first lint run failed on `console` and `process` in `scripts/*.mjs`, because
 TypeScript block only applied browser/node globals to `.ts`/`.tsx`. A dedicated `*.mjs`
 block fixed it. Lesson: lint the tooling, not just the app.
 
+## 2026-11-16 — Next 16 renamed middleware to proxy
+
+`middleware.ts` is `proxy.ts` in Next 16. next-intl's docs and examples reflect the rename;
+the handler still comes from `next-intl/middleware`. Lesson: check the framework's file
+conventions against the installed major before copying an older example.
+
+## 2026-11-16 — pnpm 12 uses allowBuilds, not onlyBuiltDependencies
+
+Adding `onlyBuiltDependencies` to `pnpm-workspace.yaml` was ignored and install failed with
+`ERR_PNPM_IGNORED_BUILDS`. `pnpm approve-builds --all` wrote the correct `allowBuilds` map.
+Lesson: let the tool write its own config instead of guessing the current key name.
+
+## 2026-11-16 — Mongoose 9 dropped the second hook argument
+
+`pre('validate', function (next) { ... })` fails to typecheck because the hook no longer
+receives `next`, and `validateSync()` is deprecated and returns `undefined` on success.
+Both are signs to move to the async APIs now rather than at the Mongoose 10 upgrade.
+
+## 2026-11-16 — Vite 8 reads jsx: preserve from the Next tsconfig
+
+Vitest 5 uses oxc, not esbuild; setting `esbuild.jsx` produced a warning and left the test
+file untransformed. `oxc: { jsx: { runtime: 'automatic' } }` in a `.mts` config fixed it.
+
+## 2026-11-16 — exactOptionalPropertyTypes applies to component props
+
+Passing a CSS module class that may be undefined into `className?: string` fails under
+`exactOptionalPropertyTypes`. Optional presentation props declare `string | undefined`.
+
 ## 2026-11-16 — A Stripe CLI can point at another project's sandbox
 
 The Stripe CLI is configured against a sandbox named for a different project. Lesson:

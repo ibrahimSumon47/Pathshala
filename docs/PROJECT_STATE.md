@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, end of P0. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 1 in progress. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -8,7 +8,8 @@ Snapshot: 2026-11-16, end of P0. Update this file at the end of every slice.
 | --- | --- | --- |
 | Intake | Owner questions, environment audit, documentation system | done — 2026-11-16 |
 | P0 | Repo hygiene, hooks, CI, workspace, check-done | done — 2026-11-16 |
-| P1 | Monorepo breadth, design system, i18n, auth, models, API | next |
+| P1 | Design system, i18n, models | done — 2026-11-16 |
+| P1 | Auth with roles, API hardening, API hosting spike | next |
 | P2 | Categories, courses, sections, lessons, authoring, catalog | not started |
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | not started |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | not started |
@@ -21,48 +22,43 @@ Snapshot: 2026-11-16, end of P0. Update this file at the end of every slice.
 
 ## What exists
 
-- pnpm workspace (`pnpm-workspace.yaml`) with `apps/web` and `packages/shared`.
-- `packages/shared`: money in integer paisa (`toPaisa`, `formatPaisa`), Bangla and English
-  formatting, 7 Vitest cases.
-- `apps/web`: Next.js 16 shell with a bilingual holding page and a warm paper palette.
-  This is a placeholder; the real design system, fonts and routing arrive in P1.
-- Shared strict TypeScript baseline (`tsconfig.base.json`) and one flat ESLint config.
-- Guards: `.githooks/commit-msg` (message credits), `.githooks/pre-push` (author and
-  trailer check through `scripts/check-commits.mjs`), `.githooks/pre-commit` (gitleaks on
-  staged content, fails closed), `core.hooksPath=.githooks`.
-- CI: `.github/workflows/ci.yml` with commit identity, secret scan, quality (lint, types,
-  tests, build) and dependency audit jobs; `.github/workflows/codeql.yml` on push and a
-  weekly schedule.
-- Feature gate: `node scripts/check-done.mjs`.
+- `packages/tokens`: warm paper palette, one deep-teal accent, light and dark roles, a
+  4/8 point spacing grid, type scale, radii, shadows and motion durations.
+- `packages/shared`: money in integer paisa with Bangla and English formatting.
+- `packages/db`: Mongoose models for User, Category, Course, Section, Lesson, Enrolment,
+  Order and AuditEvent, with catalogue, ordering and idempotency indexes. No database
+  connection exists yet: Atlas is waiting on the owner.
+- `apps/web`: Next.js 16 with next-intl. Bangla lives at `/` and English at `/en`; both
+  languages are prerendered. Pages: landing and catalogue (honest empty state).
+- Primitives in `apps/web/src/components/ui`: Button, Field, Select, Card, Badge, Skeleton,
+  EmptyState. Header adds a language switch and a stored light/dark toggle.
+- Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
+- Guards, CI and the feature gate from P0 are unchanged and still green.
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (7 passing), `pnpm build`, `pnpm audit --prod
-  --audit-level high` all exit 0 locally.
-- `gitleaks git` over the full history: no leaks.
-- Hook self-tests: a fake Stripe key was blocked by pre-commit; a commit by a foreign
-  author and a commit with a co-author trailer were both blocked by the shared checker;
-  the owner's real history passed.
-- GitHub Actions CI run 43886044371 is green: commit identity, secret scan, quality and
-  dependency audit. CodeQL run 43886042634 is green.
-- No app has been deployed yet, so nothing is live.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (37 tests: 12 tokens, 17 models, 8
+  components) and `pnpm build` all exit 0 locally.
+- Build output prerenders `/bn`, `/en`, `/bn/courses` and `/en/courses`; the proxy
+  negotiates locale.
+- Not verified yet: a deployed preview, sign-in, any database read or write, and axe /
+  Lighthouse passes. There is no auth and no API service.
 
 ## Environment facts
 
 - Node 24.22.1, pnpm 12.15.0, git 2.56.0, gh 2.103.3 signed in as `ibrahimSumon47`.
-- Vercel CLI 65.4.0 on the Hobby plan; Stripe CLI 1.55.2 against another project's
-  sandbox; gcloud 590.0.0 signed in; `atlas` 1.59.3 installed with an expired session.
-- gitleaks 8.30.1 installed locally under `tools/gitleaks/` (gitignored) because winget has
-  no package for it.
-- Docker is not installed, so anything that needs it must be re-planned.
+- Vercel CLI 65.4.0 on Hobby; Stripe CLI against another sandbox; gcloud signed in;
+  `atlas` installed but its session expired.
+- gitleaks 8.30.1 under gitignored `tools/gitleaks/`.
+- Docker is not installed.
 
 ## Known risks
 
 - Vercel Hobby daily deployment cap — batch deploys per finished slice.
 - Atlas, Google OAuth and a dedicated Stripe sandbox need the owner; see `OWNER_TODO.md`.
-- The NestJS-on-Vercel decision is still a spike in P1.
-- TypeScript is pinned to 6.0.3 because typescript-eslint does not support 7 yet.
-- The CodeQL action major version is worth re-checking on the first scheduled run.
+- The NestJS-on-Vercel decision is still a spike.
+- Next.js downloads the two fonts at build time; CI needs network access to Google Fonts.
+- Tailwind is not installed yet. Tokens are CSS variables, so the P2 mapping is additive.
 
 ## Next action
 

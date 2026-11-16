@@ -1,3 +1,9 @@
 packages:
   - apps/*
   - packages/*
+
+# pnpm blocks install scripts by default. These two fetch the native binaries the
+# Next.js toolchain uses; nothing else is allowed to run arbitrary install code.
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true

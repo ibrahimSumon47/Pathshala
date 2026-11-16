@@ -1,0 +1,21 @@
+{
+  "name": "@pathshala/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./models": "./src/models/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pathshala/shared": "workspace:*",
+    "mongoose": "^9.12.1"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

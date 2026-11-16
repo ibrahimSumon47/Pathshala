@@ -141,6 +141,61 @@ once at the boundary and rejects unsafe values; `formatPaisa` shows whole taka w
 decimals and uses Bengali digits for Bangla. No floating-point arithmetic anywhere in the
 money path.
 
+## 2026-11-16 — Tokens are CSS custom properties; Tailwind waits for P2
+
+The design system ships as CSS variables in `packages/tokens/theme.css`, consumed directly
+by CSS modules. Tailwind 4 is CSS-first, so when the catalogue adds many layouts it can map
+the same variables through `@theme inline` without a second source of truth or a rewrite.
+Revisit: P2, when the catalogue needs utility-scale layout work.
+
+## 2026-11-16 — Bangla at `/`, English at `/en`
+
+next-intl uses `localePrefix: 'as-needed'` with `bn` as the default. The Bangla site keeps
+clean URLs, English stays shareable, and every page is prerendered. `next/root-params`
+keeps static rendering working on Next 16 instead of the legacy `setRequestLocale` path.
+Revisit: if analytics show reviewers need English first; the default is one line.
+
+## 2026-11-16 — Two self-hosted fonts, one stack
+
+Inter carries Latin and punctuation; Noto Sans Bengali covers Bangla glyphs and the taka
+sign. Both are downloaded at build by `next/font` and served from our own origin, so there
+is no third-party font request at runtime.
+Revisit: only if the build environment loses access to Google Fonts.
+
+## 2026-11-16 — The document is the theme store
+
+An inline boot script applies `data-theme` before paint; the toggle writes the changed
+attribute and localStorage, and React reads it through `useSyncExternalStore`. This avoids
+the white flash and the cascading render that a state-setting effect causes.
+Revisit: if themes become per-account settings, then the user record leads.
+
+## 2026-11-16 — Course content in separate collections
+
+Courses, sections and lessons are separate collections keyed by ordered references rather
+than one large embedded document. Authoring, reordering and progress updates touch small
+documents, and the unique `(course, section, order)` index prevents duplicate positions.
+Lesson carries a reserved `video` subdocument, so adding video does not require migrating
+existing lessons.
+Revisit: if read latency demands an embedded table of contents; measure first.
+
+## 2026-11-16 — Async validation in model tests
+
+Mongoose 9 deprecates `validateSync` and returns `undefined` rather than `null` on success.
+The tests use `document.validate()` and assert on the returned error map, which is the API
+that survives into Mongoose 10.
+
+## 2026-11-16 — pnpm build approvals are explicit
+
+pnpm 12 blocks dependency install scripts and calls the allow-list `allowBuilds` (an object),
+not `onlyBuiltDependencies`. Only `@swc/core` and `@parcel/watcher` may run scripts; the
+approval was written by `pnpm approve-builds --all` and is committed in `pnpm-workspace.yaml`.
+
+## 2026-11-16 — Vitest transforms JSX through oxc
+
+Vitest 5 uses Vite 8's oxc pipeline and Vite reads `jsx: preserve` from the Next tsconfig,
+which leaves JSX untransformed. `vitest.config.mts` sets `oxc.jsx.runtime` to `automatic`
+and aliases `@` to `src`, so component tests run without a DOM or extra plugin.
+
 ## 2026-11-16 — Design tokens before screens
 
 Warm paper background, one deep-teal accent, a real type scale and 8-pt spacing land in

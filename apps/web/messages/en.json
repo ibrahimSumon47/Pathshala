@@ -1,0 +1,49 @@
+{
+  "Metadata": {
+    "title": "Pathshala — Learn in your language",
+    "description": "Courses, quizzes and live classes in Bangla and English. Find what you want to learn, and teach what you already know."
+  },
+  "Header": {
+    "brand": "পাঠশালা",
+    "brandLatin": "Pathshala",
+    "navCourses": "Courses",
+    "homeLabel": "Pathshala — home",
+    "language": "Language",
+    "navLabel": "Main menu",
+    "switchTo": "Change language"
+  },
+  "Theme": {
+    "toggle": "Toggle colour theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "Home": {
+    "eyebrow": "Learning in Bangla and English",
+    "title": "Learn in your language, at your own pace.",
+    "lede": "Courses, quizzes and live classes in one place. Find the subject you want to learn, and teach what you already know.",
+    "primaryAction": "Browse courses",
+    "howItWorks": "How it works",
+    "step1Title": "Pick a subject",
+    "step1Body": "Programming, a language, office skills or exam preparation — start with what you actually need.",
+    "step2Title": "Learn on your schedule",
+    "step2Body": "Lessons, quizzes and notes together. Stop anywhere and pick up from the same place.",
+    "step3Title": "Finish with a certificate",
+    "step3Body": "Complete a course and get a verifiable certificate anyone can check from a link.",
+    "subjectsTitle": "Subjects being prepared",
+    "subjects": ["Programming", "Spoken English", "Excel and office", "Mathematics", "Design", "Music"]
+  },
+  "Courses": {
+    "title": "Courses",
+    "lede": "Published courses will appear here, with filters for subject, language and level coming alongside them.",
+    "emptyTitle": "No courses are published yet",
+    "emptyBody": "Instructors are preparing the first courses. They will show up here as soon as they are ready.",
+    "emptyAction": "Back to home"
+  },
+  "Common": {
+    "skipToContent": "Skip to content"
+  },
+  "Footer": {
+    "tagline": "A place to learn and teach",
+    "copyright": "© 2026 Pathshala"
+  }
+}

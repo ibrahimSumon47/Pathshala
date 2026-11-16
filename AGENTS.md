@@ -103,7 +103,8 @@ apps/web        Next.js app (catalog, learning, instructor, admin, i18n)
 apps/api        NestJS API — arrives with the first real route in P1
 apps/paybridge  Sandbox payment gateway, own Vercel project — arrives in P4
 packages/shared Cross-app primitives (money, shared types)
-packages/tokens Design tokens — arrives in P1
+packages/tokens Design tokens (CSS custom properties, light and dark)
+packages/db     Mongoose models and shared schema pieces
 docs/           Project memory (state, handoff, decisions, lessons, features)
 scripts/        Repository tooling, including check-done and the commit guard
 ```

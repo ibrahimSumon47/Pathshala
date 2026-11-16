@@ -1,0 +1,84 @@
+import { model, models, Schema, type Model, type Types } from 'mongoose';
+import type { Locale } from '@pathshala/shared';
+import { localizedTextSchema, localizedTextValidator, SLUG_PATTERN, type LocalizedText } from '../common';
+
+export const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+export const COURSE_STATUSES = ['draft', 'pending', 'published', 'archived'] as const;
+
+export type CourseLevel = (typeof COURSE_LEVELS)[number];
+export type CourseStatus = (typeof COURSE_STATUSES)[number];
+
+export type CourseDoc = {
+  title: LocalizedText;
+  slug: string;
+  subtitle?: LocalizedText;
+  description?: LocalizedText;
+  category: Types.ObjectId;
+  instructor: Types.ObjectId;
+  language: Locale;
+  level: CourseLevel;
+  pricePaisa: number;
+  salePricePaisa: number | null;
+  status: CourseStatus;
+  outcomes: string[];
+  requirements: string[];
+  thumbnailUrl?: string;
+  promoVideoUrl?: string;
+  ratingAverage: number;
+  ratingCount: number;
+  enrolmentCount: number;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Prices are integer paisa; a fractional amount is a bug, not a rounding choice. */
+const paisaField = {
+  type: Number,
+  required: true,
+  min: 0,
+  validate: {
+    validator: (value: number) => Number.isInteger(value),
+    message: 'Price must be a whole number of paisa',
+  },
+};
+
+const courseSchema = new Schema<CourseDoc>(
+  {
+    title: { type: localizedTextSchema, required: true, validate: localizedTextValidator },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      match: [SLUG_PATTERN, 'Use lowercase words separated by hyphens'],
+    },
+    subtitle: { type: localizedTextSchema },
+    description: { type: localizedTextSchema },
+    category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    language: { type: String, enum: ['bn', 'en'], required: true },
+    level: { type: String, enum: COURSE_LEVELS, default: 'beginner' },
+    pricePaisa: paisaField,
+    salePricePaisa: { type: Number, default: null, min: 0 },
+    status: { type: String, enum: COURSE_STATUSES, default: 'draft' },
+    outcomes: { type: [String], default: [] },
+    requirements: { type: [String], default: [] },
+    thumbnailUrl: { type: String, trim: true },
+    promoVideoUrl: { type: String, trim: true },
+    // Denormalised counters, updated when reviews and enrolments change.
+    ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0, min: 0 },
+    enrolmentCount: { type: Number, default: 0, min: 0 },
+    publishedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+
+// Catalogue queries filter on status, category, language and level, then sort by recency.
+courseSchema.index({ status: 1, category: 1, language: 1, level: 1, publishedAt: -1 });
+// One text index per collection; it covers both languages rather than duplicating storage.
+courseSchema.index({ 'title.bn': 'text', 'title.en': 'text', 'subtitle.bn': 'text', 'subtitle.en': 'text' });
+
+export const Course = (models.Course as Model<CourseDoc> | undefined) ?? model<CourseDoc>('Course', courseSchema);
