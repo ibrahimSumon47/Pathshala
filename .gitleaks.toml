@@ -1,0 +1,15 @@
+title = "Pathshala secret rules"
+
+[extend]
+useDefault = true
+
+# Local-only folders are excluded because they are gitignored and never pushed. Anything
+# that can reach GitHub still goes through the default rules.
+[[allowlists]]
+description = "Local-only working folders"
+paths = [
+  '''^private/''',
+  '''^tools/''',
+  '''^coverage/''',
+  '''^\.next/''',
+]

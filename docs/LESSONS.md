@@ -13,6 +13,19 @@ described repo is not evidence of one.
 "session expired". Lesson: `whoami` is not proof; run one real read command before
 trusting a CLI login. Re-authentication is an owner action and lives in `OWNER_TODO.md`.
 
+## 2026-11-16 — winget does not carry gitleaks
+
+`winget install zricethezav.gitleaks` reports "No package found". The release zip from
+GitHub is the reliable route; it now lives in gitignored `tools/gitleaks/` and CI
+installs the same pinned version. Lesson: check the package exists before writing install
+steps into docs.
+
+## 2026-11-16 — Flat ESLint config needs node globals for .mjs
+
+The first lint run failed on `console` and `process` in `scripts/*.mjs`, because the
+TypeScript block only applied browser/node globals to `.ts`/`.tsx`. A dedicated `*.mjs`
+block fixed it. Lesson: lint the tooling, not just the app.
+
 ## 2026-11-16 — A Stripe CLI can point at another project's sandbox
 
 The Stripe CLI is configured against a sandbox named for a different project. Lesson:

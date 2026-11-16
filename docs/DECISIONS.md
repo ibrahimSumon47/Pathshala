@@ -96,6 +96,51 @@ added only if a sender's free tier is verified on the day, with the pricing page
 recorded here.
 Revisit: P5.
 
+## 2026-11-16 — TypeScript 6.0.3, not 7
+
+TypeScript 7.0.2 is the latest, but typescript-eslint 8.72 declares `>=4.8.4 <6.1.0`, so a
+7.x compiler would leave linting unsupported. The workspace pins 6.0.3 until the lint
+toolchain catches up. Revisit monthly; the pin is one line.
+
+## 2026-11-16 — ESLint 10 flat config, one file
+
+One `eslint.config.mjs` covers apps, packages and repository scripts, with node globals
+for `.mjs` and React hook rules only for `apps/web`. Formatting is left to review rather
+than adding Prettier in this phase.
+Revisit: if formatting churn appears in diffs.
+
+## 2026-11-16 — gitleaks as a portable binary
+
+winget has no gitleaks package. The release binary lives in gitignored `tools/gitleaks/`
+and the pre-commit hook resolves it after checking PATH. CI downloads the pinned release
+and verifies its checksum, so both sides scan with the same version.
+
+## 2026-11-16 — One implementation of the author rule
+
+`scripts/check-commits.mjs` owns the author and trailer checks; the pre-push hook calls it
+with the outgoing ranges and CI calls it with `--all`. A separate shell copy would drift.
+The checker was tested against throwaway repositories with a foreign author and a
+trailer-bearing message; both were rejected.
+
+## 2026-11-16 — Workspace grows when a feature needs it
+
+P0 creates only `apps/web` and `packages/shared`. `apps/api` arrives with the first real
+API route in P1 and `apps/paybridge` with the gateway in P4, so no empty shells sit in the
+repository. Shared tooling is already configured for new packages.
+
+## 2026-11-16 — Verified tool versions
+
+Next 16.4.6, React 19.3.1, Vitest 5.1.0, Vite 8.3.8, ESLint 10.15.0, typescript-eslint
+8.72.2, gitleaks 8.30.1, pnpm 12.15.0, Node 24. All were resolved from the registry on
+2026-11-16; the lockfile pins the resolution.
+
+## 2026-11-16 — Money as integer paisa, formatted by locale
+
+Prices and ledger entries are integer paisa (`PAISA_PER_TAKA = 100`). `toPaisa` rounds
+once at the boundary and rejects unsafe values; `formatPaisa` shows whole taka without
+decimals and uses Bengali digits for Bangla. No floating-point arithmetic anywhere in the
+money path.
+
 ## 2026-11-16 — Design tokens before screens
 
 Warm paper background, one deep-teal accent, a real type scale and 8-pt spacing land in

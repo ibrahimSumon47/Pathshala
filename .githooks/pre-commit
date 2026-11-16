@@ -1,0 +1,18 @@
+#!/bin/sh
+# Secret guard: scan exactly what is about to be committed.
+# Fails closed, because a missing scanner must never mean an unchecked commit.
+set -eu
+
+if command -v gitleaks >/dev/null 2>&1; then
+  scanner="gitleaks"
+elif [ -x "tools/gitleaks/gitleaks.exe" ]; then
+  scanner="tools/gitleaks/gitleaks.exe"
+elif [ -x "tools/gitleaks/gitleaks" ]; then
+  scanner="tools/gitleaks/gitleaks"
+else
+  echo "pre-commit: gitleaks is not installed." >&2
+  echo "Install it, or put the binary in tools/gitleaks/ before committing." >&2
+  exit 1
+fi
+
+"$scanner" git --pre-commit --staged --redact --no-banner --verbose

@@ -1,38 +1,28 @@
 #!/bin/sh
-# Local guard: nothing leaves this machine unless every outgoing commit is authored by the
-# owner and its message is trailer-free. Runs before the network call, so a bad history
-# never reaches GitHub.
+# Author guard: nothing leaves this machine unless every outgoing commit belongs to the
+# owner and carries no tool credit. The rule itself lives in scripts/check-commits.mjs so
+# the hook and CI cannot drift apart.
 set -u
 
-owner_name='Md Ibrahim Hossain Sumon'
-owner_email='ibrahimsumon005@gmail.com'
 zero='0000000000000000000000000000000000000000'
-blocked='(co-authored-by|co-authored|generated[ -]with|assisted-by|reviewed-by|signed-off-by)'
-status=0
+ranges=''
+scan_all=0
 
 while read -r _local_ref local_sha _remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
-
   if [ "$remote_sha" = "$zero" ]; then
-    # New remote branch: inspect everything that is not already known to a remote.
-    commits=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || git rev-list "$local_sha")
+    # A branch the remote has never seen: the whole history is new to it.
+    scan_all=1
   else
-    commits=$(git rev-list "$remote_sha..$local_sha")
+    ranges="$ranges $remote_sha..$local_sha"
   fi
-
-  for sha in $commits; do
-    author_name=$(git log -1 --format='%an' "$sha")
-    author_email=$(git log -1 --format='%ae' "$sha")
-    if [ "$author_name" != "$owner_name" ] || [ "$author_email" != "$owner_email" ]; then
-      echo "pre-push: $sha has author '$author_name <$author_email>'." >&2
-      echo "pre-push: only $owner_name <$owner_email> may author commits here." >&2
-      status=1
-    fi
-    if git log -1 --format='%B' "$sha" | grep -Eiq "$blocked"; then
-      echo "pre-push: $sha has a tool credit or trailer in its message." >&2
-      status=1
-    fi
-  done
 done
 
-exit $status
+if [ "$scan_all" -eq 1 ]; then
+  exec node scripts/check-commits.mjs --all
+fi
+
+[ -z "$ranges" ] && exit 0
+
+# shellcheck disable=SC2086
+exec node scripts/check-commits.mjs $ranges

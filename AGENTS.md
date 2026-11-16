@@ -100,11 +100,22 @@ That is expected during the build and must not be worked around.
 
 ```
 apps/web        Next.js app (catalog, learning, instructor, admin, i18n)
-apps/api        NestJS API
-apps/paybridge  Standalone sandbox payment gateway (own Vercel project + database)
-packages/*      Shared types, design tokens, config
+apps/api        NestJS API — arrives with the first real route in P1
+apps/paybridge  Sandbox payment gateway, own Vercel project — arrives in P4
+packages/shared Cross-app primitives (money, shared types)
+packages/tokens Design tokens — arrives in P1
 docs/           Project memory (state, handoff, decisions, lessons, features)
-scripts/        Repository tooling, including check-done
+scripts/        Repository tooling, including check-done and the commit guard
 ```
 
-Exact commands are added here as each package lands.
+## Commands
+
+```bash
+pnpm install                              # workspace dependencies
+pnpm dev                                  # Next.js dev server on :3000
+pnpm lint && pnpm typecheck && pnpm test  # the local gate
+pnpm build                                # production build
+pnpm audit                                # high/critical production advisories
+pnpm check:commits                        # author and message rule over all history
+pnpm check:done                           # feature gate; non-zero until the end
+```
