@@ -1,13 +1,16 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { auth } from '@/auth';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/cn';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme-toggle';
 import styles from './site-header.module.css';
 
-/** Masthead: wordmark, the one catalogue link, and the two reader preferences. */
-export function SiteHeader() {
-  const t = useTranslations('Header');
+/** Masthead: wordmark, catalogue link, account state and the two reader preferences. */
+export async function SiteHeader() {
+  const t = await getTranslations('Header');
+  const session = await auth();
+  const signedIn = Boolean(session?.user);
 
   return (
     <header className={styles.header}>
@@ -26,6 +29,9 @@ export function SiteHeader() {
         </nav>
 
         <div className={styles.controls}>
+          <Link href={signedIn ? '/dashboard' : '/sign-in'} className={styles.account}>
+            {signedIn ? t('dashboard') : t('signIn')}
+          </Link>
           <LocaleSwitcher />
           <ThemeToggle />
         </div>

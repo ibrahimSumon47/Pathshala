@@ -5,9 +5,11 @@
 
 .inner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-3) var(--space-5);
   min-height: 72px;
+  padding-block: var(--space-3);
 }
 
 .brand {
@@ -51,11 +53,33 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-inline-start: auto;
 }
 
-@media (max-width: 640px) {
+.account {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.account:hover {
+  color: var(--color-accent);
+}
+
+@media (max-width: 720px) {
   .inner {
     gap: var(--space-3);
+  }
+
+  .brand {
+    margin-inline-end: 0;
+  }
+
+  /* The hero and footer carry the catalogue link on small screens. */
+  .nav {
+    display: none;
   }
 
   .brandLatin {

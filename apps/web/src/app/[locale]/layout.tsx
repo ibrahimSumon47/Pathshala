@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Inter, Noto_Sans_Bengali } from 'next/font/google';
+import Script from 'next/script';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { SiteHeader } from '@/components/site-header';
@@ -55,7 +56,9 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+        <Script id="theme-boot" strategy="beforeInteractive">
+          {themeBoot}
+        </Script>
       </head>
       <body className={cn(latin.variable, bengali.variable)}>
         <NextIntlClientProvider>

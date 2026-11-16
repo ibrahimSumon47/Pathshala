@@ -71,3 +71,38 @@ ran. Keep the release filename when verifying a checksum.
 The commit-identity job failed with "Unable to locate executable file: pnpm": setup-node v5
 reads the packageManager field and prepares a pnpm cache before pnpm is installed. That job
 only reads git history, so package-manager caching is disabled there.
+
+## 2026-11-16 — Nest 12 ESM + CommonJS throttler broke Reflector identity
+
+`@nestjs/throttler` declares Nest 12 support, but its CommonJS build loaded a `Reflector`
+class that the ESM-only Nest 12 container did not recognise; startup failed with
+`UnknownDependenciesException`. Providing Reflector again did not help. Lesson: a peer range
+is not proof of runtime identity on an ESM-only major; test the guard at boot, and prefer a
+dependency-free guard when the interop cost exceeds the feature.
+
+## 2026-11-16 — PORT=0 is a real value in this environment
+
+The API logged "listening on http://localhost:0" because the shell exports `PORT=0`.
+`Number.parseInt(process.env.PORT ?? '4000')` accepted it and Node chose a random port.
+Lesson: treat zero and non-numeric ports as missing when a fixed local port is intended.
+
+## 2026-11-16 — Next 16 warns about inline scripts rendered by components
+
+The pre-paint theme script worked visually but logged "Encountered a script tag while
+rendering React component" on client navigation and raised a dev issue badge.
+`next/script` with `beforeInteractive` in the root layout is the supported home for it.
+Lesson: check the console after navigations, not just the first paint.
+
+## 2026-11-16 — tsx and bundlers do not emit decorator metadata
+
+Nest's `design:paramtypes` is absent under esbuild/tsx, so a global ValidationPipe had no
+DTO metatype and class-validator would have passed everything. Explicit `@Inject` and
+schema-based zod pipes make dependencies and validation runtime-explicit.
+Lesson: in a metadata-free runtime, never rely on implicit type reflection for security.
+
+## 2026-11-16 — Screenshot scroll capture is unreliable in the local browser
+
+After a programmatic scroll the capture surface stayed on the first frame or cropped to the
+old phone width. Layout measurements (rects, `scrollWidth`) and accessibility snapshots were
+reliable evidence; screenshots were only trusted at the top of a page. Lesson: choose the
+instrument that matches the question instead of repeating a flaky capture.

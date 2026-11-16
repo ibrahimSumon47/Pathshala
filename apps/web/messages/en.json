@@ -10,12 +10,50 @@
     "homeLabel": "Pathshala — home",
     "language": "Language",
     "navLabel": "Main menu",
-    "switchTo": "Change language"
+    "switchTo": "Change language",
+    "signIn": "Sign in",
+    "dashboard": "Dashboard"
   },
   "Theme": {
     "toggle": "Toggle colour theme",
     "light": "Light",
     "dark": "Dark"
+  },
+  "Roles": {
+    "student": "Student",
+    "instructor": "Instructor",
+    "admin": "Admin"
+  },
+  "Auth": {
+    "eyebrow": "Your account",
+    "title": "Sign in",
+    "lede": "Sign in to enrol in a course, keep your progress and collect certificates.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "google": "Continue with Google",
+    "or": "or",
+    "invalid": "That email and password do not match. Please try again.",
+    "demoTitle": "Demo accounts",
+    "demoNote": "These accounts are for trying Pathshala. They hold no personal data and may be reset from time to time."
+  },
+  "Dashboard": {
+    "eyebrow": "Your Pathshala",
+    "title": "Dashboard",
+    "roles": "Your roles",
+    "emptyTitle": "No courses yet",
+    "emptyBody": "Start from the catalogue. Enrolled courses and progress will appear here.",
+    "browse": "Browse courses",
+    "adminPanel": "Admin overview",
+    "signOut": "Sign out"
+  },
+  "Admin": {
+    "title": "Admin",
+    "lede": "Accounts and the roles they hold.",
+    "name": "Name",
+    "email": "Email",
+    "roles": "Roles",
+    "empty": "No accounts yet."
   },
   "Home": {
     "eyebrow": "Learning in Bangla and English",

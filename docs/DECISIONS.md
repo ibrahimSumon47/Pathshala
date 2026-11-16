@@ -187,8 +187,9 @@ that survives into Mongoose 10.
 ## 2026-11-16 — pnpm build approvals are explicit
 
 pnpm 12 blocks dependency install scripts and calls the allow-list `allowBuilds` (an object),
-not `onlyBuiltDependencies`. Only `@swc/core` and `@parcel/watcher` may run scripts; the
-approval was written by `pnpm approve-builds --all` and is committed in `pnpm-workspace.yaml`.
+not `onlyBuiltDependencies`. Only `@swc/core`, `@parcel/watcher` and `esbuild` (tsx) may
+run scripts; the approval was written by `pnpm approve-builds --all` and is committed in
+`pnpm-workspace.yaml`.
 
 ## 2026-11-16 — Vitest transforms JSX through oxc
 
@@ -202,3 +203,62 @@ Warm paper background, one deep-teal accent, a real type scale and 8-pt spacing 
 `packages/tokens` before any page. This prevents a pile of one-off styles that would need
 rewriting later.
 Revisit: never.
+
+## 2026-11-16 — Demo accounts behind a real account seam
+
+Three credentials accounts (student, instructor, admin) exist in code with bcrypt hashes so
+every role is reviewable without Atlas. The same module reads users and password hashes from
+Mongo when `MONGODB_URI` is set; the demo list is the fallback, not a second auth system.
+Passwords appear on the sign-in page because they are public demo credentials. The list is
+on by default in development and off in production unless `DEMO_AUTH=true`; `DEMO_AUTH=false`
+removes it anywhere. Admin is read-only until P6.
+Revisit: replace the demo list with seeded Mongo users when Atlas lands; turn demo auth off
+before any destructive admin action ships.
+
+## 2026-11-16 — JWT sessions carry roles, pages re-check them
+
+Auth.js JWT sessions are required by the credentials provider, so roles ride in the signed
+token and every protected page calls `requireRole` on the server. No client component trusts
+a role from the DOM. Google users default to the student role until their Mongo record exists.
+Revisit: database sessions if magic-link email arrives and per-request revocation matters.
+
+## 2026-11-16 — bcryptjs, not native argon2
+
+bcryptjs is pure JavaScript with no install script, so it works unchanged on Vercel and CI.
+Cost 10 keeps demo sign-in fast; the demo passwords are public anyway. Argon2id would be
+stronger but adds a native build the deployment spike does not need.
+Revisit: P7 security review, with a native-capable host or prebuilt binary.
+
+## 2026-11-16 — Zod pipes instead of class-validator
+
+The API runs through tsx locally and through one bundled Vercel function, neither of which
+emits `design:paramtypes` metadata. A global ValidationPipe would silently skip validation.
+A small `ZodValidationPipe` takes the schema explicitly, so validation is real in every
+runtime, and the schema is unit-tested without booting Nest.
+Revisit: if class-validator becomes metadata-safe on this toolchain.
+
+## 2026-11-16 — Our rate limit guard replaces @nestjs/throttler
+
+With Nest 12 (ESM-only) and the CommonJS throttler, the guard's `Reflector` token did not
+match the provider, and startup failed with UnknownDependenciesException. A dependency-free
+guard over a per-process window is honest for one instance and easy to test. It is not a
+global limit across serverless instances; that needs a shared store.
+Revisit: when the API gets a shared Redis/Upstash store, or Nest and the throttler settle
+their module identity.
+
+## 2026-11-16 — API as one Vercel function, run locally by tsx
+
+`apps/api/api/index.ts` boots Nest once per function instance and strips Vercel's `/api`
+prefix, so the same controllers answer at `/health` locally and behind the rewrite. There is
+no compiled dist: the function bundles workspace TypeScript, and decorator metadata is not
+needed because controller dependencies use explicit `@Inject`.
+Revisit: if Vercel cold start or the workspace TS bundle fails, move to a persistent Node
+host; the hosting spike stays open until measured.
+
+## 2026-11-16 — Theme boot moves to next/script
+
+An inline `<script>` in the root layout produced React's "scripts inside components are never
+executed" error on client navigation. `<Script strategy="beforeInteractive">` keeps the
+pre-hydration theme read without the warning; the toggle and localStorage contract are
+unchanged.
+Revisit: if themes become server-rendered per account, replace localStorage with a cookie.

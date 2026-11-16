@@ -10,11 +10,17 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@pathshala/db": "workspace:*",
+    "@pathshala/shared": "workspace:*",
     "@pathshala/tokens": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "next": "^16.4.6",
+    "next-auth": "5.0.0-beta.32",
     "next-intl": "^4.15.1",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

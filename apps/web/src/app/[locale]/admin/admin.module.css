@@ -1,0 +1,54 @@
+.page {
+  padding-block: var(--space-8);
+}
+
+.title {
+  font-size: var(--text-3xl);
+}
+
+.lede {
+  margin-top: var(--space-3);
+  max-width: 56ch;
+  color: var(--color-ink-muted);
+}
+
+.tableWrap {
+  margin-top: var(--space-6);
+  overflow-x: auto;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.table th {
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.email {
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  padding: var(--space-5);
+  color: var(--color-ink-muted);
+}

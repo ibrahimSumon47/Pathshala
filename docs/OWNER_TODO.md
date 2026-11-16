@@ -4,7 +4,7 @@ Only the owner can do these: they need a browser session, an OAuth console or a 
 Each item says exactly where the resulting value goes. Never paste a secret into chat; put
 it in `private/.env.local` (gitignored). Check items off as they are done.
 
-## 1. MongoDB Atlas — re-authenticate and create the free cluster (needed in P1)
+## 1. MongoDB Atlas — re-authenticate and create the free cluster (needed for real data)
 
 1. In a terminal on this PC run `atlas auth login` and finish the browser step. The CLI
    session expired on 2026-11-16.
@@ -18,7 +18,10 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
    is documented as a limitation.)
 6. **Connect** → **Drivers** → Node.js → copy the `mongodb+srv://…` string, replace
    `<password>` with the real one.
-7. Put it in `private/.env.local` as `MONGODB_URI=…` and tell me it is there.
+7. Put it in `private/.env.local` as `MONGODB_URI=…` and tell me it is there. I will copy
+   it into `apps/web/.env.local` and the API environment; auth then reads Mongo users and the
+   catalogue stops returning `database_unavailable`. Seeded demo users replace the public
+   demo list at that point.
 
 ## 2. Stripe — a dedicated sandbox (needed in P4)
 
@@ -43,9 +46,11 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
 5. **Credentials → Create credentials → OAuth client ID → Web application**, name
    `Pathshala web`. Authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google`
+   - `http://localhost:59800/api/auth/callback/google` (the preview server used this session)
    - the production callback, which I will give you once the Vercel domain exists.
 6. Copy the client ID and client secret into `private/.env.local` as `AUTH_GOOGLE_ID` and
-   `AUTH_GOOGLE_SECRET`.
+   `AUTH_GOOGLE_SECRET`. The Google button appears only when both are set; without Atlas the
+   session gets the student role and no stored user, so connect Atlas first for real accounts.
 
 ## 4. Email sender (optional, P5)
 
@@ -55,10 +60,13 @@ is the current candidate) with no card, create an API key named `pathshala`, and
 in `DECISIONS.md` before anything depends on it. If it is not free at that moment, P5
 ships with in-app reminders and `.ics` files only.
 
-## 5. Vercel (no action yet)
+## 5. Vercel — approve the API deploy (needed to close P1 hosting)
 
-The CLI is already signed in on the Hobby plan. I will create the projects. Two things to
-keep in mind: Hobby caps deployments per day, and the production domain must be added to
+The CLI is already signed in on the Hobby plan. The NestJS adapter is ready at
+`apps/api/api/index.ts`; I have not deployed it because that creates an external project and
+spends Hobby deployment quota. Tell me to deploy and I will create the API project, set
+`MONGODB_URI` and `WEB_ORIGIN`, verify `/health` and `/courses`, and record cold start in
+`DECISIONS.md`. Hobby caps deployments per day, and the production domain must be added to
 the Google redirect URIs from item 3 once it exists.
 
 ## 6. Secrets distribution (I do this, not you)

@@ -72,6 +72,9 @@ jobs:
       - name: Tests
         run: pnpm test
       - name: Build
+        # Auth.js requires a secret at build time; this value is never used at runtime.
+        env:
+          AUTH_SECRET: ci-build-only-not-a-runtime-secret
         run: pnpm build
 
   audit:
