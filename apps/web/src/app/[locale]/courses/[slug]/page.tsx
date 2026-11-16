@@ -1,13 +1,20 @@
 import { getCourseBySlug } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
+import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { buttonStyles } from '@/components/ui/button';
+import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
+import { getCourseReviews, getCourseViewerState } from '@/lib/learning';
+import { enrolAction, submitReviewAction, toggleWishlistAction } from '../../learn/[slug]/actions';
 import styles from './course.module.css';
 
-type CoursePageProps = { params: Promise<{ locale: string; slug: string }> };
+type CoursePageProps = {
+  params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ error?: string }>;
+};
 
 const COPY = {
   bn: {
@@ -26,6 +33,16 @@ const COPY = {
     back: 'সব কোর্স',
     note: 'যে কোনো সময় শুরু করুন; কোর্সটি আপনার অ্যাকাউন্টে থাকবে।',
     noLessons: 'পাঠক্রম এখনো যোগ করা হয়নি।',
+    continue: 'শেখা চালিয়ে যান',
+    wishlist: 'পরে দেখার তালিকায় রাখুন',
+    wishlisted: 'তালিকা থেকে সরান',
+    reviews: 'শিক্ষার্থীদের মতামত',
+    noReviews: 'এখনো কোনো মতামত নেই।',
+    reviewTitle: 'আপনার মতামত',
+    rating: 'রেটিং',
+    reviewBody: 'কী ভালো লাগল, কী আরও ভালো হতে পারত',
+    submitReview: 'মতামত সংরক্ষণ করুন',
+    paymentSoon: 'এই কোর্সটি পরিশোধিত; চেকআউট পেমেন্ট ধাপে চালু হবে।',
   },
   en: {
     by: 'Teacher',
@@ -43,17 +60,31 @@ const COPY = {
     back: 'All courses',
     note: 'Start any time; the course stays in your account.',
     noLessons: 'The curriculum is still being prepared.',
+    continue: 'Continue learning',
+    wishlist: 'Save for later',
+    wishlisted: 'Remove from saved',
+    reviews: 'Learner reviews',
+    noReviews: 'No reviews yet.',
+    reviewTitle: 'Your review',
+    rating: 'Rating',
+    reviewBody: 'What worked, and what could be better',
+    submitReview: 'Save review',
+    paymentSoon: 'This is a paid course; checkout opens in the payment phase.',
   },
 } as const;
 
 /** Public course page with teacher, curriculum and the enrolment entry point. */
-export default async function CoursePage({ params }: CoursePageProps) {
+export default async function CoursePage({ params, searchParams }: CoursePageProps) {
   const { locale, slug } = await params;
+  const { error } = await searchParams;
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
   const course = await getCourseBySlug(slug);
   if (!course) notFound();
 
+  const session = await auth();
+  const viewer = session?.user?.id ? await getCourseViewerState(course.id, session.user.id) : null;
+  const reviews = await getCourseReviews(course.id);
   const lessonCount = course.sections.reduce((total, section) => total + section.lessons.length, 0);
 
   return (
@@ -62,6 +93,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
         <Link href="/courses" className={styles.back}>
           ← {copy.back}
         </Link>
+        {error ? <Alert tone="error">{error}</Alert> : null}
         <div className={styles.layout}>
           <div>
             <div className={styles.badges}>
@@ -117,6 +149,41 @@ export default async function CoursePage({ params }: CoursePageProps) {
                 </div>
               ))}
             </section>
+
+            <section id="reviews" className={styles.section}>
+              <h2>{copy.reviews}</h2>
+              {reviews.length === 0 ? <p className={styles.meta}>{copy.noReviews}</p> : null}
+              <ul className={styles.reviewList}>
+                {reviews.map((review) => (
+                  <li key={review.id} className={styles.review}>
+                    <p className={styles.reviewHead}>
+                      <strong>{review.author}</strong> · ★ {review.rating}
+                    </p>
+                    {review.body ? <p>{review.body}</p> : null}
+                  </li>
+                ))}
+              </ul>
+              {viewer?.enrolled ? (
+                <form action={submitReviewAction} className={styles.reviewForm}>
+                  <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="courseId" value={course.id} />
+                  <input type="hidden" name="slug" value={course.slug} />
+                  <label htmlFor="rating">{copy.rating}</label>
+                  <select id="rating" name="rating" defaultValue="5">
+                    {[5, 4, 3, 2, 1].map((value) => (
+                      <option key={value} value={value}>
+                        {'★'.repeat(value)}
+                      </option>
+                    ))}
+                  </select>
+                  <label htmlFor="review-body">{copy.reviewBody}</label>
+                  <textarea id="review-body" name="body" rows={4} maxLength={1200} />
+                  <Button type="submit" variant="secondary">
+                    {copy.submitReview}
+                  </Button>
+                </form>
+              ) : null}
+            </section>
           </div>
 
           <Card className={styles.buyCard}>
@@ -124,9 +191,36 @@ export default async function CoursePage({ params }: CoursePageProps) {
             <p className={styles.meta}>
               {lessonCount} {copy.lessons}
             </p>
-            <Link href="/sign-in" className={buttonStyles()}>
-              {copy.signIn}
-            </Link>
+            {!session?.user ? (
+              <Link href="/sign-in" className={buttonStyles()}>
+                {copy.signIn}
+              </Link>
+            ) : viewer?.enrolled ? (
+              <Link href={`/learn/${course.slug}`} className={buttonStyles()}>
+                {copy.continue}
+              </Link>
+            ) : course.pricePaisa > 0 ? (
+              <p className={styles.note}>{copy.paymentSoon}</p>
+            ) : (
+              <form action={enrolAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="slug" value={course.slug} />
+                <Button type="submit" className={styles.fullButton}>
+                  {copy.enrol}
+                </Button>
+              </form>
+            )}
+            {session?.user ? (
+              <form action={toggleWishlistAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="slug" value={course.slug} />
+                <Button type="submit" variant="secondary" className={styles.fullButton}>
+                  {viewer?.wishlisted ? copy.wishlisted : copy.wishlist}
+                </Button>
+              </form>
+            ) : null}
             <p className={styles.note}>{copy.note}</p>
           </Card>
         </div>

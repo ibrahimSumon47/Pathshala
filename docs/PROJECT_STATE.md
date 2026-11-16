@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is searchable and instructors can author and publish. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 3 complete. Learners can enrol, work through lessons, take quizzes, keep notes, ask questions and review; instructors build quizzes. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -12,7 +12,7 @@ Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is search
 | P1 | Auth with roles, API hardening | done — 2026-11-16 |
 | P1 | API hosting spike | done — 2026-11-16, cold 1.411s, warm 0.674s |
 | P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-16 |
-| P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | not started |
+| P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-16 |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | not started |
 | P5 | Live classes, attendance, reminders, calendar files | not started |
 | P6 | Certificates, analytics, admin area, audit log | not started |
@@ -32,7 +32,14 @@ Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is search
 - Catalogue: search, subject/level/language/price filters, bounded pagination and a public
   detail view. API `/courses` and `/courses/:slug` call the same query module.
 - Authoring: instructor studio at `/studio` with course create/edit, sections, lessons,
-  sanitized HTML, https video slots, validated attachment metadata and draft/publish.
+  sanitized HTML, https video slots, validated attachment metadata and draft/publish, plus
+  a quiz builder per quiz lesson with single, multiple and true/false questions.
+- Learning: `/learn/[slug]` shows the curriculum, progress, sanitized lesson body, video,
+  attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses wait
+  for P4 checkout. Access comes from an enrolment, course ownership or the admin role.
+- Learner surfaces: course detail has enrol, wishlist and review forms; the dashboard lists
+  enrolled courses with progress and saved courses. Models: Enrolment, QuizQuestion,
+  QuizAttempt, Note, Question, Review, Wishlist.
 - `apps/web`: Next.js 16 with next-intl. Bangla lives at `/` and English at `/en`; pages
   are server-rendered because the header reads the session. Routes: landing, catalogue,
   sign-in, dashboard, admin and the Auth.js handler.
@@ -53,7 +60,7 @@ Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is search
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (85 tests: 12 tokens, 17 models, 7 shared,
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (92 tests: 12 tokens, 21 models, 10 shared,
   32 web, 17 API) and `pnpm build` all exit 0 locally. The API integration tests boot
   `mongodb-memory-server`; no Atlas credentials are needed.
 - Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
@@ -78,6 +85,12 @@ Snapshot: 2026-11-16, Phase 2 complete. The API is live, the catalogue is search
 - Phase 2 API on the seeded memory DB: `/courses?limit=2&price=free` 200, course detail 200,
   limit 99 400, unknown slug 404. Catalogue integration tests cover published-only,
   filters, search and detail.
+- Phase 3 browser flow as `student@pathshala.dev` against the seeded memory DB: dashboard
+  listed the enrolled course at 33% and a saved course; marking a lesson moved progress to
+  67%; the quiz scored 3/3, showed the last score and completed the course at 100%; a Bangla
+  note persisted after redirect; a lesson question appeared in the thread; updating a review
+  changed the text and kept the rating count; wishlist toggled both ways. Quiz scoring has
+  four unit tests and progress rounding has three.
 - Not verified yet: a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in,
   cross-instance rate limiting, and axe / Lighthouse passes.
 

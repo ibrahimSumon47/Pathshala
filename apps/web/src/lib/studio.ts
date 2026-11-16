@@ -1,5 +1,5 @@
 import 'server-only';
-import { Course, Lesson, Section, connectToDatabase } from '@pathshala/db';
+import { Course, Lesson, QuizQuestion, Section, connectToDatabase } from '@pathshala/db';
 
 type StudioLesson = {
   id: string;
@@ -16,6 +16,15 @@ type StudioSection = {
   lessons: StudioLesson[];
 };
 
+export type QuizQuestionView = { id: string; prompt: string; type: string; options: string[]; correctIndexes: number[]; points: number };
+
+export type StudioQuiz = {
+  courseTitle: { bn?: string; en?: string };
+  lessonTitle: { bn?: string; en?: string };
+  lessonType: string;
+  questions: QuizQuestionView[];
+};
+
 export type StudioCourse = {
   id: string;
   slug: string;
@@ -30,6 +39,35 @@ export type StudioCourse = {
   sections: StudioSection[];
   lessonCount: number;
 };
+
+/** Load one quiz lesson and its questions, scoped to the owning instructor or an admin. */
+export async function getStudioQuiz(
+  courseId: string,
+  lessonId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<StudioQuiz | null> {
+  if (!/^[a-f0-9]{24}$/i.test(courseId) || !/^[a-f0-9]{24}$/i.test(lessonId)) return null;
+  await connectToDatabase();
+  const course = await Course.findOne(isAdmin ? { _id: courseId } : { _id: courseId, instructor: userId }).lean();
+  if (!course) return null;
+  const lesson = await Lesson.findOne({ _id: lessonId, course: course._id }).lean();
+  if (!lesson) return null;
+  const questions = await QuizQuestion.find({ lesson: lesson._id }).sort({ order: 1 }).lean();
+  return {
+    courseTitle: course.title,
+    lessonTitle: lesson.title,
+    lessonType: lesson.type,
+    questions: questions.map((question) => ({
+      id: String(question._id),
+      prompt: question.prompt,
+      type: question.type,
+      options: question.options,
+      correctIndexes: question.correctIndexes,
+      points: question.points,
+    })),
+  };
+}
 
 /** Load one editable course, scoped to its instructor unless the caller is an admin. */
 export async function getStudioCourse(courseId: string, userId: string, isAdmin: boolean): Promise<StudioCourse | null> {

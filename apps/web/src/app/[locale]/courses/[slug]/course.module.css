@@ -109,6 +109,49 @@
   font-weight: 700;
 }
 
+.fullButton {
+  width: 100%;
+}
+
+.reviewList {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review {
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.reviewHead {
+  margin-bottom: var(--space-2);
+}
+
+.reviewForm {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 520px;
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.reviewForm select,
+.reviewForm textarea {
+  padding: var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+}
+
 .note {
   color: var(--color-ink-subtle);
   font-size: var(--text-sm);

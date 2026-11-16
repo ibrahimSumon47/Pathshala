@@ -2,9 +2,14 @@ import mongoose from 'mongoose';
 import {
   Category,
   Course,
+  Enrolment,
   Lesson,
+  Note,
+  QuizQuestion,
+  Review,
   Section,
   User,
+  Wishlist,
   connectToDatabase,
 } from '@pathshala/db';
 
@@ -257,6 +262,83 @@ export async function seedDatabase(): Promise<void> {
       );
     }
   }
+
+  const studentId = userIds.get('student@pathshala.dev');
+  const programming = await Course.findOne({ slug: 'javascript-first-steps' });
+  const english = await Course.findOne({ slug: 'spoken-english-daily' });
+  if (!studentId || !programming || !english) throw new Error('Demo learning seed failed');
+
+  const section = await Section.findOne({ course: programming._id, order: 1 });
+  if (!section) throw new Error('Demo section missing');
+  const quiz = await Lesson.findOneAndUpdate(
+    { course: programming._id, section: section._id, order: 3 },
+    {
+      course: programming._id,
+      section: section._id,
+      order: 3,
+      title: { bn: 'ছোট কুইজ', en: 'A short quiz' },
+      type: 'quiz',
+      content: { bodyHtml: '<p>Answer all questions, then submit.</p>', attachments: [] },
+      video: null,
+      isPreview: false,
+    },
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
+  );
+  await QuizQuestion.deleteMany({ lesson: quiz._id });
+  await QuizQuestion.create([
+    {
+      course: programming._id,
+      lesson: quiz._id,
+      prompt: 'Which keyword declares a variable that cannot be reassigned?',
+      type: 'single',
+      options: ['const', 'let', 'var', 'function'],
+      correctIndexes: [0],
+      points: 1,
+      order: 1,
+    },
+    {
+      course: programming._id,
+      lesson: quiz._id,
+      prompt: 'Which values are strings?',
+      type: 'multiple',
+      options: ['"hello"', '42', "'pathshala'", 'true'],
+      correctIndexes: [0, 2],
+      points: 2,
+      order: 2,
+    },
+  ]);
+
+  const firstLesson = await Lesson.findOne({ course: programming._id, order: 1 });
+  await Enrolment.findOneAndUpdate(
+    { student: studentId, course: programming._id },
+    {
+      $setOnInsert: {
+        status: 'active',
+        completedLessonIds: firstLesson ? [firstLesson._id] : [],
+        progressPercent: firstLesson ? 33 : 0,
+        enrolledAt: new Date('2026-11-12T09:00:00Z'),
+      },
+    },
+    { upsert: true, returnDocument: 'after' },
+  );
+  await Review.findOneAndUpdate(
+    { student: studentId, course: programming._id },
+    { rating: 5, body: 'প্রথম পাঠটা সহজ করে লেখা, আর কাজটা ছোট ছিল।' },
+    { upsert: true, returnDocument: 'after' },
+  );
+  await Wishlist.findOneAndUpdate(
+    { student: studentId, course: english._id },
+    { $setOnInsert: { createdAt: new Date() } },
+    { upsert: true },
+  );
+  if (firstLesson) {
+    await Note.findOneAndUpdate(
+      { student: studentId, lesson: firstLesson._id },
+      { course: programming._id, body: 'কনস্ট দিয়ে শুরু করা যায়, পরে দরকার হলে লেট।' },
+      { upsert: true },
+    );
+  }
+  await Course.findByIdAndUpdate(programming._id, { ratingAverage: 5, ratingCount: 1 });
 }
 
 if (process.argv[1]?.endsWith('seed.ts')) {

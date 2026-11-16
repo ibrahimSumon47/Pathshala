@@ -315,3 +315,19 @@ integration tests boot their own instance. A real `MONGODB_URI` switches every p
 Atlas without a code branch; memory data is disposable and never used in production.
 Revisit: when Atlas exists, use it for the deployed app and keep the memory server only
 for tests and fresh clones.
+
+## 2026-11-16 — Quiz correctness stays on the server
+
+`getLessonQuiz` returns prompts, options and points but never `correctIndexes`; scoring runs
+in the server action through `scoreQuiz` and stores the attempt. A learner can inspect the
+page HTML without learning the answers, and every attempt is auditable. Submissions require
+the same course access as the lesson.
+Revisit: never for graded quizzes; a practice mode could reveal answers after an attempt.
+
+## 2026-11-16 — Learning writes stay in Next.js server actions
+
+Enrolment, progress, notes, Q&A, reviews and wishlist all use server actions guarded by
+`requireUser` and course access, following the P2 authoring decision. The NestJS API stays
+on public catalogue, health and the coming payment webhooks. This avoids inventing a second
+session protocol for user-scoped writes before there is an independent consumer.
+Revisit: if a mobile client needs the learning endpoints.

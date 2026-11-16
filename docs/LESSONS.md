@@ -154,3 +154,18 @@ bundle. Lesson: exercise the real runtime entry point, not only the test runner.
 script until `allowBuilds` included it. Once cached it starts in under a second. Lesson:
 budget for the binary on a fresh clone and document that `pnpm db:dev` is the only local
 database step.
+
+## 2026-11-16 — $toObjectId is not accepted inside an aggregation $match
+
+Saving a review failed with `MongoServerError: unknown operator: $toObjectId`. Mongoose casts
+object ids in ordinary queries, but an aggregation pipeline receives raw BSON, and this
+MongoDB build rejects `$toObjectId` in `$match`. The average now reads the small rating list
+and computes it in JavaScript, which also removes the cast question entirely.
+Lesson: aggregation bypasses schema casting; convert ids before the pipeline or stay in the
+query API when the set is small.
+
+## 2026-11-16 — A quiz pass test must use the real pass fraction
+
+A test expected a 5/10 quiz to pass, but `scoreQuiz` requires 60 percent. The code was right
+and the test was wrong. Lesson: assert the boundary with numbers that actually sit on it
+(6/10), not numbers that merely feel close.

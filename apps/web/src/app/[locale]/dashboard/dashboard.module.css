@@ -60,6 +60,66 @@
   font-size: var(--text-xl);
 }
 
+.courseList {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.courseLink {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  text-decoration: none;
+}
+
+.courseTitle {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.courseMeta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.courseProgress {
+  height: 6px;
+  margin-top: var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+}
+
+.courseProgress span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.saved {
+  margin-top: var(--space-6);
+}
+
+.wishlist {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wishlist li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
 .panelBody {
   margin-top: var(--space-3);
   color: var(--color-ink-muted);

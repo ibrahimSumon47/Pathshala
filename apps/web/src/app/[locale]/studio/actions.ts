@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Category, Course, Lesson, Section, connectToDatabase } from '@pathshala/db';
+import { Category, Course, Lesson, QuizQuestion, Section, connectToDatabase, type QuizType } from '@pathshala/db';
 import { toPaisa } from '@pathshala/shared';
 import { z } from 'zod';
 import { validateAttachment } from '@/lib/attachments';
@@ -187,6 +187,52 @@ export async function addSectionAction(form: FormData): Promise<void> {
   await Section.create({ course: course._id, title: { bn: titleBn, en: titleEn }, order: (last?.order ?? 0) + 1 });
   revalidatePath(`/studio/${courseId}`);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Add one scored question to a quiz lesson. */
+export async function addQuizQuestionAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const lessonId = text(form, 'lessonId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+  if (!OBJECT_ID.test(lessonId)) fail(form, `/studio/${courseId}`, 'Lesson not found.');
+
+  await connectToDatabase();
+  const lesson = await Lesson.findOne({ _id: lessonId, course: course._id }).lean();
+  if (!lesson || lesson.type !== 'quiz') fail(form, `/studio/${courseId}`, 'Choose a quiz lesson first.');
+
+  const prompt = text(form, 'prompt').trim();
+  const rawType = text(form, 'type');
+  if (!['single', 'multiple', 'true-false'].includes(rawType)) fail(form, `/studio/${courseId}`, 'Choose a question type.');
+  const type = rawType as QuizType;
+  const options = [0, 1, 2, 3].map((index) => text(form, `option${index}`).trim()).filter(Boolean);
+  const correct = text(form, 'correct')
+    .split(',')
+    .map((value) => Number.parseInt(value, 10))
+    .filter((value) => Number.isInteger(value));
+  const points = Number.parseInt(text(form, 'points') || '1', 10);
+  if (prompt.length < 4) fail(form, `/studio/${courseId}`, 'Write a question.');
+  if (options.length < 2) fail(form, `/studio/${courseId}`, 'Add at least two options.');
+  if (correct.length < 1 || correct.some((index) => index < 0 || index >= options.length)) {
+    fail(form, `/studio/${courseId}`, 'Mark at least one valid answer.');
+  }
+  if (type === 'single' && correct.length !== 1) fail(form, `/studio/${courseId}`, 'Single choice needs one answer.');
+  if (type === 'true-false' && options.length !== 2) fail(form, `/studio/${courseId}`, 'True/false needs exactly two options.');
+
+  const last = await QuizQuestion.findOne({ lesson: lesson._id }).sort({ order: -1 }).select('order').lean();
+  await QuizQuestion.create({
+    course: course._id,
+    lesson: lesson._id,
+    prompt: prompt.slice(0, 500),
+    type,
+    options,
+    correctIndexes: [...new Set(correct)].sort((a, b) => a - b),
+    points: Number.isInteger(points) ? Math.max(1, Math.min(10, points)) : 1,
+    order: (last?.order ?? 0) + 1,
+  });
+  revalidatePath(`/studio/${courseId}/lesson/${lessonId}`);
+  redirect(localePath(form, `/studio/${courseId}/lesson/${lessonId}?saved=1`));
 }
 
 /** Add a lesson, with a validated attachment and a video slot when supplied. */

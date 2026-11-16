@@ -130,7 +130,13 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
               <ol className={styles.lessonList}>
                 {section.lessons.map((lesson) => (
                   <li key={lesson.id} className={styles.lessonRow}>
-                    <span>{lesson.title[language] || lesson.title.en || lesson.title.bn}</span>
+                    {lesson.type === 'quiz' ? (
+                      <Link href={`/studio/${course.id}/lesson/${lesson.id}`} className={styles.lessonLink}>
+                        {lesson.title[language] || lesson.title.en || lesson.title.bn} →
+                      </Link>
+                    ) : (
+                      <span>{lesson.title[language] || lesson.title.en || lesson.title.bn}</span>
+                    )}
                     <span className={styles.meta}>
                       {copy[lesson.type]} · {lesson.bodyHtml ? 'HTML' : '—'}
                       {lesson.attachmentCount > 0 ? ` · ${lesson.attachmentCount}` : ''}

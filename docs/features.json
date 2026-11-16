@@ -3,61 +3,444 @@
   "updated": "2026-11-16",
   "note": "A feature is done only when status is done and evidence lists how to verify it. scripts/check-done.mjs enforces this.",
   "features": [
-    { "id": "intake.owner-questions", "phase": "Intake", "title": "Owner intake answered and recorded", "status": "done", "evidence": ["private/OWNER_ANSWERS.md (local, gitignored)", "docs/REQUIREMENTS_LOG.md"] },
-    { "id": "intake.docs-system", "phase": "Intake", "title": "Documentation system and feature gate", "status": "done", "evidence": ["AGENTS.md, CLAUDE.md, GEMINI.md", "docs/PROJECT_STATE.md, features.json, HANDOFF.md, DECISIONS.md, LESSONS.md, OWNER_TODO.md", "scripts/check-done.mjs validates this file"] },
-
-    { "id": "p0.toolchain", "phase": "P0", "title": "CLIs installed and verified", "status": "done", "evidence": ["docs/PROJECT_STATE.md lists each CLI and version checked 2026-11-16", "gitleaks 8.30.1 installed at tools/gitleaks/ because winget has no package"] },
-    { "id": "p0.hooks", "phase": "P0", "title": "commit-msg and pre-push hooks enabled", "status": "done", "evidence": [".githooks/commit-msg, pre-commit and pre-push; core.hooksPath=.githooks", "self-test: foreign author rejected, co-author trailer rejected, owner history accepted"] },
-    { "id": "p0.gitleaks", "phase": "P0", "title": "gitleaks in pre-commit and CI", "status": "done", "evidence": [".gitleaks.toml extends the default rules", "pre-commit blocked a fake Stripe key in a staged file", "CI secret job scans the full history with checksum-verified 8.30.1"] },
-    { "id": "p0.ci", "phase": "P0", "title": "CI: lint, typecheck, tests, build, gitleaks, CodeQL, audit, author guard", "status": "done", "evidence": [".github/workflows/ci.yml: commits, secrets, quality, audit", ".github/workflows/codeql.yml on push and weekly", "CI run 43886044371 green on 2026-11-16; CodeQL run 43886042634 green"] },
-    { "id": "p0.workspace", "phase": "P0", "title": "pnpm workspace with strict TypeScript and shared config", "status": "done", "evidence": ["pnpm-workspace.yaml with apps/web and packages/shared", "tsconfig.base.json with strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes", "Vitest: 7 money cases pass; next build prerenders the shell"] },
-
-    { "id": "p1.design-system", "phase": "P1", "title": "Warm light/dark design system with tokens and components", "status": "done", "evidence": ["packages/tokens/theme.css: light and dark roles on one accent", "12 token tests prove contrast and the 4px spacing grid", "Button, Field, Select, Card, Badge, Skeleton and EmptyState with 8 server-render tests",         "theme is a server-read cookie; data-theme is rendered before paint and survives soft navigation without a boot script"] },
-    { "id": "p1.i18n", "phase": "P1", "title": "Bangla/English routing, fonts and copy pipeline", "status": "done", "evidence": ["next-intl 4.15: Bangla at / and English at /en", "apps/web/messages/bn.json and en.json hold all visible copy", "Next 16 proxy.ts negotiates locale; build prerenders both languages", "Inter and Noto Sans Bengali self-hosted through next/font"] },
-    { "id": "p1.auth", "phase": "P1", "title": "Auth.js sign-in with student, instructor and admin roles", "status": "done", "evidence": ["apps/web/src/auth.ts: credentials plus optional Google, JWT sessions carrying roles", "requireUser and requireRole guard /dashboard and /admin; role tests in src/lib/auth/roles.test.ts", "six credential tests in src/lib/auth/accounts.test.ts cover hashes, roles and wrong passwords", "browser flow checked: student sign-in, admin 404 for students, sign-out, admin table, wrong-password message", "apps/web/.env.example documents AUTH_SECRET, Google and DEMO_AUTH; no secret is committed"] },
-    { "id": "p1.models", "phase": "P1", "title": "Mongoose models for users, courses, lessons, enrolments, orders and audits", "status": "done", "evidence": ["packages/db: User, Category, Course, Section, Lesson, Enrolment, Order, AuditEvent", "17 model tests cover validation, bilingual text, integer paisa and indexes", "lesson video slot reserved for P2; no migration needed later"] },
-    { "id": "p1.api-hardening", "phase": "P1", "title": "Validation, rate limiting and a single error envelope", "status": "done", "evidence": ["apps/api: health plus GET /courses behind a repository interface", "Zod validation pipe rejects a bad limit and unknown parameters; curl recorded 400 with the shared envelope", "RateLimitGuard blocks the 61st request in a minute; tests cover the window, reset and per-address isolation", "12 API tests pass; with no database the catalogue returns 503 database_unavailable instead of a fake empty list"] },
-    { "id": "p1.api-hosting", "phase": "P1", "title": "NestJS API deployed on a verified free host", "status": "done", "evidence": ["Vercel project pathshala-api (Hobby) at https://pathshala-api-lake.vercel.app", "self-contained esbuild CJS bundle deployed prebuilt; the function needs no workspace node_modules at runtime", "deployed /health 200: cold 1.411s total with uptime 0, warm 0.674s from Dhaka; function region iad1", "deployed /courses 503 database_unavailable (Atlas pending), /courses?limit=99 400 validation_failed, /nope 404 not_found", "three Hobby deployments used: two failed on ESM and reflect-metadata resolution, the third is live; cold start recorded 2026-11-16", "a Mongo-backed catalogue 200 is still unverified until MONGODB_URI exists"] },
-
-    { "id": "p2.categories", "phase": "P2", "title": "Category taxonomy across unrelated subjects", "status": "done", "evidence": ["scripts/seed.ts seeds six bilingual subjects from programming to music", "packages/db/src/catalog.ts lists active categories in admin order", "admin category form in apps/web/src/app/[locale]/admin/actions.ts; browser-verified add flow", "catalogue facets read the same collection; categories are shown on cards and detail pages"] },
-    { "id": "p2.course-crud", "phase": "P2", "title": "Course, section and lesson authoring with draft and publish", "status": "done", "evidence": ["studio create/edit/publish actions in apps/web/src/app/[locale]/studio/actions.ts", "browser smoke flow created 'Studio Smoke Course', added a section and lesson, published it", "published course returned 200 at /en/courses/studio-smoke-course and appeared in catalogue search", "publishing requires at least one lesson; draft, published and archived statuses are modelled"] },
-    { "id": "p2.attachments", "phase": "P2", "title": "Lesson rich text and validated attachments, video-ready model", "status": "done", "evidence": ["apps/web/src/lib/sanitize.ts strips scripts, event handlers and javascript links; 3 tests in sanitize.test.ts", "apps/web/src/lib/attachments.ts validates https, MIME allow-list and 1 byte-20 MB; 5 tests", "lesson editor accepts HTML, an https video URL and attachment metadata; video slot is in the Lesson model", "sanitized HTML is stored server-side before Mongo writes"] },
-    { "id": "p2.instructor-ui", "phase": "P2", "title": "Instructor dashboard for authoring", "status": "done", "evidence": ["apps/web/src/app/[locale]/studio has course list, create form and per-course curriculum editor", "requireRole('instructor','admin') guards both studio screens; header shows Studio only to teachers", "browser-verified as instructor@pathshala.dev: list, create, add section, add lesson, publish"] },
-    { "id": "p2.catalog", "phase": "P2", "title": "Catalog with search, filters and pagination", "status": "done", "evidence": ["packages/db/src/catalog.ts implements Mongo text search plus category, level, language and price filters with bounded pagination", "GET /courses?limit=2&price=free returned 200 with two rows against the seeded memory MongoDB", "GET /courses/javascript-first-steps returned 200 with curriculum; unknown slug returned 404 course_not_found", "API integration test catalog.integration.test.ts covers published-only, category, price, level, search and detail against mongodb-memory-server", "browser /en/courses?q=Studio found the smoke course; UI has search, four facets and pager"] },
-
-    { "id": "p3.enrolment", "phase": "P3", "title": "Enrolment and access control per course", "status": "todo", "evidence": [] },
-    { "id": "p3.progress", "phase": "P3", "title": "Lesson progress and course completion", "status": "todo", "evidence": [] },
-    { "id": "p3.quizzes", "phase": "P3", "title": "Quiz builder, question types, attempts and scoring", "status": "todo", "evidence": [] },
-    { "id": "p3.qna", "phase": "P3", "title": "Lesson Q&A threads", "status": "todo", "evidence": [] },
-    { "id": "p3.notes", "phase": "P3", "title": "Per-lesson notes", "status": "todo", "evidence": [] },
-    { "id": "p3.reviews", "phase": "P3", "title": "Reviews and ratings with eligibility rules", "status": "todo", "evidence": [] },
-    { "id": "p3.wishlist", "phase": "P3", "title": "Wishlist", "status": "todo", "evidence": [] },
-
-    { "id": "p4.stripe", "phase": "P4", "title": "Stripe test-mode checkout with signed, idempotent webhooks", "status": "todo", "evidence": [] },
-    { "id": "p4.paybridge", "phase": "P4", "title": "PayBridge gateway: hosted checkout, HMAC webhooks, retries, refunds, ledger", "status": "todo", "evidence": [] },
-    { "id": "p4.paybridge-dashboard", "phase": "P4", "title": "PayBridge merchant dashboard and API keys", "status": "todo", "evidence": [] },
-    { "id": "p4.orders", "phase": "P4", "title": "Orders, coupons, receipts and instructor earnings ledger", "status": "todo", "evidence": [] },
-    { "id": "p4.test-mode", "phase": "P4", "title": "Every payment surface states test mode", "status": "todo", "evidence": [] },
-
-    { "id": "p5.sessions", "phase": "P5", "title": "Live session scheduling per course", "status": "todo", "evidence": [] },
-    { "id": "p5.jitsi", "phase": "P5", "title": "Jitsi room embed or new-tab fallback", "status": "todo", "evidence": [] },
-    { "id": "p5.attendance", "phase": "P5", "title": "Attendance log", "status": "todo", "evidence": [] },
-    { "id": "p5.reminders", "phase": "P5", "title": "Reminder scheduler with in-app delivery and optional email", "status": "todo", "evidence": [] },
-    { "id": "p5.ics", "phase": "P5", "title": "Downloadable .ics calendar file", "status": "todo", "evidence": [] },
-
-    { "id": "p6.certificates", "phase": "P6", "title": "Certificates with QR and public verification page", "status": "todo", "evidence": [] },
-    { "id": "p6.instructor-analytics", "phase": "P6", "title": "Instructor analytics", "status": "todo", "evidence": [] },
-    { "id": "p6.admin", "phase": "P6", "title": "Admin users, course approval and reports", "status": "todo", "evidence": [] },
-    { "id": "p6.audit", "phase": "P6", "title": "Audit log with injection-safe CSV export", "status": "todo", "evidence": [] },
-
-    { "id": "p7.seed", "phase": "P7", "title": "Realistic bilingual seed data", "status": "todo", "evidence": [] },
-    { "id": "p7.e2e", "phase": "P7", "title": "Playwright flows on production", "status": "todo", "evidence": [] },
-    { "id": "p7.a11y", "phase": "P7", "title": "axe reports zero violations", "status": "todo", "evidence": [] },
-    { "id": "p7.performance", "phase": "P7", "title": "Lighthouse scores recorded", "status": "todo", "evidence": [] },
-    { "id": "p7.security", "phase": "P7", "title": "OWASP review, webhook and upload checks, IDOR tests", "status": "todo", "evidence": [] },
-
-    { "id": "p8.readme", "phase": "P8", "title": "Portfolio README with live URL, architecture and screenshots", "status": "todo", "evidence": [] },
-    { "id": "p8.demo", "phase": "P8", "title": "Demo script", "status": "todo", "evidence": [] },
-    { "id": "p8.deploy", "phase": "P8", "title": "Deployment guide", "status": "todo", "evidence": [] }
+    {
+      "id": "intake.owner-questions",
+      "phase": "Intake",
+      "title": "Owner intake answered and recorded",
+      "status": "done",
+      "evidence": [
+        "private/OWNER_ANSWERS.md (local, gitignored)",
+        "docs/REQUIREMENTS_LOG.md"
+      ]
+    },
+    {
+      "id": "intake.docs-system",
+      "phase": "Intake",
+      "title": "Documentation system and feature gate",
+      "status": "done",
+      "evidence": [
+        "AGENTS.md, CLAUDE.md, GEMINI.md",
+        "docs/PROJECT_STATE.md, features.json, HANDOFF.md, DECISIONS.md, LESSONS.md, OWNER_TODO.md",
+        "scripts/check-done.mjs validates this file"
+      ]
+    },
+    {
+      "id": "p0.toolchain",
+      "phase": "P0",
+      "title": "CLIs installed and verified",
+      "status": "done",
+      "evidence": [
+        "docs/PROJECT_STATE.md lists each CLI and version checked 2026-11-16",
+        "gitleaks 8.30.1 installed at tools/gitleaks/ because winget has no package"
+      ]
+    },
+    {
+      "id": "p0.hooks",
+      "phase": "P0",
+      "title": "commit-msg and pre-push hooks enabled",
+      "status": "done",
+      "evidence": [
+        ".githooks/commit-msg, pre-commit and pre-push; core.hooksPath=.githooks",
+        "self-test: foreign author rejected, co-author trailer rejected, owner history accepted"
+      ]
+    },
+    {
+      "id": "p0.gitleaks",
+      "phase": "P0",
+      "title": "gitleaks in pre-commit and CI",
+      "status": "done",
+      "evidence": [
+        ".gitleaks.toml extends the default rules",
+        "pre-commit blocked a fake Stripe key in a staged file",
+        "CI secret job scans the full history with checksum-verified 8.30.1"
+      ]
+    },
+    {
+      "id": "p0.ci",
+      "phase": "P0",
+      "title": "CI: lint, typecheck, tests, build, gitleaks, CodeQL, audit, author guard",
+      "status": "done",
+      "evidence": [
+        ".github/workflows/ci.yml: commits, secrets, quality, audit",
+        ".github/workflows/codeql.yml on push and weekly",
+        "CI run 43886044371 green on 2026-11-16; CodeQL run 43886042634 green"
+      ]
+    },
+    {
+      "id": "p0.workspace",
+      "phase": "P0",
+      "title": "pnpm workspace with strict TypeScript and shared config",
+      "status": "done",
+      "evidence": [
+        "pnpm-workspace.yaml with apps/web and packages/shared",
+        "tsconfig.base.json with strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes",
+        "Vitest: 7 money cases pass; next build prerenders the shell"
+      ]
+    },
+    {
+      "id": "p1.design-system",
+      "phase": "P1",
+      "title": "Warm light/dark design system with tokens and components",
+      "status": "done",
+      "evidence": [
+        "packages/tokens/theme.css: light and dark roles on one accent",
+        "12 token tests prove contrast and the 4px spacing grid",
+        "Button, Field, Select, Card, Badge, Skeleton and EmptyState with 8 server-render tests",
+        "theme is a server-read cookie; data-theme is rendered before paint and survives soft navigation without a boot script"
+      ]
+    },
+    {
+      "id": "p1.i18n",
+      "phase": "P1",
+      "title": "Bangla/English routing, fonts and copy pipeline",
+      "status": "done",
+      "evidence": [
+        "next-intl 4.15: Bangla at / and English at /en",
+        "apps/web/messages/bn.json and en.json hold all visible copy",
+        "Next 16 proxy.ts negotiates locale; build prerenders both languages",
+        "Inter and Noto Sans Bengali self-hosted through next/font"
+      ]
+    },
+    {
+      "id": "p1.auth",
+      "phase": "P1",
+      "title": "Auth.js sign-in with student, instructor and admin roles",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/auth.ts: credentials plus optional Google, JWT sessions carrying roles",
+        "requireUser and requireRole guard /dashboard and /admin; role tests in src/lib/auth/roles.test.ts",
+        "six credential tests in src/lib/auth/accounts.test.ts cover hashes, roles and wrong passwords",
+        "browser flow checked: student sign-in, admin 404 for students, sign-out, admin table, wrong-password message",
+        "apps/web/.env.example documents AUTH_SECRET, Google and DEMO_AUTH; no secret is committed"
+      ]
+    },
+    {
+      "id": "p1.models",
+      "phase": "P1",
+      "title": "Mongoose models for users, courses, lessons, enrolments, orders and audits",
+      "status": "done",
+      "evidence": [
+        "packages/db: User, Category, Course, Section, Lesson, Enrolment, Order, AuditEvent",
+        "17 model tests cover validation, bilingual text, integer paisa and indexes",
+        "lesson video slot reserved for P2; no migration needed later"
+      ]
+    },
+    {
+      "id": "p1.api-hardening",
+      "phase": "P1",
+      "title": "Validation, rate limiting and a single error envelope",
+      "status": "done",
+      "evidence": [
+        "apps/api: health plus GET /courses behind a repository interface",
+        "Zod validation pipe rejects a bad limit and unknown parameters; curl recorded 400 with the shared envelope",
+        "RateLimitGuard blocks the 61st request in a minute; tests cover the window, reset and per-address isolation",
+        "12 API tests pass; with no database the catalogue returns 503 database_unavailable instead of a fake empty list"
+      ]
+    },
+    {
+      "id": "p1.api-hosting",
+      "phase": "P1",
+      "title": "NestJS API deployed on a verified free host",
+      "status": "done",
+      "evidence": [
+        "Vercel project pathshala-api (Hobby) at https://pathshala-api-lake.vercel.app",
+        "self-contained esbuild CJS bundle deployed prebuilt; the function needs no workspace node_modules at runtime",
+        "deployed /health 200: cold 1.411s total with uptime 0, warm 0.674s from Dhaka; function region iad1",
+        "deployed /courses 503 database_unavailable (Atlas pending), /courses?limit=99 400 validation_failed, /nope 404 not_found",
+        "three Hobby deployments used: two failed on ESM and reflect-metadata resolution, the third is live; cold start recorded 2026-11-16",
+        "a Mongo-backed catalogue 200 is still unverified until MONGODB_URI exists"
+      ]
+    },
+    {
+      "id": "p2.categories",
+      "phase": "P2",
+      "title": "Category taxonomy across unrelated subjects",
+      "status": "done",
+      "evidence": [
+        "scripts/seed.ts seeds six bilingual subjects from programming to music",
+        "packages/db/src/catalog.ts lists active categories in admin order",
+        "admin category form in apps/web/src/app/[locale]/admin/actions.ts; browser-verified add flow",
+        "catalogue facets read the same collection; categories are shown on cards and detail pages"
+      ]
+    },
+    {
+      "id": "p2.course-crud",
+      "phase": "P2",
+      "title": "Course, section and lesson authoring with draft and publish",
+      "status": "done",
+      "evidence": [
+        "studio create/edit/publish actions in apps/web/src/app/[locale]/studio/actions.ts",
+        "browser smoke flow created 'Studio Smoke Course', added a section and lesson, published it",
+        "published course returned 200 at /en/courses/studio-smoke-course and appeared in catalogue search",
+        "publishing requires at least one lesson; draft, published and archived statuses are modelled"
+      ]
+    },
+    {
+      "id": "p2.attachments",
+      "phase": "P2",
+      "title": "Lesson rich text and validated attachments, video-ready model",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/lib/sanitize.ts strips scripts, event handlers and javascript links; 3 tests in sanitize.test.ts",
+        "apps/web/src/lib/attachments.ts validates https, MIME allow-list and 1 byte-20 MB; 5 tests",
+        "lesson editor accepts HTML, an https video URL and attachment metadata; video slot is in the Lesson model",
+        "sanitized HTML is stored server-side before Mongo writes"
+      ]
+    },
+    {
+      "id": "p2.instructor-ui",
+      "phase": "P2",
+      "title": "Instructor dashboard for authoring",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/studio has course list, create form and per-course curriculum editor",
+        "requireRole('instructor','admin') guards both studio screens; header shows Studio only to teachers",
+        "browser-verified as instructor@pathshala.dev: list, create, add section, add lesson, publish"
+      ]
+    },
+    {
+      "id": "p2.catalog",
+      "phase": "P2",
+      "title": "Catalog with search, filters and pagination",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/catalog.ts implements Mongo text search plus category, level, language and price filters with bounded pagination",
+        "GET /courses?limit=2&price=free returned 200 with two rows against the seeded memory MongoDB",
+        "GET /courses/javascript-first-steps returned 200 with curriculum; unknown slug returned 404 course_not_found",
+        "API integration test catalog.integration.test.ts covers published-only, category, price, level, search and detail against mongodb-memory-server",
+        "browser /en/courses?q=Studio found the smoke course; UI has search, four facets and pager"
+      ]
+    },
+    {
+      "id": "p3.enrolment",
+      "phase": "P3",
+      "title": "Enrolment and access control per course",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/learn/[slug]/actions.ts enrols free courses with an idempotent upsert; paid courses wait for checkout",
+        "apps/web/src/lib/learning.ts resolves access from enrolment, course owner or admin; direct learn URLs redirect non-enrolled readers",
+        "browser-verified as student@pathshala.dev: course detail showed Continue learning, dashboard listed the enrolled course"
+      ]
+    },
+    {
+      "id": "p3.progress",
+      "phase": "P3",
+      "title": "Lesson progress and course completion",
+      "status": "done",
+      "evidence": [
+        "markLessonAction and syncProgress recompute completion from the authoritative lesson count",
+        "packages/shared/src/progress.ts calculateProgress has 3 unit tests; browser progress moved 33% -> 67% -> 100%",
+        "completion status and completedAt are set when every lesson is finished"
+      ]
+    },
+    {
+      "id": "p3.quizzes",
+      "phase": "P3",
+      "title": "Quiz builder, question types, attempts and scoring",
+      "status": "done",
+      "evidence": [
+        "QuizQuestion and QuizAttempt models; scoreQuiz has 4 unit tests for exact answers, duplicates, pass mark and empty quizzes",
+        "studio quiz builder at /studio/[id]/lesson/[lessonId] adds single, multiple and true/false questions with points",
+        "browser-verified quiz attempt scored 3/3, showed last score and marked the lesson complete"
+      ]
+    },
+    {
+      "id": "p3.qna",
+      "phase": "P3",
+      "title": "Lesson Q&A threads",
+      "status": "done",
+      "evidence": [
+        "Question model stores author, body and teacher answers under each lesson",
+        "askQuestionAction and answerQuestionAction validate access and length; getLessonQuestions resolves names in one query",
+        "browser-verified asking a question from the lesson page and seeing it in the thread"
+      ]
+    },
+    {
+      "id": "p3.notes",
+      "phase": "P3",
+      "title": "Per-lesson notes",
+      "status": "done",
+      "evidence": [
+        "Note model enforces one note per student per lesson",
+        "saveNoteAction validates course access and 4000-character limit; the learning page pre-fills the saved note",
+        "browser-verified saving Bangla notes and seeing them after redirect"
+      ]
+    },
+    {
+      "id": "p3.reviews",
+      "phase": "P3",
+      "title": "Reviews and ratings with eligibility rules",
+      "status": "done",
+      "evidence": [
+        "Review model allows one review per student per course with a 1-5 rating",
+        "submitReviewAction requires an active enrolment and recalculates Course.ratingAverage and ratingCount",
+        "browser-verified updating a review; course detail showed the new text and rating count"
+      ]
+    },
+    {
+      "id": "p3.wishlist",
+      "phase": "P3",
+      "title": "Wishlist",
+      "status": "done",
+      "evidence": [
+        "Wishlist model stores one row per student and course; toggleWishlistAction adds or removes it",
+        "course detail button changes between Save for later and Remove from saved; dashboard lists saved courses",
+        "browser-verified toggling the saved state"
+      ]
+    },
+    {
+      "id": "p4.stripe",
+      "phase": "P4",
+      "title": "Stripe test-mode checkout with signed, idempotent webhooks",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p4.paybridge",
+      "phase": "P4",
+      "title": "PayBridge gateway: hosted checkout, HMAC webhooks, retries, refunds, ledger",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p4.paybridge-dashboard",
+      "phase": "P4",
+      "title": "PayBridge merchant dashboard and API keys",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p4.orders",
+      "phase": "P4",
+      "title": "Orders, coupons, receipts and instructor earnings ledger",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p4.test-mode",
+      "phase": "P4",
+      "title": "Every payment surface states test mode",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p5.sessions",
+      "phase": "P5",
+      "title": "Live session scheduling per course",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p5.jitsi",
+      "phase": "P5",
+      "title": "Jitsi room embed or new-tab fallback",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p5.attendance",
+      "phase": "P5",
+      "title": "Attendance log",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p5.reminders",
+      "phase": "P5",
+      "title": "Reminder scheduler with in-app delivery and optional email",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p5.ics",
+      "phase": "P5",
+      "title": "Downloadable .ics calendar file",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p6.certificates",
+      "phase": "P6",
+      "title": "Certificates with QR and public verification page",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p6.instructor-analytics",
+      "phase": "P6",
+      "title": "Instructor analytics",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p6.admin",
+      "phase": "P6",
+      "title": "Admin users, course approval and reports",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p6.audit",
+      "phase": "P6",
+      "title": "Audit log with injection-safe CSV export",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p7.seed",
+      "phase": "P7",
+      "title": "Realistic bilingual seed data",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p7.e2e",
+      "phase": "P7",
+      "title": "Playwright flows on production",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p7.a11y",
+      "phase": "P7",
+      "title": "axe reports zero violations",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p7.performance",
+      "phase": "P7",
+      "title": "Lighthouse scores recorded",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p7.security",
+      "phase": "P7",
+      "title": "OWASP review, webhook and upload checks, IDOR tests",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p8.readme",
+      "phase": "P8",
+      "title": "Portfolio README with live URL, architecture and screenshots",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p8.demo",
+      "phase": "P8",
+      "title": "Demo script",
+      "status": "todo",
+      "evidence": []
+    },
+    {
+      "id": "p8.deploy",
+      "phase": "P8",
+      "title": "Deployment guide",
+      "status": "todo",
+      "evidence": []
+    }
   ]
 }

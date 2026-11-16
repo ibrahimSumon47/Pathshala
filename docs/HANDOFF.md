@@ -1,29 +1,26 @@
 # Handoff
 
-Updated: 2026-11-16, after the P2 catalogue and authoring slice.
+Updated: 2026-11-16, after the P3 learning slice.
 
 ## Where we are
 
-P2 is complete. The studio creates, edits and publishes bilingual courses; the public
+P3 is complete. A signed-in reader can enrol in a free course, open the learning room at
+`/learn/[slug]`, mark lessons complete, take a sourced quiz, keep private notes, ask lesson
+questions and review an enrolled course. Instructors add quiz questions from
+`/studio/[id]/lesson/[lessonId]`. The dashboard lists enrolled courses with progress and the
+wishlist. Paid courses deliberately wait for P4 checkout.
+
+P2 remains complete: the studio creates, edits and publishes bilingual courses; the public
 catalogue searches the Mongo text index and filters by subject, level, language and price.
-A local `mongodb-memory-server` (`pnpm db:dev`) seeds six courses so no phase waits on
-Atlas. The same `MONGODB_URI` switch runs against Atlas.
+A local `mongodb-memory-server` (`pnpm db:dev`) seeds three users, six categories, six
+courses, a three-lesson learning path with a quiz, an enrolment, a review and a saved course.
+`scripts/seed.ts` is safe to rerun against the running memory server.
 
-Phase 1 remains complete. Auth.js v5 signs in three demo roles with bcrypt-checked passwords,
-carries roles in a JWT, protects `/dashboard` and `/admin`, and switches to MongoDB
-automatically once `MONGODB_URI` exists. The NestJS API is live at
-`https://pathshala-api-lake.vercel.app` as one self-contained bundle: `/health` answered in
-1.411s on an idle first request (`uptime: 0`) and 0.674s warm, measured from Dhaka against
-the `iad1` function region. `/courses` returns the honest 503 `database_unavailable` until
-Atlas exists. Two earlier deployments failed on module resolution, so three Hobby
-deployments were used to get this one live.
-
-The theme is now a server-read cookie rendered as `data-theme` on `<html>`; a 1440px
-light/dark pass found that a soft language switch used to drop the attribute, and this
-change keeps dark across navigation without a boot script or React warning.
-
-The catalogue is still an honest empty state: there is no course authoring and no database
-connection yet. Atlas and Google OAuth remain owner tasks.
+P1 remains complete: Auth.js v5 signs in three demo roles with bcrypt-checked passwords,
+carries roles in a JWT and protects `/dashboard`, `/admin`, `/studio` and `/learn`. The
+NestJS API is live at `https://pathshala-api-lake.vercel.app`; `/courses` still returns the
+honest 503 `database_unavailable` until Atlas exists because the deployed function has no
+`MONGODB_URI`.
 
 ## Demo access (public by design)
 
@@ -39,22 +36,29 @@ Demo accounts are on by default in development and off in production unless
 
 ## Exact next step
 
-1. Owner: finish `OWNER_TODO.md` items 1 and 3 (Atlas cluster, Google OAuth client). Add
-   the Google redirect URI for port 59800 as well as 3000; the API domain is not an OAuth
-   callback, so the production web callback waits for a web deployment.
-2. Once `MONGODB_URI` is in `private/.env.local`, set it on the Vercel project, redeploy the
-   API and verify a Mongo-backed `/courses` 200. That redeploy is the next allowed
-   deployment; do not spend one before the URI exists.
-3. Start P3: enrolment and access control, lesson progress, quizzes, Q&A, notes, reviews
-   and wishlist. Reuse the memory server for integration tests; no owner action is needed.
+Start P4 in this order; no owner key is required to begin:
+
+1. Check for Stripe test keys in `private/.env.local` and `apps/web/.env.local`. If absent,
+   write the click-by-click Stripe sandbox steps once in `docs/OWNER_TODO.md` and continue
+   with recorded fixtures and signature verification. Do not invent keys.
+2. Add the order, payment, coupon and ledger models in `packages/db`, with integer paisa and
+   a single state machine shared by Stripe and PayBridge.
+3. Build `apps/paybridge` as its own free Vercel project: hosted test-mode checkout, merchant
+   API keys, HMAC-signed webhooks with retry, idempotency keys, refunds, ledger and merchant
+   dashboard. Build it fully before waiting on Stripe.
+4. Wire paid enrolment in the web app through the order service, then the Stripe checkout
+   route and signature-verified webhook. Every payment screen says test mode.
+5. Test with recorded fixtures, then the browser, then update `features.json`, this file,
+   `PROJECT_STATE` and `DECISIONS`; run the full gate and push one slice.
 
 ## Local commands
 
 ```bash
 pnpm install
-pnpm dev                             # web on the configured Next port
-pnpm --filter @pathshala/api dev     # API on :4000 (ignores PORT=0)
-pnpm --filter @pathshala/api bundle  # generated, gitignored api/index.cjs for Vercel
+pnpm db:dev                          # memory MongoDB on :27018, seeds and stays up
+MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm --filter @pathshala/web exec next dev -p 59800
+MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm --filter @pathshala/api dev
+MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm db:seed   # rerun against the live memory server
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 pnpm run audit                       # production dependency audit used by CI
 node scripts/check-done.mjs
@@ -66,18 +70,19 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Files worth knowing
 
-- `apps/web/src/auth.ts` — providers, JWT callbacks, role claims.
-- `apps/web/src/lib/auth/{accounts,guard,roles}.ts` — account seam, page guards, pure checks.
-- `apps/web/src/app/[locale]/{sign-in,dashboard,admin}` — the visible auth surfaces.
-- `apps/api/src/{app.module,bootstrap,serverless}.ts` — Nest wiring and shared runtime config.
-- `apps/api/api/index.cjs` — generated bundle; `vercel.json` builds it and rewrites to it.
+- `apps/web/src/lib/learning.ts` — learning access, dashboard, quiz, notes, Q&A and review reads.
+- `apps/web/src/app/[locale]/learn/[slug]/*` — the learning room and its server actions.
+- `apps/web/src/app/[locale]/courses/[slug]/page.tsx` — enrol, wishlist and review surfaces.
+- `apps/web/src/app/[locale]/studio/[id]/lesson/[lessonId]/page.tsx` — quiz builder.
+- `packages/db/src/models/{quiz,review,note,question,wishlist}.ts` — P3 models and `scoreQuiz`.
+- `packages/shared/src/progress.ts` — clamped whole-number progress with tests.
+- `packages/db/src/catalog.ts` — catalogue query used by web and API.
 - `apps/api/src/courses/*` — repository seam, service, Zod query schema and controller.
-- `apps/web/src/lib/theme.ts` and `components/theme-toggle.tsx` — the cookie theme contract.
+- `apps/web/src/auth.ts` — providers, JWT callbacks and role claims.
 - `packages/db/src/connection.ts` — cached Mongo connection used by web auth and the API.
-- `packages/tokens/theme.css` — colour and spacing source of truth.
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1 and P2 are
-complete and the project is 18/47, with 29 features still to build. The gate must exit 0 before the final
-handover, which also means every later phase's evidence exists.
+`node scripts/check-done.mjs` exits non-zero while features remain open. P1, P2 and P3 are
+complete and the project is 25/47, with 22 features still to build. The gate must exit 0
+before the final handover, which also means every later phase's evidence exists.
