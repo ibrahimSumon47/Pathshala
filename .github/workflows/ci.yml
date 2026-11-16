@@ -17,10 +17,10 @@ jobs:
     name: Commit identity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Every commit must belong to the owner
@@ -30,18 +30,20 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Install gitleaks
         run: |
           set -euo pipefail
           version=8.30.1
+          asset="gitleaks_${version}_linux_x64.tar.gz"
           base="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
-          curl -sSfL "${base}/gitleaks_${version}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          # Keep the release filename so the checksum file can verify it by name.
+          curl -sSfL "${base}/${asset}" -o "/tmp/${asset}"
           curl -sSfL "${base}/gitleaks_${version}_checksums.txt" -o /tmp/gitleaks-checksums.txt
-          (cd /tmp && grep 'linux_x64.tar.gz' gitleaks-checksums.txt | sha256sum -c -)
-          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          (cd /tmp && grep "${asset}" gitleaks-checksums.txt | sha256sum -c -)
+          tar -xzf "/tmp/${asset}" -C /tmp gitleaks
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
       - name: Scan the full history
@@ -51,9 +53,9 @@ jobs:
     name: Lint, types, tests, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
@@ -72,9 +74,9 @@ jobs:
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm

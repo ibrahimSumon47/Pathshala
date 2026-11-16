@@ -31,3 +31,9 @@ block fixed it. Lesson: lint the tooling, not just the app.
 The Stripe CLI is configured against a sandbox named for a different project. Lesson:
 never assume a configured CLI belongs to this project; check the sandbox name in the
 response before creating prices, products or webhooks.
+
+## 2026-11-16 — Checksums verify filenames, not just bytes
+
+The CI secret job saved the gitleaks tarball as `/tmp/gitleaks.tar.gz` while the checksums
+file lists `gitleaks_8.30.1_linux_x64.tar.gz`, so `sha256sum -c` failed before any scan
+ran. Keep the release filename when verifying a checksum.
