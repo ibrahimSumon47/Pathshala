@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 6 complete. Learners can pay, learn, join live classes and keep a verifiable certificate; instructors see per-course analytics and admins have audited approval and reporting tools. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 7 complete. The seeded product passes production-build Playwright flows, axe reports zero violations and Lighthouse records 97-99 performance with 100 accessibility, best practices and SEO. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -16,7 +16,7 @@ Snapshot: 2026-11-16, Phase 6 complete. Learners can pay, learn, join live class
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-16 (real Stripe redirect waits on owner keys) |
 | P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-16 (optional email waits on a sender key) |
 | P6 | Certificates, analytics, admin area, audit log | done — 2026-11-16 |
-| P7 | Seed data, production e2e, a11y, performance, security review | not started |
+| P7 | Seed data, production e2e, a11y, performance, security review | done — 2026-11-16 (deployed-origin pass waits on Atlas) |
 | P8 | Portfolio README, demo script, deploy guide | not started |
 
 `docs/features.json` is authoritative; this table is the summary.
@@ -129,10 +129,17 @@ Snapshot: 2026-11-16, Phase 6 complete. Learners can pay, learn, join live class
   50% completion, 1 attendance and per-course rows. The admin unpublished and republished
   Studio Smoke Course, granted and revoked the student's instructor role, saw both audit
   rows and downloaded a 200 `text/csv` export with a BOM.
+- Phase 7 quality pass: 8 Playwright tests pass against the production build on
+  `127.0.0.1:59802`, including catalogue search, student learning, live room, certificate,
+  student/admin boundary and admin audit export. axe reports zero violations on landing,
+  catalogue, sign-in and dashboard after fixing brand naming, progress labels and contrast.
+  Lighthouse mobile: landing 99/100/100/100 with FCP 0.7s, LCP 0.7s, CLS 0 and TBT 120ms;
+  catalogue 97/100/100/100 with FCP 0.6s, LCP 0.6s, CLS 0 and TBT 190ms. `pnpm audit --prod`
+  is clean; the dev-only minimatch advisory remains documented.
 - Not verified yet: a real Stripe redirect and signature (test keys absent; fixture path is
-  proven), a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in, optional email
-  delivery (no Resend key and no owned sender domain), cross-instance rate limiting, and
-  axe / Lighthouse passes (now covered by the P7 suite against the production build).
+  proven), a deployed Mongo-backed catalogue and deployed Playwright run (no Atlas URI),
+  Google sign-in, optional email delivery (no Resend key and no owned sender domain), and
+  cross-instance rate limiting.
 
 ## Environment facts
 

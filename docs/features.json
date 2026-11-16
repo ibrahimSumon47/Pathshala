@@ -449,36 +449,56 @@
       "id": "p7.seed",
       "phase": "P7",
       "title": "Realistic bilingual seed data",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "scripts/seed.ts creates three bilingual demo accounts, six subjects, six courses with fourteen lessons, a quiz with four questions, an enrolment, a review, a note, a wishlist entry, a live session, reminders, a certificate and the EARLYBIRD coupon",
+        "Every write is an idempotent upsert or a guarded findOneAndUpdate; rerunning pnpm db:seed against the live memory server completes cleanly",
+        "Seeded database counts after the P6 verification: 3 users, 7 courses (one smoke-test course), 14 lessons, 3 enrolments, 1 certificate, 2 live sessions"
+      ]
     },
     {
       "id": "p7.e2e",
       "phase": "P7",
       "title": "Playwright flows on production",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Playwright config runs against the production build (`next start`) on 127.0.0.1:59802; E2E_BASE_URL switches the same suite to a deployed origin when Atlas exists",
+        "8 tests pass: public catalogue search and detail, public certificate verification, student learning/live/certificate, student admin 404, live embed, admin reports/audit/CSV and two axe suites",
+        "The deployed web origin is still waiting on MONGODB_URI; the suite is ready to point at it with E2E_BASE_URL and no test edits"
+      ]
     },
     {
       "id": "p7.a11y",
       "phase": "P7",
       "title": "axe reports zero violations",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "axe-core runs with wcag2a, wcag2aa, wcag21a and wcag21aa tags on landing, catalogue, sign-in and the student dashboard",
+        "Zero violations. The pass found and fixed a brand accessible-name mismatch, unnamed progress bars and two low-contrast text styles at the component and token level"
+      ]
     },
     {
       "id": "p7.performance",
       "phase": "P7",
       "title": "Lighthouse scores recorded",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Lighthouse mobile against the production build: landing 99 performance, 100 accessibility, 100 best practices, 100 SEO, FCP 0.7s, LCP 0.7s, CLS 0, TBT 120ms",
+        "Catalogue 97 performance, 100 accessibility, 100 best practices, 100 SEO, FCP 0.6s, LCP 0.6s, CLS 0, TBT 190ms",
+        "A 404 favicon was the only best-practices miss; the app now ships src/app/icon.svg and the second run scored 100"
+      ]
     },
     {
       "id": "p7.security",
       "phase": "P7",
       "title": "OWASP review, webhook and upload checks, IDOR tests",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "docs/SECURITY.md records the OWASP review: access control, injection, payments, uploads, external content, secrets and residual risks",
+        "Webhook tests cover a changed body, an old signature, a missing header and a wrong secret; PayBridge accepts only the 4242 test card",
+        "IDOR: the live integration test proves an outsider cannot resolve a session, and Playwright proves a student gets 404 from /admin; attachment tests reject http, HTML and oversize metadata",
+        "pnpm audit --prod --audit-level high reports no known vulnerabilities; the dev-only minimatch advisory stays documented"
+      ]
     },
     {
       "id": "p8.readme",

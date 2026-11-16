@@ -1,10 +1,15 @@
 # Handoff
 
-Updated: 2026-11-16, after the P6 trust slice.
+Updated: 2026-11-16, after the P7 quality slice.
 
 ## Where we are
 
-P6 is complete. Completed courses issue a verifiable certificate with a QR code, the
+P7 is complete. Eight Playwright tests run against the production build, axe reports zero
+violations on the four key pages, and Lighthouse records 99/97 performance on landing and
+catalogue with 100 accessibility, best practices and SEO. The OWASP review lives in
+`docs/SECURITY.md`; deployed-origin execution and Atlas verification remain owner-gated.
+
+P6 remains complete. Completed courses issue a verifiable certificate with a QR code, the
 instructor studio reports revenue, students, completion and attendance, and the admin area
 approves courses, manages instructor access and exports a formula-safe audit CSV.
 
@@ -51,17 +56,16 @@ Demo accounts are on by default in development and off in production unless
 
 ## Exact next step
 
-Start P7 in this order; no owner key is required:
+The final package, P8:
 
-1. Turn the existing realistic bilingual seed into the documented demo dataset and prove
-   `pnpm db:seed` is idempotent.
-2. Keep the Playwright suite running against `next start` and, once Atlas exists, point
-   `E2E_BASE_URL` at the deployed origin without editing the tests.
-3. Keep axe at zero violations on landing, catalogue, sign-in and dashboard; fix contrast
-   and naming at the component, never with a disable comment.
-4. Record Lighthouse mobile scores for landing and catalogue after every performance change.
-5. Follow `docs/SECURITY.md`, add negative webhook and IDOR checks, then update
-   `features.json`, `PROJECT_STATE` and this file before the P8 package.
+1. Write the portfolio README with the architecture, screenshots, measured checks and the
+   live API URL; mark the web deployment as waiting on `MONGODB_URI` rather than inventing a
+   working demo.
+2. Write `docs/DEMO.md` as a six-minute click path: catalogue, checkout with EARLYBIRD and
+   4242, learning, live room, certificate, then studio and admin.
+3. Write `docs/DEPLOY.md` for Atlas, Vercel web/API/PayBridge, secrets and the post-deploy
+   verification, including `E2E_BASE_URL`.
+4. Run the final gate, update this file and `PROJECT_STATE`, then push the last slice.
 
 ## Local commands
 
@@ -117,6 +121,6 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P6 are complete
-and the project is 39/47, with 8 features still to build (P7–P8). The gate must exit 0 before
-the final handover, which also means every later phase's evidence exists.
+`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P7 are complete
+and the project is 44/47, with the three P8 packaging features left. The gate must exit 0
+before the final handover.

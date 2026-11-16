@@ -177,6 +177,19 @@ The PayBridge return URL used `localhost` while the browser session was opened o
 server. Local origins are now consistently `127.0.0.1` in `APP_URL`, `PAYBRIDGE_BASE_URL`
 and `PAYBRIDGE_PUBLIC_URL`. Lesson: a redirect between hostnames is a different cookie jar.
 
+## 2026-11-16 — React's purity lint rejects `Date.now()` inside a server component
+
+The live page split sessions into upcoming and past with `Date.now()`, and `eslint` failed
+with `react-hooks/purity`. The fix was not a disable comment: the database query now takes
+an explicit `upcoming | past | all` window, so the page receives already-split rows.
+Lesson: push time-dependent selection into the query boundary rather than hiding impurity.
+
+## 2026-11-16 — axe finds what sighted review misses
+
+The first axe run found a brand link whose aria-label hid its visible text, unnamed
+progress bars and low-contrast meta text. All were fixed at the component/token level;
+zero violations now hold on four pages. Lesson: run axe before calling a visual pass done.
+
 ## 2026-11-16 — A webhook that creates its dedupe row before failing blocks the retry
 
 The first PayBridge delivery was accepted by signature verification but the handler looked up
