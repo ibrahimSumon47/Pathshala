@@ -1,4 +1,4 @@
-import { getCourseBySlug } from '@pathshala/db';
+import { getCourseBySlug, listCourseSessions } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
@@ -45,6 +45,8 @@ const COPY = {
     submitReview: 'মতামত সংরক্ষণ করুন',
     buy: 'কোর্সটি কিনুন',
     testNote: 'চেকআউট পরীক্ষা মোডে; আসল টাকা কাটা হবে না।',
+    live: 'লাইভ ক্লাস',
+    liveRoom: 'লাইভ রুমে যান',
   },
   en: {
     by: 'Teacher',
@@ -73,6 +75,8 @@ const COPY = {
     submitReview: 'Save review',
     buy: 'Buy this course',
     testNote: 'Checkout runs in test mode; no real money is charged.',
+    live: 'Live classes',
+    liveRoom: 'Open the live room',
   },
 } as const;
 
@@ -88,6 +92,7 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
   const session = await auth();
   const viewer = session?.user?.id ? await getCourseViewerState(course.id, session.user.id) : null;
   const reviews = await getCourseReviews(course.id);
+  const liveSessions = await listCourseSessions(course.id, 'upcoming');
   const lessonCount = course.sections.reduce((total, section) => total + section.lessons.length, 0);
 
   return (
@@ -152,6 +157,27 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                 </div>
               ))}
             </section>
+
+            {liveSessions.length > 0 ? (
+              <section className={styles.section}>
+                <h2>{copy.live}</h2>
+                <ul className={styles.reviewList}>
+                  {liveSessions.map((session) => (
+                    <li key={session.id} className={styles.review}>
+                      <p className={styles.reviewHead}>
+                        <strong>{session.title[language] || session.title.en || session.title.bn}</strong>
+                      </p>
+                      <p className={styles.meta}>
+                        {new Date(session.startsAt).toLocaleString(locale)} · {session.durationMinutes} min
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                <Link href={`/live/${course.slug}`} className={buttonStyles({ variant: 'secondary' })}>
+                  {copy.liveRoom}
+                </Link>
+              </section>
+            ) : null}
 
             <section id="reviews" className={styles.section}>
               <h2>{copy.reviews}</h2>

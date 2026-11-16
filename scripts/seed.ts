@@ -5,7 +5,10 @@ import {
   Course,
   Enrolment,
   Lesson,
+  LiveSession,
   Note,
+  Reminder,
+  ensureRemindersForEnrolment,
   QuizQuestion,
   Review,
   Section,
@@ -340,6 +343,26 @@ export async function seedDatabase(): Promise<void> {
     );
   }
   await Course.findByIdAndUpdate(programming._id, { ratingAverage: 5, ratingCount: 1 });
+
+  const live = await LiveSession.findOneAndUpdate(
+    { roomName: 'pathshala-demo-live' },
+    {
+      course: programming._id,
+      instructor: programming.instructor,
+      title: { bn: 'প্রশ্ন-উত্তর সেশন', en: 'Questions and answers' },
+      description: {
+        bn: 'প্রথম সপ্তাহের প্রশ্ন নিয়ে সরাসরি কথা।',
+        en: 'A live hour for questions from the first week.',
+      },
+      startsAt: new Date(Date.now() + 30 * 60 * 1000),
+      durationMinutes: 60,
+      roomName: 'pathshala-demo-live',
+      status: 'scheduled',
+    },
+    { upsert: true, returnDocument: 'after' },
+  );
+  await Reminder.deleteMany({ session: live._id, student: studentId });
+  await ensureRemindersForEnrolment(studentId, String(programming._id));
 
   const adminId = userIds.get('admin@pathshala.dev');
   if (adminId) {

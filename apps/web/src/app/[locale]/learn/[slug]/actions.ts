@@ -7,6 +7,7 @@ import {
   Enrolment,
   Lesson,
   Note,
+  ensureRemindersForEnrolment,
   Question,
   QuizAttempt,
   QuizQuestion,
@@ -50,6 +51,7 @@ export async function enrolAction(form: FormData): Promise<void> {
     { $setOnInsert: { enrolledAt: new Date() } },
     { upsert: true, returnDocument: 'after' },
   );
+  await ensureRemindersForEnrolment(user.id, String(course._id));
   revalidatePath(`/courses/${slug}`);
   revalidatePath('/dashboard');
   redirect(path(form, `/learn/${slug}`));

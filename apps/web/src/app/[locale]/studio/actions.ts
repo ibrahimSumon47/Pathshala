@@ -2,7 +2,17 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Category, Course, Lesson, QuizQuestion, Section, connectToDatabase, type QuizType } from '@pathshala/db';
+import {
+  Category,
+  Course,
+  Lesson,
+  QuizQuestion,
+  Section,
+  connectToDatabase,
+  createLiveSession,
+  scheduleSessionReminders,
+  type QuizType,
+} from '@pathshala/db';
 import { toPaisa } from '@pathshala/shared';
 import { z } from 'zod';
 import { validateAttachment } from '@/lib/attachments';
@@ -186,6 +196,37 @@ export async function addSectionAction(form: FormData): Promise<void> {
   const last = await Section.findOne({ course: course._id }).sort({ order: -1 }).select('order').lean();
   await Section.create({ course: course._id, title: { bn: titleBn, en: titleEn }, order: (last?.order ?? 0) + 1 });
   revalidatePath(`/studio/${courseId}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Schedule one live room and create an in-app reminder for every enrolled student. */
+export async function scheduleSessionAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+
+  const titleBn = text(form, 'titleBn').trim();
+  const titleEn = text(form, 'titleEn').trim();
+  const startsAtRaw = text(form, 'startsAt');
+  const startsAt = new Date(startsAtRaw);
+  const duration = Number.parseInt(text(form, 'durationMinutes') || '60', 10);
+  if (!titleBn && !titleEn) fail(form, `/studio/${courseId}`, 'Give the class a title.');
+  if (!startsAtRaw || Number.isNaN(startsAt.getTime())) fail(form, `/studio/${courseId}`, 'Choose a valid date and time.');
+  if (startsAt.getTime() <= Date.now()) fail(form, `/studio/${courseId}`, 'The class must start in the future.');
+  if (!Number.isInteger(duration) || duration < 15 || duration > 240) fail(form, `/studio/${courseId}`, 'Duration is 15-240 minutes.');
+
+  const session = await createLiveSession({
+    courseId: course.id,
+    instructorId: user.id,
+    title: { bn: titleBn.slice(0, 160), en: titleEn.slice(0, 160) },
+    description: { bn: text(form, 'descriptionBn').trim().slice(0, 800), en: text(form, 'descriptionEn').trim().slice(0, 800) },
+    startsAt,
+    durationMinutes: duration,
+  });
+  await scheduleSessionReminders(session.id);
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath(`/live/${course.slug}`);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));
 }
 

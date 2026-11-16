@@ -340,6 +340,27 @@ webhook. Unique `(provider, eventId)` and `(provider, providerRef)` rows plus a 
 `status: {$ne: 'paid'}` update make replays harmless. Receipts are generated at that moment.
 Revisit: never; a redirect-only fulfilment is a fraud hole.
 
+## 2026-11-16 — Live rooms are Jitsi rooms keyed by a generated name
+
+A live session stores an unguessable room name derived from a UUID; the page embeds
+`meet.jit.si` in an iframe and always renders a new-tab link for browsers that block the
+embed. Access is checked against the course enrolment before the room name reaches the
+page, because a Jitsi room name is the only secret. Jitsi's free public service needs no
+account or key and keeps the project free forever; the trade-off is that anyone with a
+leaked room name can join, so names are never printed on the public course page.
+Revisit: move to JaaS or a self-hosted Jitsi if a room needs waiting lists or recording.
+
+## 2026-11-16 — Reminders use a binary min-heap and idempotent claims
+
+Due reminder rows are pushed into a binary min-heap ordered by `dueAt`: building from N rows
+is O(N), each pop is O(log N), and the dispatcher drains only the due prefix. Before
+sending, a guarded `findOneAndUpdate({status: 'pending'})` claims the row, so two workers or a
+retry cannot notify twice; the notification has a unique `(user, kind, session)` key. In-app
+delivery is the primary channel. Email is optional and runs only when `RESEND_API_KEY` and a
+verified `REMINDER_EMAIL_FROM` exist; a failed email is recorded on the reminder without
+losing the in-app message. `pnpm reminders:dispatch` is the cron entry point.
+Revisit: a durable queue if delivery volume outgrows one process; the heap itself stays.
+
 ## 2026-11-16 — PayBridge is a separate app with its own merchant boundary
 
 `apps/paybridge` runs on its own port and Vercel project. It stores hashed merchant API keys,

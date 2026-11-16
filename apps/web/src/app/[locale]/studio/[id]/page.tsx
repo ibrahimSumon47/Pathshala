@@ -1,4 +1,4 @@
-import { ATTACHMENT_MIME_TYPES, listCategories } from '@pathshala/db';
+import { ATTACHMENT_MIME_TYPES, listAttendance, listCategories, listCourseSessions } from '@pathshala/db';
 import { notFound } from 'next/navigation';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { requireRole } from '@/lib/auth/guard';
 import { getStudioCourse } from '@/lib/studio';
-import { addLessonAction, addSectionAction, updateCourseAction } from '../actions';
+import { addLessonAction, addSectionAction, scheduleSessionAction, updateCourseAction } from '../actions';
 import { studioCopy } from '../copy';
 import styles from '../studio.module.css';
 
@@ -32,6 +32,8 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
   const copy = studioCopy(language);
   const categories = await listCategories();
   const published = course.status === 'published';
+  const sessions = await listCourseSessions(course.id);
+  const attendance = await Promise.all(sessions.map((session) => listAttendance(session.id)));
 
   return (
     <div className={styles.page}>
@@ -193,6 +195,46 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                 <Field id="sectionTitleEn" name="titleEn" label={copy.sectionTitleEn} maxLength={200} />
               </div>
               <Button type="submit">{copy.addSection}</Button>
+            </form>
+          </details>
+        </section>
+
+        <section className={styles.panel}>
+          <h2 className={styles.sectionHeading}>{language === 'en' ? 'Live classes' : 'লাইভ ক্লাস'}</h2>
+          {sessions.length === 0 ? <p className={styles.empty}>{language === 'en' ? 'No live classes scheduled.' : 'কোনো লাইভ ক্লাস নেই।'}</p> : null}
+          {sessions.map((session, index) => (
+            <div key={session.id} className={styles.sectionBlock}>
+              <h3 className={styles.sectionTitle}>{session.title[language] || session.title.en || session.title.bn}</h3>
+              <p className={styles.meta}>
+                {new Date(session.startsAt).toLocaleString(locale)} · {session.durationMinutes} min · {session.status} ·{' '}
+                {language === 'en' ? 'attending' : 'উপস্থিত'}: {attendance[index]?.length ?? 0}
+              </p>
+              {attendance[index]?.length ? (
+                <p className={styles.meta}>{attendance[index].map((row) => row.studentName).join(', ')}</p>
+              ) : null}
+              <Link href={`/live/${course.slug}`} className={styles.lessonLink} style={{ marginTop: '0.5rem', display: 'inline-block' }}>
+                {language === 'en' ? 'Open live room →' : 'লাইভ রুম খুলুন →'}
+              </Link>
+            </div>
+          ))}
+          <details className={styles.disclosure}>
+            <summary>{language === 'en' ? 'Schedule a live class' : 'লাইভ ক্লাস যোগ করুন'}</summary>
+            <form action={scheduleSessionAction} className={styles.form}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="courseId" value={course.id} />
+              <div className={styles.two}>
+                <Field id="live-title-bn" name="titleBn" label={copy.titleBn} maxLength={160} />
+                <Field id="live-title-en" name="titleEn" label={copy.titleEn} maxLength={160} />
+              </div>
+              <div className={styles.two}>
+                <Field id="live-starts" name="startsAt" type="datetime-local" label={language === 'en' ? 'Starts (server local time)' : 'শুরু (সার্ভারের স্থানীয় সময়)'} required />
+                <Field id="live-duration" name="durationMinutes" type="number" min={15} max={240} defaultValue={60} label={language === 'en' ? 'Minutes' : 'মিনিট'} />
+              </div>
+              <div className={styles.two}>
+                <Textarea id="live-description-bn" name="descriptionBn" label={copy.descriptionBn} defaultValue="" />
+                <Textarea id="live-description-en" name="descriptionEn" label={copy.descriptionEn} defaultValue="" />
+              </div>
+              <Button type="submit">{language === 'en' ? 'Schedule class' : 'ক্লাস নির্ধারণ করুন'}</Button>
             </form>
           </details>
         </section>

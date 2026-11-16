@@ -1,10 +1,16 @@
 # Handoff
 
-Updated: 2026-11-16, after the P4 payments slice.
+Updated: 2026-11-16, after the P5 live classes slice.
 
 ## Where we are
 
-P4 is complete. A paid course opens `/checkout/[orderNumber]` with an order summary, coupon
+P5 is complete. The studio schedules a live session with a generated Jitsi room; the course
+live page embeds the next room (with a new-tab fallback), checks attendance once per learner
+and downloads a stable `.ics`. A binary min-heap drains due reminders into in-app dashboard
+notifications; `pnpm reminders:dispatch` is the cron path and email stays off until a sender
+key and domain exist.
+
+P4 remains complete. A paid course opens `/checkout/[orderNumber]` with an order summary, coupon
 and two test rails. PayBridge is a fully local sandbox gateway in `apps/paybridge` on
 `:59801`: merchant API key, hosted checkout, signed webhook with three attempts and a manual
 retry, refunds, ledger and a password-gated dashboard. Stripe checkout and signature
@@ -41,18 +47,17 @@ Demo accounts are on by default in development and off in production unless
 
 ## Exact next step
 
-Start P5 in this order; no owner key is required:
+Start P6 in this order; no owner key is required:
 
-1. Add LiveSession, Attendance and Reminder models with a unique `(course, startsAt)`
-   session key and an attendance row per student/session.
-2. Instructor studio scheduling form and course-detail/live page listing upcoming sessions
-   with a Jitsi room link; fall back to opening the room in a new tab when the embed is
-   blocked.
-3. Attendance check-in guarded by course access; record join time once per student.
-4. Reminder scheduling uses a binary min-heap (documented in `DECISIONS.md`) and delivers
-   in-app first; email is optional and only when a free sender is verified. Add the `.ics`
-   download with stable UIDs.
-5. Browser-verify schedule, join, attendance, `.ics`, reminder, then update `features.json`,
+1. Add the Certificate model and a printable certificate route that only resolves for a
+   completed enrolment; store one certificate number per student/course.
+2. Instructor analytics: per-course paid sales, revenue in paisa, completion percent and
+   the existing attendance counts, with honest empty states.
+3. Expand `/admin` into a read-only operations view: users, courses, orders, webhook events
+   and certificate counts; no destructive actions yet.
+4. Add an append-only AuditEvent for admin reads of sensitive lists, with actor, action,
+   target and timestamp; cover it with an integration test.
+5. Browser-verify certificate, analytics, admin and audit, then update `features.json`,
    `PROJECT_STATE`, `DECISIONS` and this file; run the full gate and push one slice.
 
 ## Local commands
@@ -83,6 +88,10 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Files worth knowing
 
+- `packages/db/src/live.ts` — scheduling, access checks, attendance, reminders and notifications.
+- `packages/shared/src/min-heap.ts` — the binary heap behind reminder dispatch.
+- `apps/web/src/app/[locale]/live/[slug]/*` — the live room, check-in and calendar links.
+- `apps/web/src/app/api/sessions/[id]/calendar/route.ts` — authenticated `.ics` download.
 - `packages/db/src/commerce.ts` — orders, coupons, paid/refund state machine and ledger.
 - `apps/paybridge` — merchant API, hosted checkout, signed deliveries, dashboard.
 - `apps/web/src/lib/payments/*` — Stripe body/signature and PayBridge client/signature.
@@ -100,6 +109,6 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P4 are complete
-and the project is 30/47, with 17 features still to build (P5–P8). The gate must exit 0 before
+`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P5 are complete
+and the project is 35/47, with 12 features still to build (P6–P8). The gate must exit 0 before
 the final handover, which also means every later phase's evidence exists.

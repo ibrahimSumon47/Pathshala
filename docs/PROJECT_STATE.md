@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-mode checkout, PayBridge is a working standalone gateway, and orders, coupons, receipts and ledgers reconcile. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 5 complete. Learners can pay through a signed test-mode checkout and join scheduled live classes with attendance, reminders and calendar files. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -14,7 +14,7 @@ Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-m
 | P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-16 |
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-16 |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-16 (real Stripe redirect waits on owner keys) |
-| P5 | Live classes, attendance, reminders, calendar files | not started |
+| P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-16 (optional email waits on a sender key) |
 | P6 | Certificates, analytics, admin area, audit log | not started |
 | P7 | Seed data, production e2e, a11y, performance, security review | not started |
 | P8 | Portfolio README, demo script, deploy guide | not started |
@@ -41,6 +41,11 @@ Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-m
   enrolled courses with progress, saved courses, receipts and orders. Models: Enrolment,
   QuizQuestion, QuizAttempt, Note, Question, Review, Wishlist, Order, Coupon, Payment,
   LedgerEntry, WebhookEvent.
+- Live classes: the studio schedules a session with a generated Jitsi room; `/live/[slug]`
+  embeds the next room with a new-tab fallback, records one attendance row per learner and
+  offers `.ics` downloads. A min-heap drains due reminders into in-app notifications with
+  an idempotent status guard; `pnpm reminders:dispatch` is the cron entry point and email
+  is attempted only when `RESEND_API_KEY` and `REMINDER_EMAIL_FROM` exist.
 - Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test
   rails. `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook
   events, payment references and order status guards. Signed webhooks live at
@@ -68,9 +73,9 @@ Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-m
 
 ## Verification recorded 2026-11-16
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (107 tests: 12 tokens, 27 db, 10 shared,
-  41 web, 17 API) and `pnpm build` all exit 0 locally, including the PayBridge build. The
-  API integration tests boot `mongodb-memory-server`; no Atlas credentials are needed.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (116 tests: 12 tokens, 30 db, 13 shared,
+  44 web, 17 API) and `pnpm build` all exit 0 locally, including the PayBridge build. The
+  API and live integration tests boot `mongodb-memory-server`; no Atlas credentials are needed.
 - Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
   admin at 1440px in light and dark; earlier phone pass at 390px and a 320px overflow
   check. This pass found and fixed two real theme defects: a soft language switch dropped
@@ -105,9 +110,16 @@ Snapshot: 2026-11-16, Phase 4 complete. Learners can pay through a signed test-m
   platform; a refund reversed both and set the enrolment to refunded. The failed delivery
   retry moved to delivered. A signed Stripe fixture event fulfilled another order and the
   replay returned `duplicate: true`.
+- Phase 5 browser flow: the instructor scheduled "Debugging clinic" for 2026-11-20, 90
+  minutes; the enrolled student opened the seeded room with the Jitsi iframe and a new-tab
+  fallback, checked in, saw "You are marked present" and appeared in the studio attendance
+  log. The dashboard delivered one in-app reminder and listed the upcoming class; the
+  authenticated `.ics` download returned a valid VCALENDAR with DTSTART and SUMMARY.
+  `pnpm reminders:dispatch` exited 0 against the seeded memory DB.
 - Not verified yet: a real Stripe redirect and signature (test keys absent; fixture path is
-  proven), a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in, cross-instance
-  rate limiting, and axe / Lighthouse passes.
+  proven), a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in, optional email
+  delivery (no Resend key and no owned sender domain), cross-instance rate limiting, and
+  axe / Lighthouse passes.
 
 ## Environment facts
 

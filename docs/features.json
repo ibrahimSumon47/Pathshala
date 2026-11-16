@@ -350,36 +350,56 @@
       "id": "p5.sessions",
       "phase": "P5",
       "title": "Live session scheduling per course",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Instructors schedule a session from the course studio; the server validates a future start and 15-240 minutes",
+        "LiveSession stores a unique generated Jitsi room, duration and status; scheduleSessionReminders creates one row per enrolled student",
+        "Browser-verified: instructor scheduled \"Debugging clinic\" for 2026-11-20, 90 minutes; it appeared in the studio list and the student live page"
+      ]
     },
     {
       "id": "p5.jitsi",
       "phase": "P5",
       "title": "Jitsi room embed or new-tab fallback",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "The live page embeds meet.jit.si in an iframe with camera and microphone permissions and always shows a new-tab join link",
+        "The room name is generated from a UUID and not exposed on the public course page; access is checked against the enrolment"
+      ]
     },
     {
       "id": "p5.attendance",
       "phase": "P5",
       "title": "Attendance log",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Check-in is a server action guarded by course access; Attendance has a unique (session, student) index and records joinedAt once",
+        "Browser-verified: the enrolled student checked in, saw \"You are marked present\" and the studio attendance log showed 1 attendee, Nusrat Jahan",
+        "Integration test covers first check-in, idempotent second check-in, outsider rejection and the instructor name list"
+      ]
     },
     {
       "id": "p5.reminders",
       "phase": "P5",
       "title": "Reminder scheduler with in-app delivery and optional email",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "A binary min-heap (O(n) build, O(log n) pop) drains due reminders; a guarded status update and unique notification key make redelivery harmless",
+        "Browser-verified: the seeded session produced \"1 reminder delivered\" with an in-app message and an upcoming-class row on the student dashboard",
+        "pnpm reminders:dispatch drains every due reminder for cron; optional email sends through Resend only when RESEND_API_KEY and REMINDER_EMAIL_FROM are present (no key in this build)",
+        "Integration test drains one due reminder, checks the notification link and proves a second run sends nothing"
+      ]
     },
     {
       "id": "p5.ics",
       "phase": "P5",
       "title": "Downloadable .ics calendar file",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "GET /api/sessions/[id]/calendar returns a CRLF .ics with a stable UID, UTC start/end, escaped text and 75-octet folding",
+        "Browser-verified: the authenticated download returned BEGIN:VCALENDAR, DTSTART and SUMMARY for the seeded session",
+        "Three unit tests cover the VCALENDAR shape, escaping and repeated-download stability"
+      ]
     },
     {
       "id": "p6.certificates",

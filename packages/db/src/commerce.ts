@@ -8,6 +8,7 @@ import { LedgerEntry } from './models/ledger-entry';
 import { Order, type OrderDoc, type PaymentProvider } from './models/order';
 import { Payment } from './models/payment';
 import { WebhookEvent } from './models/webhook-event';
+import { ensureRemindersForEnrolment } from './live';
 
 export class CommerceError extends Error {
   constructor(
@@ -240,6 +241,7 @@ export async function markOrderPaid({
     },
     { upsert: true },
   );
+  await ensureRemindersForEnrolment(String(updated.user), String(updated.course));
 
   if (updated.couponCode) {
     await Coupon.updateOne({ code: updated.couponCode }, { $inc: { redeemedCount: 1 } });

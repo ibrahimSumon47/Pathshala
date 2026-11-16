@@ -332,6 +332,9 @@ importers:
         specifier: ^9.12.1
         version: 9.12.1
     devDependencies:
+      mongodb-memory-server:
+        specifier: 11.3.0
+        version: 11.3.0(bare-buffer@3.7.2)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
