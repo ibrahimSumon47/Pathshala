@@ -43,6 +43,8 @@ Snapshot: 2026-11-16, end of P0. Update this file at the end of every slice.
 - Hook self-tests: a fake Stripe key was blocked by pre-commit; a commit by a foreign
   author and a commit with a co-author trailer were both blocked by the shared checker;
   the owner's real history passed.
+- GitHub Actions CI run 43886044371 is green: commit identity, secret scan, quality and
+  dependency audit. CodeQL run 43886042634 is green.
 - No app has been deployed yet, so nothing is live.
 
 ## Environment facts
