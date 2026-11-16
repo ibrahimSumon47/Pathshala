@@ -37,3 +37,9 @@ response before creating prices, products or webhooks.
 The CI secret job saved the gitleaks tarball as `/tmp/gitleaks.tar.gz` while the checksums
 file lists `gitleaks_8.30.1_linux_x64.tar.gz`, so `sha256sum -c` failed before any scan
 ran. Keep the release filename when verifying a checksum.
+
+## 2026-11-16 — setup-node caches pnpm before pnpm exists
+
+The commit-identity job failed with "Unable to locate executable file: pnpm": setup-node v5
+reads the packageManager field and prepares a pnpm cache before pnpm is installed. That job
+only reads git history, so package-manager caching is disabled there.

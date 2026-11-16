@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # This job only reads git history; skip package-manager auto-detection.
+          package-manager-cache: false
       - name: Every commit must belong to the owner
         run: node scripts/check-commits.mjs --all
 
@@ -54,7 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -75,7 +79,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
