@@ -405,29 +405,45 @@
       "id": "p6.certificates",
       "phase": "P6",
       "title": "Certificates with QR and public verification page",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Certificate model has unique student/course and public-code indexes; issuance requires a completed enrolment and keeps the first certificate",
+        "The public /verify/[code] page renders a printable certificate with learner, course, instructor, number, issue date and a QR data URL generated server-side from the verification URL",
+        "Browser-verified: the completed JavaScript enrolment issued PS-2026-TP8VTU / code TP8VTU59XX with a QR image; the page returned 200 without a session and the dashboard linked to it",
+        "Unit tests cover the unambiguous 16-character code and the year/code number; an integration test proves one certificate per completed course and public lookup"
+      ]
     },
     {
       "id": "p6.instructor-analytics",
       "phase": "P6",
       "title": "Instructor analytics",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "getInstructorAnalytics aggregates paid orders, revenue, distinct students, completion and attendance scoped to the instructor course ids",
+        "Browser-verified on /studio: revenue ৳1,200, 1 paid sale, 1 student, 50% completion, 1 attendance and a per-course performance table"
+      ]
     },
     {
       "id": "p6.admin",
       "phase": "P6",
       "title": "Admin users, course approval and reports",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Admin overview shows users, courses, published courses, enrolments, certificates, live sessions, test revenue and paid orders",
+        "Course approval changes publish/draft/archive status with publishedAt maintained; instructor access can be granted or revoked but admins and the acting account are immutable",
+        "Browser-verified: Studio Smoke Course was unpublished and republished; the student account gained and lost instructor access; both actions appeared in the audit log"
+      ]
     },
     {
       "id": "p6.audit",
       "phase": "P6",
       "title": "Audit log with injection-safe CSV export",
-      "status": "todo",
-      "evidence": []
+      "status": "done",
+      "evidence": [
+        "Append-only AuditEvent rows record course.status, user.instructor_grant and user.instructor_revoke with actor and metadata; the admin table shows the latest 20",
+        "GET /api/admin/audit/export is admin-only and buildCsv quotes every cell, prefixes = + - @ tab CR with an apostrophe and uses CRLF",
+        "Browser-verified: the export returned 200 text/csv with attachment filename, a UTF-8 BOM and the expected rows; unit tests cover quotes, commas and formula injection"
+      ]
     },
     {
       "id": "p7.seed",

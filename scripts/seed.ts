@@ -9,6 +9,7 @@ import {
   Note,
   Reminder,
   ensureRemindersForEnrolment,
+  issueCertificateIfEligible,
   QuizQuestion,
   Review,
   Section,
@@ -325,6 +326,7 @@ export async function seedDatabase(): Promise<void> {
     },
     { upsert: true, returnDocument: 'after' },
   );
+  await issueCertificateIfEligible(studentId, String(programming._id));
   await Review.findOneAndUpdate(
     { student: studentId, course: programming._id },
     { rating: 5, body: 'প্রথম পাঠটা সহজ করে লেখা, আর কাজটা ছোট ছিল।' },

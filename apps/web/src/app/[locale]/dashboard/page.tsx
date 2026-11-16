@@ -48,6 +48,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             <Link href="/dashboard/orders" className={styles.ordersLink}>
               {t('orders')}
             </Link>
+            {learning.certificateCount > 0 ? (
+              <p className={styles.courseMeta}>
+                {learning.certificateCount} {locale === 'en' ? 'certificate(s)' : 'টি সার্টিফিকেট'}
+              </p>
+            ) : null}
             <form action={signOutAction} className={styles.signOut}>
               <button type="submit" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
                 {t('signOut')}
@@ -79,9 +84,21 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                       <span className={styles.courseTitle}>{course.title[locale === 'en' ? 'en' : 'bn'] || course.title.en}</span>
                       <span className={styles.courseMeta}>{course.progressPercent}% · {course.status}</span>
                     </Link>
-                    <div className={styles.courseProgress} role="progressbar" aria-valuenow={course.progressPercent} aria-valuemin={0} aria-valuemax={100}>
+                    <div
+                      className={styles.courseProgress}
+                      role="progressbar"
+                      aria-label={`${course.title[locale === 'en' ? 'en' : 'bn'] || course.title.en}: ${course.progressPercent}%`}
+                      aria-valuenow={course.progressPercent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
                       <span style={{ width: `${course.progressPercent}%` }} />
                     </div>
+                    {course.certificateCode ? (
+                      <Link href={`/verify/${course.certificateCode}`} className={styles.certificateLink}>
+                        {locale === 'en' ? 'Certificate' : 'সার্টিফিকেট'}
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ul>

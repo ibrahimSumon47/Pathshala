@@ -100,7 +100,7 @@
 
 .meta {
   margin-top: auto;
-  color: var(--color-ink-subtle);
+  color: var(--color-ink-muted);
   font-size: var(--text-sm);
 }
 

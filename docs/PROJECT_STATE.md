@@ -1,6 +1,6 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 5 complete. Learners can pay through a signed test-mode checkout and join scheduled live classes with attendance, reminders and calendar files. Update this file at the end of every slice.
+Snapshot: 2026-11-16, Phase 6 complete. Learners can pay, learn, join live classes and keep a verifiable certificate; instructors see per-course analytics and admins have audited approval and reporting tools. Update this file at the end of every slice.
 
 ## Phase status
 
@@ -15,7 +15,7 @@ Snapshot: 2026-11-16, Phase 5 complete. Learners can pay through a signed test-m
 | P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-16 |
 | P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-16 (real Stripe redirect waits on owner keys) |
 | P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-16 (optional email waits on a sender key) |
-| P6 | Certificates, analytics, admin area, audit log | not started |
+| P6 | Certificates, analytics, admin area, audit log | done — 2026-11-16 |
 | P7 | Seed data, production e2e, a11y, performance, security review | not started |
 | P8 | Portfolio README, demo script, deploy guide | not started |
 
@@ -41,6 +41,13 @@ Snapshot: 2026-11-16, Phase 5 complete. Learners can pay through a signed test-m
   enrolled courses with progress, saved courses, receipts and orders. Models: Enrolment,
   QuizQuestion, QuizAttempt, Note, Question, Review, Wishlist, Order, Coupon, Payment,
   LedgerEntry, WebhookEvent.
+- Certificates: completion issues one certificate per learner/course with a random public
+  code and printed number. `/verify/[code]` is public and renders a QR code pointing at the
+  same page; the dashboard links to it.
+- Analytics and admin: `/studio` shows revenue, sales, students, completion, attendance and
+  a per-course table. `/admin` reports operating counts, approves course status, grants or
+  revokes instructor access and lists the audit trail. The audited CSV export is quoted and
+  formula-safe.
 - Live classes: the studio schedules a session with a generated Jitsi room; `/live/[slug]`
   embeds the next room with a new-tab fallback, records one attendance row per learner and
   offers `.ics` downloads. A min-heap drains due reminders into in-app notifications with
@@ -116,10 +123,16 @@ Snapshot: 2026-11-16, Phase 5 complete. Learners can pay through a signed test-m
   log. The dashboard delivered one in-app reminder and listed the upcoming class; the
   authenticated `.ics` download returned a valid VCALENDAR with DTSTART and SUMMARY.
   `pnpm reminders:dispatch` exited 0 against the seeded memory DB.
+- Phase 6 browser flow: completing the JavaScript course issued certificate
+  PS-2026-TP8VTU (code TP8VTU59XX) with a server-generated QR; `/verify/TP8VTU59XX` returned
+  200 without a session. The instructor studio showed ৳1,200 revenue, 1 paid sale, 1 student,
+  50% completion, 1 attendance and per-course rows. The admin unpublished and republished
+  Studio Smoke Course, granted and revoked the student's instructor role, saw both audit
+  rows and downloaded a 200 `text/csv` export with a BOM.
 - Not verified yet: a real Stripe redirect and signature (test keys absent; fixture path is
   proven), a deployed Mongo-backed catalogue (no Atlas URI), Google sign-in, optional email
   delivery (no Resend key and no owned sender domain), cross-instance rate limiting, and
-  axe / Lighthouse passes.
+  axe / Lighthouse passes (now covered by the P7 suite against the production build).
 
 ## Environment facts
 

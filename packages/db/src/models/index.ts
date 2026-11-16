@@ -1,6 +1,8 @@
 export { Attendance } from './attendance';
 export type { AttendanceDoc } from './attendance';
 export { AuditEvent } from './audit-event';
+export { Certificate } from './certificate';
+export type { CertificateDoc } from './certificate';
 export type { AuditEventDoc } from './audit-event';
 export { Category } from './category';
 export type { CategoryDoc } from './category';

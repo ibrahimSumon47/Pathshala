@@ -1,6 +1,8 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connectToDatabase, disconnectFromDatabase } from './connection';
+import { getAdminReport, listAuditEvents, setCourseStatus } from './admin';
+import { getCertificateByCode, issueCertificateIfEligible } from './certificates';
 import {
   checkInToSession,
   createLiveSession,
@@ -112,5 +114,26 @@ describe('live classes against an in-memory MongoDB', () => {
     expect(await checkInToSession(sessionId, strangerId, ['student'])).toBeNull();
     const list = await listAttendance(sessionId);
     expect(list.map((row) => row.studentName)).toEqual(['Nusrat Jahan']);
+  });
+
+  it('issues one certificate after completion and verifies it publicly', async () => {
+    await Enrolment.updateOne({ student: studentId, course: courseId }, { status: 'completed', progressPercent: 100 });
+    const certificate = await issueCertificateIfEligible(studentId, courseId);
+    expect(certificate?.code).toMatch(/^[A-HJ-NP-Z2-9]{16}$/);
+    expect(certificate?.studentName).toBe('Nusrat Jahan');
+    const again = await issueCertificateIfEligible(studentId, courseId);
+    expect(again?.code).toBe(certificate?.code);
+    expect((await getCertificateByCode(certificate!.code))?.courseSlug).toBe('javascript');
+  });
+
+  it('audits an admin course decision and reports the counts', async () => {
+    expect(await setCourseStatus(courseId, 'draft', instructorId)).toBe(true);
+    const audit = await listAuditEvents();
+    expect(audit[0]?.action).toBe('course.status');
+    expect(audit[0]?.actorName).toBe('Rafiqul Islam');
+    const report = await getAdminReport();
+    expect(report.users).toBe(3);
+    expect(report.certificates).toBe(1);
+    expect(report.courses).toBe(1);
   });
 });

@@ -23,4 +23,8 @@ describe('verifySignedPayload', () => {
     expect(verifySignedPayload(payload, null, secret, now)).toBe(false);
     expect(verifySignedPayload(payload, 'v1=abc', secret, now)).toBe(false);
   });
+
+  it('rejects a signature made with a different secret', () => {
+    expect(verifySignedPayload(payload, signPayload(payload, 'whsec_other', now), secret, now)).toBe(false);
+  });
 });

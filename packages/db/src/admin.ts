@@ -1,0 +1,194 @@
+import { Types } from 'mongoose';
+import { connectToDatabase } from './connection';
+import { AuditEvent } from './models/audit-event';
+import { Certificate } from './models/certificate';
+import { Course, type CourseStatus } from './models/course';
+import { Enrolment } from './models/enrolment';
+import { LiveSession } from './models/live-session';
+import { Order } from './models/order';
+import { User } from './models/user';
+
+export type AdminCourseRow = {
+  id: string;
+  slug: string;
+  title: { bn?: string; en?: string };
+  status: string;
+  instructorName: string;
+  pricePaisa: number;
+  updatedAt: string;
+};
+
+export type AuditRow = {
+  id: string;
+  actorName: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type AdminReport = {
+  users: number;
+  courses: number;
+  publishedCourses: number;
+  enrolments: number;
+  certificates: number;
+  liveSessions: number;
+  paidOrders: number;
+  revenuePaisa: number;
+};
+
+type AuditInput = {
+  actor: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  metadata?: Record<string, unknown>;
+  ip?: string;
+  userAgent?: string;
+};
+
+/** Append one audit row. Callers pass ids and safe context only, never secrets. */
+export async function recordAuditEvent(input: AuditInput): Promise<void> {
+  await connectToDatabase();
+  const event: {
+    actor: Types.ObjectId | null;
+    action: string;
+    entityType: string;
+    metadata: Record<string, unknown>;
+    entityId?: Types.ObjectId;
+    ip?: string;
+    userAgent?: string;
+  } = {
+    actor: Types.ObjectId.isValid(input.actor) ? new Types.ObjectId(input.actor) : null,
+    action: input.action.slice(0, 80),
+    entityType: input.entityType.slice(0, 40),
+    metadata: input.metadata ?? {},
+  };
+  if (input.entityId && Types.ObjectId.isValid(input.entityId)) event.entityId = new Types.ObjectId(input.entityId);
+  if (input.ip) event.ip = input.ip.slice(0, 80);
+  if (input.userAgent) event.userAgent = input.userAgent.slice(0, 400);
+  await AuditEvent.create(event);
+}
+
+/** One screen of operating numbers for the admin overview. */
+export async function getAdminReport(): Promise<AdminReport> {
+  await connectToDatabase();
+  const [users, courses, publishedCourses, enrolments, certificates, liveSessions, paidOrders, revenue] = await Promise.all([
+    User.countDocuments(),
+    Course.countDocuments(),
+    Course.countDocuments({ status: 'published' }),
+    Enrolment.countDocuments({ status: { $ne: 'refunded' } }),
+    Certificate.countDocuments({ revokedAt: null }),
+    LiveSession.countDocuments(),
+    Order.countDocuments({ status: 'paid' }),
+    Order.aggregate<{ total: number }>([
+      { $match: { status: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$totalPaisa' } } },
+    ]),
+  ]);
+  return {
+    users,
+    courses,
+    publishedCourses,
+    enrolments,
+    certificates,
+    liveSessions,
+    paidOrders,
+    revenuePaisa: revenue[0]?.total ?? 0,
+  };
+}
+
+/** Courses waiting for or holding a published state, with their instructor. */
+export async function listAdminCourses(): Promise<AdminCourseRow[]> {
+  await connectToDatabase();
+  const courses = await Course.find().sort({ updatedAt: -1 }).limit(100).lean();
+  const instructors = await User.find({ _id: { $in: courses.map((course) => course.instructor) } })
+    .select('name')
+    .lean();
+  const names = new Map(instructors.map((instructor) => [String(instructor._id), instructor.name]));
+  return courses.map((course) => ({
+    id: String(course._id),
+    slug: course.slug,
+    title: course.title,
+    status: course.status,
+    instructorName: names.get(String(course.instructor)) ?? 'Instructor',
+    pricePaisa: course.pricePaisa,
+    updatedAt: course.updatedAt.toISOString(),
+  }));
+}
+
+/** Recent audit rows with the actor's display name resolved in one query. */
+export async function listAuditEvents(limit = 30): Promise<AuditRow[]> {
+  await connectToDatabase();
+  const rows = await AuditEvent.find().sort({ createdAt: -1 }).limit(Math.min(limit, 200)).lean();
+  const actors = await User.find({ _id: { $in: rows.map((row) => row.actor).filter(Boolean) } })
+    .select('name')
+    .lean();
+  const names = new Map(actors.map((actor) => [String(actor._id), actor.name]));
+  return rows.map((row) => ({
+    id: String(row._id),
+    actorName: row.actor ? names.get(String(row.actor)) ?? 'Admin' : 'System',
+    action: row.action,
+    entityType: row.entityType,
+    entityId: row.entityId ? String(row.entityId) : '',
+    metadata: (row.metadata ?? {}) as Record<string, unknown>,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
+/** Publish, unpublish or archive a course and leave an audit trail. */
+export async function setCourseStatus(
+  courseId: string,
+  status: CourseStatus,
+  actorId: string,
+): Promise<boolean> {
+  await connectToDatabase();
+  const allowed: CourseStatus[] = ['draft', 'pending', 'published', 'archived'];
+  if (!allowed.includes(status) || !Types.ObjectId.isValid(courseId)) return false;
+  const course = await Course.findById(courseId).select('status slug').lean();
+  if (!course) return false;
+  await Course.updateOne(
+    { _id: courseId },
+    { status, publishedAt: status === 'published' ? new Date() : null },
+  );
+  await recordAuditEvent({
+    actor: actorId,
+    action: 'course.status',
+    entityType: 'course',
+    entityId: courseId,
+    metadata: { from: course.status, to: status, slug: course.slug },
+  });
+  return true;
+}
+
+/** Grant or revoke instructor access; admins and the acting account are immutable here. */
+export async function setInstructorAccess(
+  userId: string,
+  grant: boolean,
+  actorId: string,
+): Promise<boolean> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(userId) || userId === actorId) return false;
+  const target = await User.findById(userId).select('roles email').lean();
+  if (!target || target.roles.includes('admin')) return false;
+  const roles = new Set(target.roles);
+  if (grant) roles.add('instructor');
+  else roles.delete('instructor');
+  roles.add('student');
+  await User.updateOne({ _id: userId }, { roles: [...roles] });
+  await recordAuditEvent({
+    actor: actorId,
+    action: grant ? 'user.instructor_grant' : 'user.instructor_revoke',
+    entityType: 'user',
+    entityId: userId,
+    metadata: { email: target.email },
+  });
+  return true;
+}
+
+/** Audit rows for CSV export, capped so one request cannot exhaust memory. */
+export async function getAuditRowsForExport(limit = 2000): Promise<AuditRow[]> {
+  return listAuditEvents(Math.min(limit, 2000));
+}

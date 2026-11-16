@@ -1,6 +1,7 @@
 import 'server-only';
 import type { UserRole } from '@pathshala/db';
 import {
+  Certificate,
   Course,
   Enrolment,
   Lesson,
@@ -13,6 +14,7 @@ import {
   User,
   Wishlist,
   connectToDatabase,
+  issueCertificateIfEligible,
 } from '@pathshala/db';
 
 type Localized = { bn?: string; en?: string };
@@ -135,6 +137,7 @@ export type DashboardCourse = {
   progressPercent: number;
   status: string;
   lessonCount: number;
+  certificateCode: string | null;
 };
 
 /** Everything the dashboard needs: active enrolments and saved courses. */
@@ -149,15 +152,27 @@ export async function getDashboardLearning(userId: string): Promise<{
     Wishlist.find({ student: userId }).sort({ createdAt: -1 }).limit(20).lean(),
   ]);
   const courseIds = [...new Set([...enrolments.map((row) => String(row.course)), ...wishlist.map((row) => String(row.course))])];
-  const [courses, lessonCounts] = await Promise.all([
+  const [courses, lessonCounts, certificates] = await Promise.all([
     Course.find({ _id: { $in: courseIds } }).select('slug title pricePaisa').lean(),
     Lesson.aggregate<{ _id: string; count: number }>([
       { $match: { course: { $in: courseIds } } },
       { $group: { _id: '$course', count: { $sum: 1 } } },
     ]),
+    Certificate.find({ student: userId }).select('course code').lean(),
   ]);
   const courseMap = new Map(courses.map((course) => [String(course._id), course]));
   const countMap = new Map(lessonCounts.map((row) => [String(row._id), row.count]));
+  const certificateMap = new Map(certificates.map((row) => [String(row.course), row.code]));
+
+  // Backfill a certificate for courses completed before the certificate slice.
+  const missing = enrolments.filter(
+    (enrolment) => enrolment.status === 'completed' && !certificateMap.has(String(enrolment.course)),
+  );
+  if (missing.length > 0) {
+    await Promise.all(missing.map((enrolment) => issueCertificateIfEligible(userId, String(enrolment.course))));
+    const refreshed = await Certificate.find({ student: userId }).select('course code').lean();
+    refreshed.forEach((row) => certificateMap.set(String(row.course), row.code));
+  }
 
   return {
     courses: enrolments.flatMap((enrolment) => {
@@ -171,6 +186,7 @@ export async function getDashboardLearning(userId: string): Promise<{
           progressPercent: enrolment.progressPercent,
           status: enrolment.status,
           lessonCount: countMap.get(String(course._id)) ?? 0,
+          certificateCode: certificateMap.get(String(course._id)) ?? null,
         },
       ];
     }),
@@ -179,7 +195,7 @@ export async function getDashboardLearning(userId: string): Promise<{
       if (!course) return [];
       return [{ id: String(course._id), slug: course.slug, title: course.title, pricePaisa: course.pricePaisa }];
     }),
-    certificateCount: 0,
+    certificateCount: certificateMap.size,
   };
 }
 

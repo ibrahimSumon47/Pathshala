@@ -21,7 +21,7 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
   return (
     <header className={styles.header}>
       <div className={cn('container', styles.inner)}>
-        <Link href="/" className={styles.brand} aria-label={t('homeLabel')}>
+        <Link href="/" className={styles.brand}>
           <span className={styles.brandBangla} lang="bn">
             {t('brand')}
           </span>

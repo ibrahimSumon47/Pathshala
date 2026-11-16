@@ -7,6 +7,7 @@ import {
   Enrolment,
   Lesson,
   Note,
+  issueCertificateIfEligible,
   ensureRemindersForEnrolment,
   Question,
   QuizAttempt,
@@ -91,6 +92,7 @@ async function syncProgress(studentId: string, courseId: string, lessonId: strin
   enrolment.status = finished ? 'completed' : 'active';
   enrolment.completedAt = finished ? (enrolment.completedAt ?? new Date()) : null;
   await enrolment.save();
+  if (finished) await issueCertificateIfEligible(studentId, courseId);
 }
 
 /** Mark one lesson complete for an enrolled reader. */

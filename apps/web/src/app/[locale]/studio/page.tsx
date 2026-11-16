@@ -1,4 +1,4 @@
-import { getInstructorEarnings, listAuthorCourses, listCategories } from '@pathshala/db';
+import { getInstructorAnalytics, listAuthorCourses, listCategories } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -25,10 +25,10 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
   const { error, saved } = await searchParams;
   const user = await requireRole('instructor', 'admin');
   const copy = studioCopy(locale === 'en' ? 'en' : 'bn');
-  const [courses, categories, earnings] = await Promise.all([
+  const [courses, categories, analytics] = await Promise.all([
     listAuthorCourses(user.id, user.roles.includes('admin')),
     listCategories(),
-    getInstructorEarnings(user.id),
+    getInstructorAnalytics(user.id),
   ]);
 
   return (
@@ -37,10 +37,28 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
         <p className={styles.eyebrow}>{copy.eyebrow}</p>
         <h1 className={styles.title}>{copy.title}</h1>
         <p className={styles.lede}>{copy.lede}</p>
-        <p className={styles.meta} style={{ marginTop: '0.75rem' }}>
-          {locale === 'en' ? 'Earnings' : 'আয়'}: {formatPaisa(earnings.totalPaisa, locale as Locale)} · {earnings.sales}{' '}
-          {locale === 'en' ? 'paid sales' : 'টি পরিশোধিত বিক্রয়'}
-        </p>
+        <section className={styles.statGrid} aria-label={locale === 'en' ? 'Teaching analytics' : 'শিক্ষাদানের হিসাব'}>
+          <div className={styles.stat}>
+            <p className={styles.statLabel}>{locale === 'en' ? 'Revenue' : 'আয়'}</p>
+            <p className={styles.statValue}>{formatPaisa(analytics.revenuePaisa, locale as Locale)}</p>
+          </div>
+          <div className={styles.stat}>
+            <p className={styles.statLabel}>{locale === 'en' ? 'Paid sales' : 'পরিশোধিত বিক্রয়'}</p>
+            <p className={styles.statValue}>{analytics.paidSales}</p>
+          </div>
+          <div className={styles.stat}>
+            <p className={styles.statLabel}>{locale === 'en' ? 'Students' : 'শিক্ষার্থী'}</p>
+            <p className={styles.statValue}>{analytics.studentCount}</p>
+          </div>
+          <div className={styles.stat}>
+            <p className={styles.statLabel}>{locale === 'en' ? 'Completion' : 'সম্পন্নতা'}</p>
+            <p className={styles.statValue}>{analytics.completionPercent}%</p>
+          </div>
+          <div className={styles.stat}>
+            <p className={styles.statLabel}>{locale === 'en' ? 'Live attendance' : 'লাইভ উপস্থিতি'}</p>
+            <p className={styles.statValue}>{analytics.attendanceCount}</p>
+          </div>
+        </section>
         {error ? <Alert tone="error">{error}</Alert> : null}
         {saved ? <Alert tone="success">{copy.saved}</Alert> : null}
 
@@ -65,6 +83,41 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
               </Link>
             </Card>
           ))}
+        </section>
+
+        <section className={styles.panel} aria-labelledby="course-analytics">
+          <h2 id="course-analytics" className={styles.sectionHeading}>
+            {locale === 'en' ? 'Course performance' : 'কোর্সের ফলাফল'}
+          </h2>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">{locale === 'en' ? 'Course' : 'কোর্স'}</th>
+                  <th scope="col">{locale === 'en' ? 'Sales' : 'বিক্রয়'}</th>
+                  <th scope="col">{locale === 'en' ? 'Revenue' : 'আয়'}</th>
+                  <th scope="col">{locale === 'en' ? 'Enrolled' : 'নথিভুক্ত'}</th>
+                  <th scope="col">{locale === 'en' ? 'Completed' : 'সম্পন্ন'}</th>
+                  <th scope="col">{locale === 'en' ? 'Attended' : 'উপস্থিত'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analytics.courses.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.title[locale as Locale] || row.title.en || row.title.bn}</td>
+                    <td className={styles.num}>{row.paidSales}</td>
+                    <td className={styles.num}>{formatPaisa(row.revenuePaisa, locale as Locale)}</td>
+                    <td className={styles.num}>{row.enrolmentCount}</td>
+                    <td className={styles.num}>
+                      {row.completionCount} ({row.enrolmentCount ? Math.round((row.completionCount / row.enrolmentCount) * 100) : 0}%)
+                    </td>
+                    <td className={styles.num}>{row.attendanceCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {analytics.courses.length === 0 ? <p className={styles.empty}>{copy.empty}</p> : null}
         </section>
 
         <section className={styles.panel} aria-labelledby="new-course">

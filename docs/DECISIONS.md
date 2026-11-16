@@ -340,6 +340,25 @@ webhook. Unique `(provider, eventId)` and `(provider, providerRef)` rows plus a 
 `status: {$ne: 'paid'}` update make replays harmless. Receipts are generated at that moment.
 Revisit: never; a redirect-only fulfilment is a fraud hole.
 
+## 2026-11-16 — Certificates are public by random code, not by enrolment id
+
+A certificate stores a 16-character code drawn from an alphabet without I, O, 0 or 1,
+plus a printed number with the UTC issue year. The public `/verify/[code]` page joins the
+learner name, course and instructor and never exposes an email. Codes are generated with
+`crypto.randomBytes`; the unique indexes on code and `(student, course)` make reissuance
+idempotent. A QR code is rendered server-side by `qrcode` as a data URL, so verification
+works without a third-party image service.
+Revisit: signed PDFs if a certificate must be printed at scale; the public page stays.
+
+## 2026-11-16 — Admin actions are audited; audit exports are formula-safe
+
+Admin approval and instructor-access changes write an append-only `AuditEvent` with actor,
+action, entity and non-secret metadata. Users cannot change admins or their own roles.
+CSV export quotes every cell and prefixes `=`, `+`, `-`, `@`, tab and CR with an apostrophe,
+because a spreadsheet opening an export is an execution surface. The export is capped at
+2000 rows and is audited too.
+Revisit: if an external SIEM consumes the log, stream events instead of exporting.
+
 ## 2026-11-16 — Live rooms are Jitsi rooms keyed by a generated name
 
 A live session stores an unguessable room name derived from a UUID; the page embeds

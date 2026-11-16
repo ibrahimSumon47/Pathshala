@@ -1,10 +1,14 @@
 # Handoff
 
-Updated: 2026-11-16, after the P5 live classes slice.
+Updated: 2026-11-16, after the P6 trust slice.
 
 ## Where we are
 
-P5 is complete. The studio schedules a live session with a generated Jitsi room; the course
+P6 is complete. Completed courses issue a verifiable certificate with a QR code, the
+instructor studio reports revenue, students, completion and attendance, and the admin area
+approves courses, manages instructor access and exports a formula-safe audit CSV.
+
+P5 remains complete. The studio schedules a live session with a generated Jitsi room; the course
 live page embeds the next room (with a new-tab fallback), checks attendance once per learner
 and downloads a stable `.ics`. A binary min-heap drains due reminders into in-app dashboard
 notifications; `pnpm reminders:dispatch` is the cron path and email stays off until a sender
@@ -47,18 +51,17 @@ Demo accounts are on by default in development and off in production unless
 
 ## Exact next step
 
-Start P6 in this order; no owner key is required:
+Start P7 in this order; no owner key is required:
 
-1. Add the Certificate model and a printable certificate route that only resolves for a
-   completed enrolment; store one certificate number per student/course.
-2. Instructor analytics: per-course paid sales, revenue in paisa, completion percent and
-   the existing attendance counts, with honest empty states.
-3. Expand `/admin` into a read-only operations view: users, courses, orders, webhook events
-   and certificate counts; no destructive actions yet.
-4. Add an append-only AuditEvent for admin reads of sensitive lists, with actor, action,
-   target and timestamp; cover it with an integration test.
-5. Browser-verify certificate, analytics, admin and audit, then update `features.json`,
-   `PROJECT_STATE`, `DECISIONS` and this file; run the full gate and push one slice.
+1. Turn the existing realistic bilingual seed into the documented demo dataset and prove
+   `pnpm db:seed` is idempotent.
+2. Keep the Playwright suite running against `next start` and, once Atlas exists, point
+   `E2E_BASE_URL` at the deployed origin without editing the tests.
+3. Keep axe at zero violations on landing, catalogue, sign-in and dashboard; fix contrast
+   and naming at the component, never with a disable comment.
+4. Record Lighthouse mobile scores for landing and catalogue after every performance change.
+5. Follow `docs/SECURITY.md`, add negative webhook and IDOR checks, then update
+   `features.json`, `PROJECT_STATE` and this file before the P8 package.
 
 ## Local commands
 
@@ -88,6 +91,11 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Files worth knowing
 
+- `packages/db/src/certificates.ts` — eligibility, issuance, public lookup and codes.
+- `packages/db/src/analytics.ts` — instructor revenue, completion and attendance aggregates.
+- `packages/db/src/admin.ts` — approvals, access changes, reports and audit writes.
+- `apps/web/src/lib/csv.ts` — quoted, formula-safe CSV cells.
+- `apps/web/src/app/[locale]/verify/[code]/page.tsx` — public certificate and QR page.
 - `packages/db/src/live.ts` — scheduling, access checks, attendance, reminders and notifications.
 - `packages/shared/src/min-heap.ts` — the binary heap behind reminder dispatch.
 - `apps/web/src/app/[locale]/live/[slug]/*` — the live room, check-in and calendar links.
@@ -109,6 +117,6 @@ both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` exist. The API reads `apps/api/.e
 
 ## Current gate
 
-`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P5 are complete
-and the project is 35/47, with 12 features still to build (P6–P8). The gate must exit 0 before
+`node scripts/check-done.mjs` exits non-zero while features remain open. P1–P6 are complete
+and the project is 39/47, with 8 features still to build (P7–P8). The gate must exit 0 before
 the final handover, which also means every later phase's evidence exists.
