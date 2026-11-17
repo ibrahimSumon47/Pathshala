@@ -13,6 +13,7 @@ import {
   createLiveSession,
   moveLesson,
   notifyWishlistPriceDrop,
+  releaseAttendance,
   saveQuestionToBank,
   scheduleSessionReminders,
   updateLiveSessionCapacity,
@@ -287,6 +288,23 @@ export async function updateLiveCapacityAction(form: FormData): Promise<void> {
   }
   const result = await updateLiveSessionCapacity({ sessionId: text(form, 'sessionId'), courseId: course.id, capacity });
   if (!result) fail(form, `/studio/${courseId}`, 'That live class could not be changed.');
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath(`/live/${course.slug}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Remove one checked-in learner and tell the next person in the queue. */
+export async function releaseSeatAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+  const result = await releaseAttendance({
+    sessionId: text(form, 'sessionId'),
+    courseId: course.id,
+    studentId: text(form, 'studentId'),
+  });
+  if (!result.released) fail(form, `/studio/${courseId}`, 'That seat could not be released.');
   revalidatePath(`/studio/${courseId}`);
   revalidatePath(`/live/${course.slug}`);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));

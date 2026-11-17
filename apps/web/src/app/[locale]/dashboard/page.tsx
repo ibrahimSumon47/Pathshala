@@ -16,6 +16,7 @@ import {
   getNotifications,
   getUpcomingForStudent,
   getWaitlistForStudent,
+  purgeStaleWaitlists,
   recommendedForStudent,
 } from '@pathshala/db';
 import { CourseShelf } from '@/components/course-shelf';
@@ -47,6 +48,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const roles = await getTranslations('Roles');
   const roleLabel = (role: UserRole) => roles(role);
   const reminders = await dispatchDueReminders(user.id);
+  // A session that started has no queue; clear those rows on the learner's next visit.
+  await purgeStaleWaitlists().catch(() => undefined);
   // Saved searches check themselves at most once a day, on the learner's next visit.
   await checkDueSavedSearches(user.id).catch(() => undefined);
   const [learning, notifications, upcoming, reviewsWritten] = await Promise.all([

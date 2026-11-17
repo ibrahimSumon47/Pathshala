@@ -1182,6 +1182,50 @@
         "unlimited codes show an em dash rather than a meaningless count, and refunded orders drop out like the cap itself",
         "packages/db/src/p18.integration.test.ts pays two buyers with a one-use code and reads learnersAtLimit 2, then checks an unlimited code stays blank"
       ]
+    },
+    {
+      "id": "p19.release-seat",
+      "phase": "P19",
+      "title": "Release a seat from the studio",
+      "status": "done",
+      "evidence": [
+        "each checked-in name on the studio live-class block has a Release seat button; the action verifies course ownership and deletes only that attendance row",
+        "releasing a seat calls the same bounded seat-opening notification path, so the next learner in line gets one in-app note",
+        "packages/db/src/p19.integration.test.ts releases the only attendee, checks the queue note, verifies the empty attendance list and confirms a second release is a no-op"
+      ]
+    },
+    {
+      "id": "p19.stale-waitlist-cleanup",
+      "phase": "P19",
+      "title": "Stale live-class waitlist cleanup",
+      "status": "done",
+      "evidence": [
+        "purgeStaleWaitlists deletes queue rows for sessions that already started or are no longer scheduled; the dashboard runs it on the learner's next visit",
+        "past sessions report zero waiting, the attendance export omits their queue rows, and getWaitlistForStudent clears a learner's stale row even before the purge",
+        "packages/db/src/p19.integration.test.ts creates a started session with one waiter, checks the hidden counts and export, then verifies purge removes the row"
+      ]
+    },
+    {
+      "id": "p19.roster-csv",
+      "phase": "P19",
+      "title": "Course roster CSV",
+      "status": "done",
+      "evidence": [
+        "/api/studio/[id]/roster exports name, email, progress, status, enrolment/completion dates, certificate code and survey state for the owning teacher or an admin",
+        "the roster page has both the live-attendance and roster downloads, and the response uses the formula-safe builder with private no-store caching",
+        "e2e/backoffice.spec.ts downloads the roster and checks pathshala-roster.csv; getCourseRoster's data is already covered by the backoffice integration tests"
+      ]
+    },
+    {
+      "id": "p19.coupon-cap-note",
+      "phase": "P19",
+      "title": "Teacher note when a coupon cap is reached",
+      "status": "done",
+      "evidence": [
+        "markOrderPaid writes one system notification to the code's creator when that learner's paid-order count reaches maxPerLearner; unlimited codes stay quiet",
+        "the note names the code and the cap and links to /studio/promotions, so the teacher can judge whether the limit is too tight",
+        "packages/db/src/p19.integration.test.ts pays a one-use code and reads the note, then pays an unlimited code and confirms the count does not move"
+      ]
     }
   ]
 }

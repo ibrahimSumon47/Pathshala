@@ -24,6 +24,11 @@ test('a teacher reads the roster, reorders a lesson and saves a bank question', 
     page.getByRole('link', { name: 'Download live attendance CSV' }).click(),
   ]);
   expect(attendance.suggestedFilename()).toBe('pathshala-live-attendance.csv');
+  const [roster] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: 'Download roster CSV' }).click(),
+  ]);
+  expect(roster.suggestedFilename()).toBe('pathshala-roster.csv');
 
   await page.getByRole('link', { name: '← Back to course' }).click();
   const curriculum = page.getByRole('heading', { name: /Curriculum/ }).locator('..');

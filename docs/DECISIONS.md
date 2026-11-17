@@ -618,3 +618,13 @@ Leaving a waitlist deletes only the caller's row. Position is derived again on t
 Attendance export is a teacher/admin read scoped through the course, not a public session endpoint. Rows carry both attended and waiting learners with a derived queue position; the existing formula-safe CSV builder handles names and emails. The export is bounded to 100 sessions per course, which is well beyond a classroom's real use.
 
 The per-learner cap impact counts distinct buyers whose paid orders with that code reached `maxPerLearner`. It uses the same paid-order definition as the cap itself, so a refunded order cannot keep a learner in the "at limit" count. Unlimited codes show a dash because a count against zero would be meaningless.
+
+## 2026-11-17 — P19 closes the teacher loop without background infrastructure
+
+Releasing a seat deletes the attendance row and then calls the same bounded seat-opening path as a capacity raise. The capacity gate still decides who hears about it, so releasing a seat in a room that is still full notifies nobody. The action checks course ownership before the data function, and the data function also filters by course.
+
+Stale queues are defined by the session, not by a timer on each row. A dashboard visit purges rows for sessions that started or stopped being scheduled, and every read hides waiting for a past session even before the purge runs. That keeps the demo honest without a scheduler, and avoids a TTL index that cannot reference another collection.
+
+The roster CSV is a second endpoint rather than another column set in the attendance export: the two files answer different questions and have different ownership-sensitive fields. Both reuse the formula-safe builder and a private no-store response.
+
+The coupon-cap note is written inside `markOrderPaid`, after the order count becomes authoritative. It fires only when that learner's paid uses equal the cap, so a refund that later frees the use and a genuine re-hit are a new event rather than a duplicate of the same one. Unlimited codes never notify.

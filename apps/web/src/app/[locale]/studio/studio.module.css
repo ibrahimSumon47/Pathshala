@@ -200,10 +200,34 @@
   font-size: var(--text-xl);
 }
 
+.downloadLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
 .downloadLink {
   display: inline-block;
   margin-top: var(--space-2);
   font-weight: 600;
+}
+
+.attendanceList {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attendanceList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
 }
 
 .capacityForm {

@@ -37,6 +37,7 @@ const COPY = {
     confidence: 'আত্মবিশ্বাস',
     comments: 'নাম ছাড়া মন্তব্য',
     download: 'লাইভ উপস্থিতি ও অপেক্ষার CSV ডাউনলোড করুন',
+    downloadRoster: 'শিক্ষার্থী তালিকার CSV ডাউনলোড করুন',
     noComments: 'এখনো কেউ লিখিত মন্তব্য দেননি।',
     noSurveys: 'এখনো কোনো সমীক্ষার উত্তর আসেনি।',
   },
@@ -66,6 +67,7 @@ const COPY = {
     confidence: 'Confidence',
     comments: 'Anonymous comments',
     download: 'Download live attendance CSV',
+    downloadRoster: 'Download roster CSV',
     noComments: 'No written comments yet.',
     noSurveys: 'No survey answers yet.',
   },
@@ -92,11 +94,14 @@ export default async function StudioRosterPage({ params }: RosterPageProps) {
           {copy.title} · {courseTitle}
         </h1>
         <p className={styles.lede}>{copy.lede}</p>
-        <p>
+        <div className={styles.downloadLinks}>
           <a className={styles.downloadLink} href={`/api/studio/${id}/attendance`}>
             {copy.download}
           </a>
-        </p>
+          <a className={styles.downloadLink} href={`/api/studio/${id}/roster`}>
+            {copy.downloadRoster}
+          </a>
+        </div>
 
         <section className={styles.statGrid} aria-label={copy.title}>
           <div className={styles.stat}>

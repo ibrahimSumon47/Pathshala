@@ -63,6 +63,11 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     record('savedSearches', await SavedSearch.deleteMany({ user: { $in: userIds } }));
     record('liveWaitlists', await LiveWaitlist.deleteMany({ student: { $in: userIds } }));
     record('notifications', await Notification.deleteMany({ user: { $in: userIds } }));
+    // E2E purchases use the seeded EARLYBIRD code and now create a cap note for its creator.
+    record(
+      'couponCapNotes',
+      await Notification.deleteMany({ 'title.en': 'Coupon use limit reached', 'body.en': /^EARLYBIRD:/ }),
+    );
     record('users', await User.deleteMany({ _id: { $in: userIds } }));
   }
 

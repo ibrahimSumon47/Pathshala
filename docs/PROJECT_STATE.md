@@ -3,8 +3,9 @@
 Snapshot: 2026-11-17. The first ten phases are complete and the expansion slices are live:
 course depth (P9), the learner account slice (P10, item 1), discovery (P11, item 2), the
 P12-P15 polish slices, the P16 studio/operations slice, P17's classroom/commerce slice and
-the P18 waitlist/commerce follow-through. 105/105 features carry production evidence, the
-three apps run on Atlas and Vercel, and `node scripts/check-done.mjs` exits 0.
+the P18 waitlist/commerce follow-through and P19's teacher/data loop. 109/109 features carry
+production evidence, the three apps run on Atlas and Vercel, and `node scripts/check-done.mjs`
+exits 0.
 
 ## Live deployment
 
@@ -43,6 +44,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P16 | Student roster, lesson reordering, certificate desk, question bank, coupon timeline, automatic saved searches, completion surveys | done — 2026-11-17, 36/36 production journeys |
 | P17 | Live waitlist and capacity, per-learner coupon limit, moderated survey comments, zero-result catalogue help with saved search | done — 2026-11-17, 38/38 production journeys |
 | P18 | Seat-opening notifications, leaving a waitlist, live attendance CSV, per-learner cap impact | done — 2026-11-17, 38/38 production journeys |
+| P19 | Studio seat release, stale waitlist cleanup, roster CSV, coupon cap note | done — 2026-11-17, 38/38 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -79,8 +81,10 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   while a seat remains and otherwise adds one waitlist row with a stable position. Learners
   see their place on the dashboard, can leave it in one click, and get an in-app note when
   the teacher raises the cap enough to reach them. The studio schedule shows
-  attendance/capacity/waiting and updates the cap in place. Attendance is one row per learner
-  and `.ics` downloads are offered. A min-heap drains due
+  attendance/capacity/waiting, updates the cap in place and can release a seat; the next
+  learner is notified. Queue rows for a started session are cleared on the next dashboard
+  visit and hidden from reads in the meantime. Attendance is one row per learner and `.ics`
+  downloads are offered. A min-heap drains due
   reminders into in-app notifications; `pnpm reminders:dispatch` is the cron entry point and
   email needs `RESEND_API_KEY`.
 - Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test rails.
@@ -97,8 +101,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   under-a-quarter window. `/admin/refunds` approves (the shared signed-refund path reverses the
   ledger and closes access) or declines, and the learner gets an inbox note either way.
 - Teaching tools: `/studio/promotions` makes percent or fixed codes scoped to one owned course,
-  with a uses-per-learner cap (0 = unlimited) enforced against paid orders and an At limit
-  count of distinct buyers who reached that cap;
+  with a uses-per-learner cap (0 = unlimited) enforced against paid orders, an At limit
+  count of distinct buyers who reached that cap, and one in-app note to the code's creator
+  each time a learner uses up their allowance;
   `/studio/questions` lists lesson questions unanswered first and writes answers into the same
   public thread. Quiz questions carry an explanation, and a finished attempt shows per-question
   chosen and correct answers.
@@ -107,8 +112,8 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   stale search automatically on load, at most once every 24 hours, so no cron is required.
   A real price cut on a saved course notifies everyone who wishlisted it.
 - Studio operations: `/studio/[id]/roster` lists the real class with progress, completion,
-  certificate links and survey answers, and downloads the course's live attendance and
-  waitlist as a formula-safe CSV. Lessons can be moved up or down inside a section,
+  certificate links and survey answers, and downloads the course's live attendance/waitlist
+  and full roster as two formula-safe CSVs. Lessons can be moved up or down inside a section,
   and the quiz builder saves questions to a reusable bank or appends one to another quiz.
 - Completion surveys: `/dashboard/surveys` asks three 1-5 questions and one optional comment
   for each finished course. Answers are editable, one per course, and only anonymous averages
@@ -145,11 +150,12 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 ## Verification recorded 2026-11-17 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (218 tests: 12 tokens, 13 shared, 104 database,
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (222 tests: 12 tokens, 13 shared, 108 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
 - `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **38/38 pass** on
-  2026-11-17 after the P18 slice. The teacher journey now downloads the live attendance CSV
-  and updates the seat cap, and the promotions journey checks the At limit column. Earlier
+  2026-11-17 after the P19 slice. The teacher journey now downloads both the live-attendance
+  and roster CSVs and updates the seat cap, and the promotions journey checks the At limit
+  column. Earlier
   journeys cover an empty catalogue search saving and removing its search, a survey comment
   reaching the roster before moderation, the roster, a lesson moved down and back up, saving a
   question to the bank, the completion survey, certificate revoke/restore and the coupon

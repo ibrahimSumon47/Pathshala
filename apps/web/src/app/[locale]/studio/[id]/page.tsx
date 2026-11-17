@@ -13,6 +13,7 @@ import {
   addLessonAction,
   addSectionAction,
   moveLessonAction,
+  releaseSeatAction,
   scheduleSessionAction,
   updateCourseAction,
   updateLiveCapacityAction,
@@ -356,7 +357,22 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                   : ''}
               </p>
               {attendance[index]?.length ? (
-                <p className={styles.meta}>{attendance[index].map((row) => row.studentName).join(', ')}</p>
+                <ul className={styles.attendanceList}>
+                  {attendance[index].map((row) => (
+                    <li key={row.studentId}>
+                      <span>{row.studentName}</span>
+                      <form action={releaseSeatAction}>
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="courseId" value={course.id} />
+                        <input type="hidden" name="sessionId" value={session.id} />
+                        <input type="hidden" name="studentId" value={row.studentId} />
+                        <Button type="submit" variant="secondary" size="sm">
+                          {language === 'en' ? 'Release seat' : 'আসন ছাড়ান'}
+                        </Button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
               ) : null}
               <form action={updateLiveCapacityAction} className={styles.capacityForm}>
                 <input type="hidden" name="locale" value={locale} />

@@ -359,7 +359,28 @@ export async function markOrderPaid({
   }
 
   if (updated.couponCode) {
-    await Coupon.updateOne({ code: updated.couponCode }, { $inc: { redeemedCount: 1 } });
+    const coupon = await Coupon.findOneAndUpdate(
+      { code: updated.couponCode },
+      { $inc: { redeemedCount: 1 } },
+      { returnDocument: 'after' },
+    ).lean();
+    const cap = coupon?.maxPerLearner ?? 1;
+    if (coupon && cap > 0) {
+      const uses = await Order.countDocuments({ user: updated.user, couponCode: coupon.code, status: 'paid' });
+      // One note per learner when this payment is the one that uses up their allowance.
+      if (uses === cap) {
+        await Notification.create({
+          user: coupon.createdBy,
+          kind: 'system',
+          title: { bn: 'কুপন ব্যবহারের সীমা পূর্ণ', en: 'Coupon use limit reached' },
+          body: {
+            bn: `${coupon.code}: একজন শিক্ষার্থী ${cap} বারের সীমায় পৌঁছেছে।`,
+            en: `${coupon.code}: a learner has reached the ${cap}-use limit.`,
+          },
+          href: '/studio/promotions',
+        }).catch(() => undefined);
+      }
+    }
   }
 
   return { order: updated.toObject(), duplicate: false };

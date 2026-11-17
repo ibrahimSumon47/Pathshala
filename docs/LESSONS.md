@@ -328,3 +328,11 @@ Two Mongoose `schema.index()` calls on the same fields with different partial fi
 A queue notification must be bounded by the number of seats actually opened. Telling every waiter whenever capacity is saved makes a routine edit look like a mass invitation. Compute `capacity - attendance` first, and let the notification query filter the rest.
 
 An export route is an authorization boundary even when the page already checks the role. Resolve the course through the signed-in instructor (or admin) inside the data function, so a copied URL cannot export another teacher's class.
+
+## 2026-11-17 — Match a localized subdocument by its dotted path
+
+`Notification.findOne({ title: { en: 'Coupon use limit reached' } })` returned null because the stored title also has a `bn` field; Mongo compared the whole subdocument. Use `'title.en'` for a single field. Lesson: a localized label is a subdocument, not a scalar.
+
+A queue read should defend itself even when a cleanup job exists. The dashboard purge handles accumulated rows, but `getWaitlistForStudent` also deletes the caller's rows for sessions that are no longer live, so a race or a missed dashboard visit cannot show a dead queue.
+
+Two exports that look similar can still deserve separate routes. Attendance answers “who came and who waited”; the roster answers “how far did each learner get”. Splitting them keeps each file's columns and authorization intent obvious.

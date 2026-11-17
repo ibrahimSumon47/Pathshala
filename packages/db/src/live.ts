@@ -29,7 +29,7 @@ export type LiveSessionView = {
   waitlistCount: number;
 };
 
-export type AttendanceView = { studentName: string; joinedAt: string };
+export type AttendanceView = { studentId: string; studentName: string; joinedAt: string };
 export type NotificationView = {
   id: string;
   title: { bn?: string; en?: string };
@@ -124,7 +124,8 @@ export async function listCourseSessions(
     ...toView(
       session as Doc<LiveSessionDoc>,
       countMap.get(String(session._id)) ?? 0,
-      waitlistMap.get(String(session._id)) ?? 0,
+      // Once a session starts, its queue is history and must not look actionable.
+      session.startsAt.getTime() < now.getTime() ? 0 : waitlistMap.get(String(session._id)) ?? 0,
     ),
   }));
 }
@@ -305,7 +306,14 @@ export async function getWaitlistForStudent(userId: string): Promise<WaitlistVie
   })
     .select('course title startsAt capacity')
     .lean();
-  if (sessions.length === 0) return [];
+  // A session that started or was cancelled no longer has a queue; clear this learner's row.
+  const liveSessionIds = new Set(sessions.map((session) => String(session._id)));
+  const stale = entries.filter((entry) => !liveSessionIds.has(String(entry.session)));
+  if (stale.length > 0) {
+    await LiveWaitlist.deleteMany({ _id: { $in: stale.map((entry) => entry._id) } });
+  }
+  const activeEntries = entries.filter((entry) => liveSessionIds.has(String(entry.session)));
+  if (activeEntries.length === 0) return [];
   const sessionMap = new Map(sessions.map((session) => [String(session._id), session]));
   const [courses, queue] = await Promise.all([
     Course.find({ _id: { $in: sessions.map((session) => session.course) } }).select('title slug').lean(),
@@ -322,7 +330,7 @@ export async function getWaitlistForStudent(userId: string): Promise<WaitlistVie
     if (!rows.includes(String(row._id))) rows.push(String(row._id));
     queueMap.set(key, rows);
   }
-  return entries.flatMap((entry) => {
+  return activeEntries.flatMap((entry) => {
     const session = sessionMap.get(String(entry.session));
     if (!session) return [];
     const course = courseMap.get(String(session.course));
@@ -351,6 +359,8 @@ export async function notifyWaitlistForOpenSeats(sessionId: string): Promise<num
   if (!Types.ObjectId.isValid(sessionId)) return 0;
   const session = await LiveSession.findById(sessionId).lean();
   if (!session) return 0;
+  // A queue only exists for an upcoming class; a past or cancelled room stays silent.
+  if (session.status !== 'scheduled' || session.startsAt.getTime() <= Date.now()) return 0;
   const capacity = session.capacity ?? 0;
   const attendance = await Attendance.countDocuments({ session: session._id });
   const free = capacity === 0 ? 50 : Math.max(0, capacity - attendance);
@@ -481,7 +491,9 @@ export async function getCourseLiveAttendance(
         addedAt: row.joinedAt.toISOString(),
       });
     }
-    for (const row of waitingBySession.get(key) ?? []) {
+    // Waiting is only meaningful before the room starts; afterward the queue is purged.
+    const queueRows = session.startsAt.getTime() < Date.now() ? [] : waitingBySession.get(key) ?? [];
+    for (const row of queueRows) {
       const person = people.get(String(row.student));
       rows.push({
         session: session.title.en ?? session.title.bn ?? '',
@@ -510,9 +522,45 @@ export async function listAttendance(sessionId: string): Promise<AttendanceView[
   const users = await User.find({ _id: { $in: rows.map((row) => row.student) } }).select('name').lean();
   const names = new Map(users.map((user) => [String(user._id), user.name]));
   return rows.map((row) => ({
+    studentId: String(row.student),
     studentName: names.get(String(row.student)) ?? 'Learner',
     joinedAt: row.joinedAt.toISOString(),
   }));
+}
+
+/**
+ * Remove one attendance row and release the seat to the queue. The teacher action
+ * checks course ownership before calling this, and the course filter keeps it scoped.
+ */
+export async function releaseAttendance(input: {
+  sessionId: string;
+  courseId: string;
+  studentId: string;
+}): Promise<{ released: boolean; notified: number }> {
+  await connectToDatabase();
+  if (![input.sessionId, input.courseId, input.studentId].every((id) => Types.ObjectId.isValid(id))) {
+    return { released: false, notified: 0 };
+  }
+  const result = await Attendance.deleteOne({
+    session: input.sessionId,
+    course: input.courseId,
+    student: input.studentId,
+  });
+  if (result.deletedCount === 0) return { released: false, notified: 0 };
+  const notified = await notifyWaitlistForOpenSeats(input.sessionId);
+  return { released: true, notified };
+}
+
+/** Delete queue rows for sessions that already started or are no longer scheduled. */
+export async function purgeStaleWaitlists(now = new Date()): Promise<number> {
+  await connectToDatabase();
+  const stale = await LiveSession.find({ $or: [{ startsAt: { $lt: now } }, { status: { $ne: 'scheduled' } }] })
+    .select('_id')
+    .limit(1000)
+    .lean();
+  if (stale.length === 0) return 0;
+  const result = await LiveWaitlist.deleteMany({ session: { $in: stale.map((session) => session._id) } });
+  return result.deletedCount;
 }
 
 export type DispatchResult = { sent: number; emailAttempted: number };
