@@ -46,8 +46,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-Item 13 of the agreed order is next. The expansion brief's own wording for that item is the
-scope; record it here before writing code so the slice has a fixed target.
+Item 13 of the agreed order is next. Its wording is not in the repository yet, so
+`docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
+every remaining item. Replace the placeholder with the brief's sentence before writing code.
 
 ## Exact next step
 
