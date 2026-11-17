@@ -608,3 +608,13 @@ The per-learner coupon cap counts only paid orders. A refund therefore frees the
 Survey comments are read through the same visible set as the averages. Hiding is applied in the query, so a hidden comment cannot linger in one view after disappearing from another. The roster returns anonymous text and a timestamp only, and the admin bulk form reuses the bounded 200-id moderation pattern.
 
 An empty catalogue result does not guess at similar titles. It aggregates published course counts per subject, excludes the subject already being viewed, and lists up to six subjects that actually have courses. Saving from that state reuses `createSavedSearch`, including its validation and ten-search limit, so the shortcut cannot create a record the dashboard could not create itself.
+
+## 2026-11-17 — P18 closes the waitlist loop with bounded writes
+
+A seat-opening note is written only for the learners who now fit: `capacity - attendance` people, capped at 50, and everyone in line when the cap becomes unlimited. Each learner gets at most one `seat_open` note per session. The unique index uses a different key order (`kind, session, user`) from the reminder guard so MongoDB accepts both indexes; the notification is an in-app row, not email, so the feature stays free.
+
+Leaving a waitlist deletes only the caller's row. Position is derived again on the next read, so the next learner moves to #1 without a renumber pass. The action is idempotent because stale dashboard rows are normal when a session has already started or a previous request completed twice.
+
+Attendance export is a teacher/admin read scoped through the course, not a public session endpoint. Rows carry both attended and waiting learners with a derived queue position; the existing formula-safe CSV builder handles names and emails. The export is bounded to 100 sessions per course, which is well beyond a classroom's real use.
+
+The per-learner cap impact counts distinct buyers whose paid orders with that code reached `maxPerLearner`. It uses the same paid-order definition as the cap itself, so a refunded order cannot keep a learner in the "at limit" count. Unlimited codes show a dash because a count against zero would be meaningless.

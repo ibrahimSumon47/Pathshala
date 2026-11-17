@@ -39,6 +39,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           perLearner: 'Uses per learner (0 = unlimited)',
           perLearnerHint: 'One use stops an account reusing the code on another course.',
           perLearnerColumn: 'Per learner',
+          atLimit: 'At limit',
           days: 'Days valid (0 = no expiry)',
           submit: 'Create code',
           list: 'Your codes',
@@ -67,6 +68,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           perLearner: 'একজন কতবার ব্যবহার করতে পারবে (০ = সীমা নেই)',
           perLearnerHint: 'একবার দিলে একই অ্যাকাউন্ট অন্য কোর্সে কোডটি আবার লাগাতে পারবে না।',
           perLearnerColumn: 'প্রতি শিক্ষার্থী',
+          atLimit: 'সীমায় পৌঁছেছে',
           days: 'কত দিন বৈধ (০ = মেয়াদ নেই)',
           submit: 'কোড তৈরি করুন',
           list: 'আপনার কোড',
@@ -174,6 +176,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                     <th scope="col">{copy.type}</th>
                     <th scope="col">{copy.usage}</th>
                     <th scope="col">{copy.perLearnerColumn}</th>
+                    <th scope="col">{copy.atLimit}</th>
                     <th scope="col">{copy.status}</th>
                     <th scope="col">{copy.expires}</th>
                     <th scope="col">{copy.toggle}</th>
@@ -195,6 +198,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                         {coupon.redeemedCount}/{coupon.maxRedemptions}
                       </td>
                       <td>{coupon.maxPerLearner === 0 ? '∞' : coupon.maxPerLearner}</td>
+                      <td>{coupon.maxPerLearner === 0 ? '—' : coupon.learnersAtLimit}</td>
                       <td>
                         <Badge tone={coupon.active ? 'success' : 'neutral'}>
                           {coupon.active ? (language === 'en' ? 'Active' : 'সক্রিয়') : language === 'en' ? 'Off' : 'বন্ধ'}

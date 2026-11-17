@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-17, after the P17 classroom and commerce slice.
+Updated: 2026-11-17, after the P18 waitlist and commerce follow-through.
 
 ## Where we are
 
@@ -8,8 +8,8 @@ The ten original phases are complete and the expansion slices have begun. Course
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
 streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
 shelf, learner recommendations), the P12-P15 polish slices, P16's studio and operations work
-and P17's classroom and commerce work are live and verified; `docs/features.json` tracks 101
-features and `node scripts/check-done.mjs` exits 0.
+P17's classroom and commerce work and P18's waitlist/commerce follow-through are live and
+verified; `docs/features.json` tracks 105 features and `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -35,8 +35,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   URL-backed filters and both recommendation rails, plus a new promo code, a saved-search
   round-trip, the operator refund desk, a roster read, a lesson moved down and back up, a
   question saved to the bank, the completion survey, certificate revoke/restore, the coupon
-  redemption timeline, saving and removing a search from an empty catalogue result, and a
-  survey comment read on the roster then hidden and restored by the admin.
+  redemption timeline, saving and removing a search from an empty catalogue result, a survey
+  comment read on the roster then hidden and restored by the admin, the live attendance CSV
+  download, a seat-cap update from the studio and the At limit promo column.
 - axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
   notes, wishlist, cart, notifications, saved searches, surveys, the admin overview and
   orders/coupons/payouts/refunds/certificates, and the studio earnings, community, questions,
@@ -58,9 +59,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-P17 is live: live sessions can carry a seat cap and queue overflow, coupons can be limited per
-learner, survey comments reach the teacher roster and the admin moderation desk, and an empty
-catalogue result suggests other subjects and saves the search in one click. Item 13 of
+P18 is live: raising a session cap notifies only the learners who now fit, a learner can leave
+a waitlist from the dashboard, teachers download a course's attendance and queue as CSV, and
+the promotions table counts buyers who reached the per-learner cap. Item 13 of
 the agreed expansion order is still next; its wording is not in the repository yet, so
 `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
 every remaining item. Replace the placeholder with the brief's sentence before writing code.
@@ -117,4 +118,4 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 
 ## Current gate
 
-`node scripts/check-done.mjs` reports **101/101 — every feature is done with evidence**.
+`node scripts/check-done.mjs` reports **105/105 — every feature is done with evidence**.

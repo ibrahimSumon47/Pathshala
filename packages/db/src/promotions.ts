@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { Course } from './models/course';
 import { Coupon, type CouponType } from './models/coupon';
+import { Order } from './models/order';
 
 export type PromoCourse = { id: string; slug: string; title: { bn?: string; en?: string } };
 
@@ -16,6 +17,8 @@ export type InstructorCouponRow = {
   redeemedCount: number;
   maxRedemptions: number;
   maxPerLearner: number;
+  /** Distinct buyers who have used the code as many times as the cap allows. */
+  learnersAtLimit: number;
   expiresAt: string | null;
 };
 
@@ -41,6 +44,19 @@ export async function listInstructorPromotions(instructorId: string, isAdmin = f
     .limit(100)
     .lean();
   const titles = new Map(courses.map((course) => [String(course._id), course.title]));
+  const usage =
+    coupons.length === 0
+      ? []
+      : await Order.aggregate<{ _id: { code: string; user: Types.ObjectId }; uses: number }>([
+          { $match: { status: 'paid', couponCode: { $in: coupons.map((coupon) => coupon.code) } } },
+          { $group: { _id: { code: '$couponCode', user: '$user' }, uses: { $sum: 1 } } },
+        ]);
+  const usesByCode = new Map<string, number[]>();
+  for (const row of usage) {
+    const rows = usesByCode.get(row._id.code) ?? [];
+    rows.push(row.uses);
+    usesByCode.set(row._id.code, rows);
+  }
   return {
     courses: owned.map((course) => ({ id: String(course._id), slug: course.slug, title: course.title })),
     coupons: coupons.map((coupon) => ({
@@ -54,6 +70,10 @@ export async function listInstructorPromotions(instructorId: string, isAdmin = f
       redeemedCount: coupon.redeemedCount,
       maxRedemptions: coupon.maxRedemptions,
       maxPerLearner: coupon.maxPerLearner ?? 1,
+      learnersAtLimit:
+        (coupon.maxPerLearner ?? 1) > 0
+          ? (usesByCode.get(coupon.code) ?? []).filter((uses) => uses >= (coupon.maxPerLearner ?? 1)).length
+          : 0,
       expiresAt: coupon.expiresAt?.toISOString() ?? null,
     })),
   };

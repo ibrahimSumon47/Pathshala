@@ -1138,6 +1138,50 @@
         "a signed-in learner can save the current query, subject, level, language and price cap as a saved search from the empty state; signed-out visitors get a sign-in link",
         "packages/db/src/p17.integration.test.ts checks the counts and the excluded subject, and e2e/backoffice.spec.ts saves and removes the search through the UI"
       ]
+    },
+    {
+      "id": "p18.seat-open-notifications",
+      "phase": "P18",
+      "title": "Seat-opening notifications for the waitlist",
+      "status": "done",
+      "evidence": [
+        "raising a live session's seat cap tells only the first learners who now fit, one in-app note each; the unique seat_open index prevents a second note on a later save",
+        "the studio course page has an Update seats form per session, and the action verifies course ownership before changing the cap",
+        "packages/db/src/p18.integration.test.ts raises a cap from one to two then three and checks exactly two notes, the right learners and the wrong-course refusal"
+      ]
+    },
+    {
+      "id": "p18.leave-waitlist",
+      "phase": "P18",
+      "title": "Leave a live-class waitlist",
+      "status": "done",
+      "evidence": [
+        "the dashboard waitlist row has a Leave waitlist button that deletes only the signed-in learner's place and returns to the dashboard",
+        "leaveWaitlist is idempotent and scoped by session and student; leaving does not affect anyone else's position",
+        "packages/db/src/p18.integration.test.ts removes one place twice, checks the second returns false, and confirms the next learner keeps position one"
+      ]
+    },
+    {
+      "id": "p18.live-attendance-export",
+      "phase": "P18",
+      "title": "Live attendance and waitlist CSV",
+      "status": "done",
+      "evidence": [
+        "/api/studio/[id]/attendance exports attended and waiting rows with session, start, learner, email, queue position and timestamp for the course's instructor or an admin",
+        "the roster page links the download, and the CSV uses the existing formula-safe builder with a private no-store response",
+        "packages/db/src/p18.integration.test.ts checks attended and waiting rows, the position, the removed learner and a foreign teacher's null result; e2e/backoffice.spec.ts downloads the file"
+      ]
+    },
+    {
+      "id": "p18.coupon-cap-impact",
+      "phase": "P18",
+      "title": "Per-learner coupon impact in the studio",
+      "status": "done",
+      "evidence": [
+        "the promotions table adds an At limit column counting distinct buyers whose paid orders with that code reached maxPerLearner",
+        "unlimited codes show an em dash rather than a meaningless count, and refunded orders drop out like the cap itself",
+        "packages/db/src/p18.integration.test.ts pays two buyers with a one-use code and reads learnersAtLimit 2, then checks an unlimited code stays blank"
+      ]
     }
   ]
 }

@@ -21,6 +21,7 @@ import {
 import { CourseShelf } from '@/components/course-shelf';
 import { getDashboardLearning } from '@/lib/learning';
 import { markNotificationReadAction } from './notification-actions';
+import { leaveWaitlistAction } from './waitlist-actions';
 import styles from './dashboard.module.css';
 
 /** Badge keys are stable data; the visible label follows the reader's language. */
@@ -238,13 +239,22 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             <ul className={styles.wishlist}>
               {waiting.map((entry) => (
                 <li key={entry.sessionId}>
-                  <Link href={`/live/${entry.courseSlug}`}>
-                    {entry.sessionTitle[locale === 'en' ? 'en' : 'bn'] ?? entry.sessionTitle.en ?? entry.courseTitle.en}
-                  </Link>
-                  <span>
-                    {new Date(entry.startsAt).toLocaleString(locale)} ·{' '}
-                    {locale === 'en' ? `#${entry.position} in line` : `তালিকায় #${entry.position}`}
-                  </span>
+                  <div className={styles.waitlistInfo}>
+                    <Link href={`/live/${entry.courseSlug}`}>
+                      {entry.sessionTitle[locale === 'en' ? 'en' : 'bn'] ?? entry.sessionTitle.en ?? entry.courseTitle.en}
+                    </Link>
+                    <span>
+                      {new Date(entry.startsAt).toLocaleString(locale)} ·{' '}
+                      {locale === 'en' ? `#${entry.position} in line` : `তালিকায় #${entry.position}`}
+                    </span>
+                  </div>
+                  <form action={leaveWaitlistAction}>
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="sessionId" value={entry.sessionId} />
+                    <button type="submit" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+                      {locale === 'en' ? 'Leave waitlist' : 'তালিকা ছাড়ুন'}
+                    </button>
+                  </form>
                 </li>
               ))}
             </ul>

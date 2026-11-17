@@ -9,7 +9,14 @@ import { Link } from '@/i18n/navigation';
 import { requireRole } from '@/lib/auth/guard';
 import { faqsToLines, listToLines } from '@/lib/course-content';
 import { getStudioCourse } from '@/lib/studio';
-import { addLessonAction, addSectionAction, moveLessonAction, scheduleSessionAction, updateCourseAction } from '../actions';
+import {
+  addLessonAction,
+  addSectionAction,
+  moveLessonAction,
+  scheduleSessionAction,
+  updateCourseAction,
+  updateLiveCapacityAction,
+} from '../actions';
 import { studioCopy } from '../copy';
 import styles from '../studio.module.css';
 
@@ -351,6 +358,28 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
               {attendance[index]?.length ? (
                 <p className={styles.meta}>{attendance[index].map((row) => row.studentName).join(', ')}</p>
               ) : null}
+              <form action={updateLiveCapacityAction} className={styles.capacityForm}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="sessionId" value={session.id} />
+                <Field
+                  id={`live-seats-${session.id}`}
+                  name="capacity"
+                  type="number"
+                  min={0}
+                  max={1000}
+                  defaultValue={session.capacity}
+                  label={language === 'en' ? 'Seats (0 = no cap)' : 'আসন (০ = সীমা নেই)'}
+                />
+                <Button type="submit" variant="secondary" size="sm">
+                  {language === 'en' ? 'Update seats' : 'আসন হালনাগাদ করুন'}
+                </Button>
+              </form>
+              <p className={styles.meta}>
+                {language === 'en'
+                  ? 'Raising the seats notifies the first learners in the waitlist.'
+                  : 'আসন বাড়ালে অপেক্ষার তালিকার প্রথম শিক্ষার্থীদের জানানো হবে।'}
+              </p>
               <Link href={`/live/${course.slug}`} className={styles.lessonLink} style={{ marginTop: '0.5rem', display: 'inline-block' }}>
                 {language === 'en' ? 'Open live room →' : 'লাইভ রুম খুলুন →'}
               </Link>

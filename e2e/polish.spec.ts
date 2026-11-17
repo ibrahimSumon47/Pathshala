@@ -74,6 +74,7 @@ test('a teacher replies to a review and announces to learners', async ({ page })
   await page.getByRole('button', { name: 'Create code' }).click();
   await expect(page.getByText(`${code} is ready at checkout.`)).toBeVisible();
   await expect(page.getByRole('cell', { name: code, exact: true })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'At limit' })).toBeVisible();
 });
 
 test('a learner saves a search and removes it', async ({ page }) => {

@@ -320,3 +320,11 @@ A stored waitlist position needs renumbering whenever someone leaves, and a fail
 A Playwright text locator can match both the title and the metadata of the same card. When asserting that a removed row is gone, count the row itself (`li` filtered by text) instead of the text; otherwise strict mode fails before the assertion can tell you whether the row survived.
 
 Logging out through a server action is a navigation. Call `signIn` only after the masthead shows its signed-out state, or the next `goto` can race the logout redirect and land back on the old account's dashboard.
+
+## 2026-11-17 — A second partial index needs a different key order
+
+Two Mongoose `schema.index()` calls on the same fields with different partial filters trigger a duplicate-index warning, and the second filter is ignored. Using `kind, session, user` for the seat-opening guard keeps the index genuinely distinct from the reminder guard. Lesson: when two uniqueness rules share fields, distinguish the key pattern, not just the filter.
+
+A queue notification must be bounded by the number of seats actually opened. Telling every waiter whenever capacity is saved makes a routine edit look like a mass invitation. Compute `capacity - attendance` first, and let the notification query filter the rest.
+
+An export route is an authorization boundary even when the page already checks the role. Resolve the course through the signed-in instructor (or admin) inside the data function, so a copied URL cannot export another teacher's class.

@@ -19,6 +19,11 @@ test('a teacher reads the roster, reorders a lesson and saves a bank question', 
   await page.getByRole('link', { name: 'Student roster' }).click();
   await expect(page.getByRole('heading', { level: 1, name: /Student roster/ })).toBeVisible();
   await expect(page.getByRole('cell', { name: /Nusrat Jahan/ })).toBeVisible();
+  const [attendance] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: 'Download live attendance CSV' }).click(),
+  ]);
+  expect(attendance.suggestedFilename()).toBe('pathshala-live-attendance.csv');
 
   await page.getByRole('link', { name: '← Back to course' }).click();
   const curriculum = page.getByRole('heading', { name: /Curriculum/ }).locator('..');
@@ -37,8 +42,12 @@ test('a teacher reads the roster, reorders a lesson and saves a bank question', 
   await expect(page.getByText('Which keyword declares a variable that cannot be reassigned?').last()).toBeVisible();
 
   await page.getByRole('link', { name: '← Back to course' }).click();
+  const capacityForm = page.locator('form').filter({ has: page.getByRole('button', { name: 'Update seats' }) }).first();
+  await capacityForm.getByLabel('Seats (0 = no cap)').fill('12');
+  await capacityForm.getByRole('button', { name: 'Update seats' }).click();
+  await expect(page.getByText('Changes saved.')).toBeVisible();
   await page.getByText('Schedule a live class').click();
-  await expect(page.getByLabel('Seats (0 = no cap)')).toBeVisible();
+  await expect(page.getByLabel('Seats (0 = no cap)')).toHaveCount(2);
 });
 
 test('a learner answers the completion survey and can change it', async ({ page }) => {

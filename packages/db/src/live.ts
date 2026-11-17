@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { MinHeap } from '@pathshala/shared';
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { Attendance, type AttendanceDoc } from './models/attendance';
 import { Course } from './models/course';
@@ -267,6 +267,14 @@ export async function joinSession(
   return { status: 'checked_in', already: false };
 }
 
+/** Remove this learner's place in one queue; a stale dashboard row can always be cleared. */
+export async function leaveWaitlist(sessionId: string, userId: string): Promise<boolean> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(sessionId) || !Types.ObjectId.isValid(userId)) return false;
+  const result = await LiveWaitlist.deleteOne({ session: sessionId, student: userId });
+  return result.deletedCount > 0;
+}
+
 /** The learner's place in one session's queue, or null when they are not waiting. */
 export async function getWaitlistPosition(sessionId: string, userId: string): Promise<number | null> {
   await connectToDatabase();
@@ -331,6 +339,162 @@ export async function getWaitlistForStudent(userId: string): Promise<WaitlistVie
       },
     ];
   });
+}
+
+/**
+ * Tell the learners at the front of a queue that a seat is free. Only the first
+ * `capacity - attendance` people are told, so raising two seats does not wake ten people.
+ * The unique seat_open index makes a repeated capacity save a no-op per learner.
+ */
+export async function notifyWaitlistForOpenSeats(sessionId: string): Promise<number> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(sessionId)) return 0;
+  const session = await LiveSession.findById(sessionId).lean();
+  if (!session) return 0;
+  const capacity = session.capacity ?? 0;
+  const attendance = await Attendance.countDocuments({ session: session._id });
+  const free = capacity === 0 ? 50 : Math.max(0, capacity - attendance);
+  if (free === 0) return 0;
+  const waiting = await LiveWaitlist.find({ session: session._id })
+    .sort({ createdAt: 1, _id: 1 })
+    .limit(Math.min(free, 50))
+    .lean();
+  if (waiting.length === 0) return 0;
+  const course = await Course.findById(session.course).select('slug').lean();
+  const title = session.title;
+  let created = 0;
+  for (const entry of waiting) {
+    const result = await Notification.updateOne(
+      { user: entry.student, kind: 'seat_open', session: session._id },
+      {
+        $setOnInsert: {
+          title: { bn: 'লাইভ ক্লাসে আসন খালি', en: 'A seat opened in your live class' },
+          body: {
+            bn: `${title.bn ?? title.en ?? 'ক্লাস'} — একটি আসন খালি হয়েছে। লাইভ পেজ থেকে নিন।`,
+            en: `${title.en ?? title.bn ?? 'Class'} has a free seat. Claim it from the live page.`,
+          },
+          href: `/live/${course?.slug ?? ''}`,
+          readAt: null,
+        },
+      },
+      { upsert: true },
+    );
+    if (result.upsertedCount > 0) created += 1;
+  }
+  return created;
+}
+
+export type CapacityUpdate = { capacity: number; notified: number };
+
+/** Change one session's seat cap; raising it notifies the first learners in line. */
+export async function updateLiveSessionCapacity(input: {
+  sessionId: string;
+  courseId: string;
+  capacity: number;
+}): Promise<CapacityUpdate | null> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(input.sessionId) || !Types.ObjectId.isValid(input.courseId)) return null;
+  const capacity = Math.max(0, Math.min(1000, Math.floor(input.capacity)));
+  const session = await LiveSession.findOneAndUpdate(
+    { _id: input.sessionId, course: input.courseId, status: { $ne: 'cancelled' } },
+    { capacity },
+    { returnDocument: 'after' },
+  ).lean();
+  if (!session) return null;
+  const notified = await notifyWaitlistForOpenSeats(input.sessionId);
+  return { capacity, notified };
+}
+
+export type CourseLiveRow = {
+  session: string;
+  startsAt: string;
+  status: 'attended' | 'waiting';
+  learner: string;
+  email: string;
+  position: number | null;
+  addedAt: string;
+};
+
+/** Attendance and queue rows for one course, scoped to its instructor (or an admin). */
+export async function getCourseLiveAttendance(
+  courseId: string,
+  instructorId: string,
+  isAdmin: boolean,
+): Promise<CourseLiveRow[] | null> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(courseId)) return null;
+  const course = await Course.findOne(isAdmin ? { _id: courseId } : { _id: courseId, instructor: instructorId })
+    .select('_id')
+    .lean();
+  if (!course) return null;
+  const sessions = await LiveSession.find({ course: course._id, status: { $ne: 'cancelled' } })
+    .sort({ startsAt: -1 })
+    .limit(100)
+    .lean();
+  if (sessions.length === 0) return [];
+  const sessionIds = sessions.map((session) => session._id);
+  const [attendance, waitlist] = await Promise.all([
+    Attendance.find({ session: { $in: sessionIds } }).sort({ joinedAt: 1 }).lean(),
+    LiveWaitlist.find({ session: { $in: sessionIds } }).sort({ createdAt: 1, _id: 1 }).lean(),
+  ]);
+  const students = await User.find({
+    _id: { $in: [...new Set([...attendance.map((row) => row.student), ...waitlist.map((row) => row.student)])] },
+  })
+    .select('name email')
+    .lean();
+  const people = new Map(students.map((student) => [String(student._id), student]));
+  const positions = new Map<string, number>();
+  const queueCount = new Map<string, number>();
+  for (const row of waitlist) {
+    const key = String(row.session);
+    const next = (queueCount.get(key) ?? 0) + 1;
+    queueCount.set(key, next);
+    positions.set(`${key}:${String(row.student)}`, next);
+  }
+  const attendedBySession = new Map<string, typeof attendance>();
+  for (const row of attendance) {
+    const key = String(row.session);
+    const rows = attendedBySession.get(key) ?? [];
+    rows.push(row);
+    attendedBySession.set(key, rows);
+  }
+  const waitingBySession = new Map<string, typeof waitlist>();
+  for (const row of waitlist) {
+    const key = String(row.session);
+    const rows = waitingBySession.get(key) ?? [];
+    rows.push(row);
+    waitingBySession.set(key, rows);
+  }
+  const rows: CourseLiveRow[] = [];
+  for (const session of sessions) {
+    const key = String(session._id);
+    const startsAt = session.startsAt.toISOString();
+    for (const row of attendedBySession.get(key) ?? []) {
+      const person = people.get(String(row.student));
+      rows.push({
+        session: session.title.en ?? session.title.bn ?? '',
+        startsAt,
+        status: 'attended',
+        learner: person?.name ?? 'Learner',
+        email: person?.email ?? '',
+        position: null,
+        addedAt: row.joinedAt.toISOString(),
+      });
+    }
+    for (const row of waitingBySession.get(key) ?? []) {
+      const person = people.get(String(row.student));
+      rows.push({
+        session: session.title.en ?? session.title.bn ?? '',
+        startsAt,
+        status: 'waiting',
+        learner: person?.name ?? 'Learner',
+        email: person?.email ?? '',
+        position: positions.get(`${key}:${String(row.student)}`) ?? null,
+        addedAt: row.createdAt.toISOString(),
+      });
+    }
+  }
+  return rows;
 }
 
 /** Whether this viewer already checked in to a session. */

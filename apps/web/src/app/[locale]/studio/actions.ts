@@ -15,6 +15,7 @@ import {
   notifyWishlistPriceDrop,
   saveQuestionToBank,
   scheduleSessionReminders,
+  updateLiveSessionCapacity,
   type QuizType,
 } from '@pathshala/db';
 import { toPaisa } from '@pathshala/shared';
@@ -269,6 +270,23 @@ export async function scheduleSessionAction(form: FormData): Promise<void> {
     capacity,
   });
   await scheduleSessionReminders(session.id);
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath(`/live/${course.slug}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Change a scheduled room's seat cap; a raise notifies the front of the waitlist. */
+export async function updateLiveCapacityAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+  const capacity = Number.parseInt(text(form, 'capacity') || '0', 10);
+  if (!Number.isInteger(capacity) || capacity < 0 || capacity > 1000) {
+    fail(form, `/studio/${courseId}`, 'Capacity is 0-1000; 0 means no cap.');
+  }
+  const result = await updateLiveSessionCapacity({ sessionId: text(form, 'sessionId'), courseId: course.id, capacity });
+  if (!result) fail(form, `/studio/${courseId}`, 'That live class could not be changed.');
   revalidatePath(`/studio/${courseId}`);
   revalidatePath(`/live/${course.slug}`);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));
