@@ -2,12 +2,17 @@ import { notFound } from 'next/navigation';
 import { getCourseRoster } from '@pathshala/db';
 import type { Locale } from '@pathshala/shared';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/field';
+import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { requireRole } from '@/lib/auth/guard';
+import { parseRosterFilters, rosterQueryString } from '@/lib/roster-filters';
 import styles from '../../studio.module.css';
 
 type RosterPageProps = {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ status?: string; from?: string; to?: string }>;
 };
 
 const COPY = {
@@ -38,6 +43,16 @@ const COPY = {
     comments: 'নাম ছাড়া মন্তব্য',
     download: 'লাইভ উপস্থিতি ও অপেক্ষার CSV ডাউনলোড করুন',
     downloadRoster: 'শিক্ষার্থী তালিকার CSV ডাউনলোড করুন',
+    filter: 'তালিকা ছাঁকুন',
+    statusFilter: 'অবস্থা',
+    allStatuses: 'সব শিক্ষার্থী',
+    activeStatus: 'চলমান',
+    completedStatus: 'সম্পন্ন',
+    from: 'শুরুর তারিখ',
+    to: 'শেষ তারিখ',
+    apply: 'ছাঁকুন',
+    clear: 'ছাঁকা বাদ দিন',
+    emptyFiltered: 'এই ছাঁকনিতে কোনো শিক্ষার্থী নেই।',
     noComments: 'এখনো কেউ লিখিত মন্তব্য দেননি।',
     noSurveys: 'এখনো কোনো সমীক্ষার উত্তর আসেনি।',
   },
@@ -68,20 +83,34 @@ const COPY = {
     comments: 'Anonymous comments',
     download: 'Download live attendance CSV',
     downloadRoster: 'Download roster CSV',
+    filter: 'Filter roster',
+    statusFilter: 'Status',
+    allStatuses: 'All learners',
+    activeStatus: 'Active',
+    completedStatus: 'Completed',
+    from: 'Enrolled from',
+    to: 'Enrolled to',
+    apply: 'Apply filters',
+    clear: 'Clear filters',
+    emptyFiltered: 'No learners match these filters.',
     noComments: 'No written comments yet.',
     noSurveys: 'No survey answers yet.',
   },
 } as const;
 
 /** One course's class list with progress, certificates and anonymous survey averages. */
-export default async function StudioRosterPage({ params }: RosterPageProps) {
+export default async function StudioRosterPage({ params, searchParams }: RosterPageProps) {
   const { locale, id } = await params;
+  const { status, from, to } = await searchParams;
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
   const user = await requireRole('instructor', 'admin');
-  const roster = await getCourseRoster(id, user.id, user.roles.includes('admin'));
+  const filters = parseRosterFilters({ status, from, to });
+  const roster = await getCourseRoster(id, user.id, user.roles.includes('admin'), filters);
   if (!roster) notFound();
   const courseTitle = roster.courseTitle[language] ?? roster.courseTitle.en ?? roster.courseTitle.bn ?? '';
+  const filterQuery = rosterQueryString(filters);
+  const filtered = Boolean(filters.status || filters.from || filters.to);
 
   return (
     <div className={styles.page}>
@@ -98,10 +127,32 @@ export default async function StudioRosterPage({ params }: RosterPageProps) {
           <a className={styles.downloadLink} href={`/api/studio/${id}/attendance`}>
             {copy.download}
           </a>
-          <a className={styles.downloadLink} href={`/api/studio/${id}/roster`}>
+          <a className={styles.downloadLink} href={`/api/studio/${id}/roster${filterQuery ? `?${filterQuery}` : ''}`}>
             {copy.downloadRoster}
           </a>
         </div>
+
+        <form method="get" className={styles.rosterFilter} aria-label={copy.filter}>
+          <Select
+            id="roster-status"
+            name="status"
+            label={copy.statusFilter}
+            defaultValue={filters.status ?? 'all'}
+            options={[
+              { value: 'all', label: copy.allStatuses },
+              { value: 'active', label: copy.activeStatus },
+              { value: 'completed', label: copy.completedStatus },
+            ]}
+          />
+          <Field id="roster-from" name="from" type="date" label={copy.from} defaultValue={from ?? ''} />
+          <Field id="roster-to" name="to" type="date" label={copy.to} defaultValue={to ?? ''} />
+          <div className={styles.filterActions}>
+            <Button type="submit" variant="secondary">
+              {copy.apply}
+            </Button>
+            <Link href={`/studio/${id}/roster`}>{copy.clear}</Link>
+          </div>
+        </form>
 
         <section className={styles.statGrid} aria-label={copy.title}>
           <div className={styles.stat}>
@@ -203,7 +254,9 @@ export default async function StudioRosterPage({ params }: RosterPageProps) {
               ))}
             </tbody>
           </table>
-          {roster.students.length === 0 ? <p className={styles.empty}>{copy.empty}</p> : null}
+          {roster.students.length === 0 ? (
+            <p className={styles.empty}>{filtered ? copy.emptyFiltered : copy.empty}</p>
+          ) : null}
         </div>
       </div>
     </div>

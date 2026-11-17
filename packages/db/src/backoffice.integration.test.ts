@@ -161,6 +161,18 @@ describe('student roster', () => {
     expect(await getCourseRoster(courseId, otherInstructorId, false)).toBeNull();
     expect((await getCourseRoster(courseId, adminId, true))?.total).toBe(2);
   });
+
+  it('filters by enrolment status and date window', async () => {
+    const completed = await getCourseRoster(courseId, instructorId, false, { status: 'completed' });
+    expect(completed?.students.map((row) => row.id)).toEqual([studentId]);
+    expect(completed?.total).toBe(1);
+    const active = await getCourseRoster(courseId, instructorId, false, { status: 'active' });
+    expect(active?.students.every((row) => row.status === 'active')).toBe(true);
+    expect(active?.total).toBe(1);
+    expect(
+      await getCourseRoster(courseId, instructorId, false, { from: new Date(Date.now() + 24 * 60 * 60 * 1000) }),
+    ).toMatchObject({ total: 0, students: [] });
+  });
 });
 
 describe('lesson ordering', () => {

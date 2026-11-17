@@ -30,6 +30,16 @@ test('a teacher reads the roster, reorders a lesson and saves a bank question', 
   ]);
   expect(roster.suggestedFilename()).toBe('pathshala-roster.csv');
 
+  await page.getByLabel('Status').selectOption('completed');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(page).toHaveURL(/status=completed/);
+  await expect(page.getByRole('cell', { name: /Nusrat Jahan/ })).toBeVisible();
+  await page.getByLabel('Status').selectOption('active');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(page.getByRole('cell', { name: /Nusrat Jahan/ })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Clear filters' }).click();
+  await expect(page.getByRole('cell', { name: /Nusrat Jahan/ })).toBeVisible();
+
   await page.getByRole('link', { name: '← Back to course' }).click();
   const curriculum = page.getByRole('heading', { name: /Curriculum/ }).locator('..');
   await expect(curriculum.getByRole('listitem').first()).toContainText('How to work through this course');

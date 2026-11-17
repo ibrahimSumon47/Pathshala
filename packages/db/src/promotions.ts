@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { Course } from './models/course';
 import { Coupon, type CouponType } from './models/coupon';
+import { Notification } from './models/notification';
 import { Order } from './models/order';
 
 export type PromoCourse = { id: string; slug: string; title: { bn?: string; en?: string } };
@@ -19,6 +20,8 @@ export type InstructorCouponRow = {
   maxPerLearner: number;
   /** Distinct buyers who have used the code as many times as the cap allows. */
   learnersAtLimit: number;
+  /** Latest cap-reached note for this code in the last 30 days, if any. */
+  recentCapAt: string | null;
   expiresAt: string | null;
 };
 
@@ -57,6 +60,22 @@ export async function listInstructorPromotions(instructorId: string, isAdmin = f
     rows.push(row.uses);
     usesByCode.set(row._id.code, rows);
   }
+  const codes = coupons.map((coupon) => coupon.code);
+  const capNotes =
+    codes.length === 0
+      ? []
+      : await Notification.find({
+          kind: 'system',
+          ref: { $in: codes },
+          createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        })
+          .sort({ createdAt: -1 })
+          .select('ref createdAt')
+          .lean();
+  const recentCap = new Map<string, Date>();
+  for (const note of capNotes) {
+    if (note.ref && !recentCap.has(note.ref)) recentCap.set(note.ref, note.createdAt);
+  }
   return {
     courses: owned.map((course) => ({ id: String(course._id), slug: course.slug, title: course.title })),
     coupons: coupons.map((coupon) => ({
@@ -74,6 +93,7 @@ export async function listInstructorPromotions(instructorId: string, isAdmin = f
         (coupon.maxPerLearner ?? 1) > 0
           ? (usesByCode.get(coupon.code) ?? []).filter((uses) => uses >= (coupon.maxPerLearner ?? 1)).length
           : 0,
+      recentCapAt: recentCap.get(coupon.code)?.toISOString() ?? null,
       expiresAt: coupon.expiresAt?.toISOString() ?? null,
     })),
   };

@@ -104,7 +104,7 @@ describe('seat-opening notifications', () => {
       notified: 1,
     });
     const first = await listNotifications(studentBId);
-    expect(first.some((notification) => notification.href === '/live/live-class')).toBe(true);
+    expect(first.some((notification) => notification.href.startsWith('/live/live-class?session='))).toBe(true);
     expect(await listNotifications(studentCId)).toEqual([]);
 
     expect(await updateLiveSessionCapacity({ sessionId, courseId, capacity: 3 })).toEqual({

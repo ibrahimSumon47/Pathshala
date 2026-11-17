@@ -303,6 +303,7 @@ export async function releaseSeatAction(form: FormData): Promise<void> {
     sessionId: text(form, 'sessionId'),
     courseId: course.id,
     studentId: text(form, 'studentId'),
+    actorId: user.id,
   });
   if (!result.released) fail(form, `/studio/${courseId}`, 'That seat could not be released.');
   revalidatePath(`/studio/${courseId}`);

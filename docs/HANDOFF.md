@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-17, after the P19 teacher and data loop.
+Updated: 2026-11-17, after the P20 polish round.
 
 ## Where we are
 
@@ -8,8 +8,8 @@ The ten original phases are complete and the expansion slices have begun. Course
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
 streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
 shelf, learner recommendations), the P12-P15 polish slices, P16's studio and operations work
-P17's classroom and commerce work, P18's waitlist/commerce follow-through and P19's teacher
-data loop are live and verified; `docs/features.json` tracks 109 features and
+P17's classroom and commerce work, P18's waitlist/commerce follow-through, P19's teacher data
+loop and P20's polish round are live and verified; `docs/features.json` tracks 113 features and
 `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
@@ -38,7 +38,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   question saved to the bank, the completion survey, certificate revoke/restore, the coupon
   redemption timeline, saving and removing a search from an empty catalogue result, a survey
   comment read on the roster then hidden and restored by the admin, the live attendance and
-  roster CSV downloads, a seat-cap update from the studio and the At limit promo column.
+  roster CSV downloads, the completed/active roster filters, a seat-cap update from the studio
+  and the At limit promo column.
 - axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
   notes, wishlist, cart, notifications, saved searches, surveys, the admin overview and
   orders/coupons/payouts/refunds/certificates, and the studio earnings, community, questions,
@@ -60,10 +61,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-P19 is live: a teacher can release a seat and the next waiter is told, started sessions drop
-their stale queue rows automatically, teachers download a full roster CSV beside the live
-attendance file, and a teacher gets one note when a learner uses up a coupon's per-learner
-allowance. Item 13 of
+P20 is live: seat notes open the exact session, seat releases are audited, the roster can be
+filtered by status and enrolment date with the CSV following the screen, and promotions show
+a Recent cap marker. Item 13 of
 the agreed expansion order is still next; its wording is not in the repository yet, so
 `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
 every remaining item. Replace the placeholder with the brief's sentence before writing code.
@@ -120,4 +120,4 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 
 ## Current gate
 
-`node scripts/check-done.mjs` reports **109/109 — every feature is done with evidence**.
+`node scripts/check-done.mjs` reports **113/113 — every feature is done with evidence**.

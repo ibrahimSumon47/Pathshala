@@ -14,7 +14,7 @@ import styles from './live.module.css';
 
 type LivePageProps = {
   params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{ checked?: string; waitlisted?: string; error?: string }>;
+  searchParams: Promise<{ checked?: string; waitlisted?: string; error?: string; session?: string }>;
 };
 
 const COPY = {
@@ -69,7 +69,7 @@ const COPY = {
 /** Course live room: next class embed, schedule, attendance and calendar download. */
 export default async function LivePage({ params, searchParams }: LivePageProps) {
   const { locale, slug } = await params;
-  const { checked, waitlisted, error } = await searchParams;
+  const { checked, waitlisted, error, session: sessionParam } = await searchParams;
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
   const user = await requireUser();
@@ -81,7 +81,8 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
     listCourseSessions(course.id, 'past'),
   ]);
   const sessions = [...upcoming, ...past];
-  const next = upcoming[0] ?? null;
+  // A seat note names the exact session; fall back to the next class if it is gone.
+  const next = upcoming.find((session) => session.id === sessionParam) ?? upcoming[0] ?? null;
   const checkedIn = next ? await hasCheckedIn(next.id, user.id) : false;
   const waitlistPosition = next ? await getWaitlistPosition(next.id, user.id) : null;
   const seatsFull = Boolean(next && next.capacity > 0 && next.attendanceCount >= next.capacity);

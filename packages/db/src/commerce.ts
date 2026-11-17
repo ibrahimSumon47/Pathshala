@@ -378,6 +378,7 @@ export async function markOrderPaid({
             en: `${coupon.code}: a learner has reached the ${cap}-use limit.`,
           },
           href: '/studio/promotions',
+          ref: coupon.code,
         }).catch(() => undefined);
       }
     }

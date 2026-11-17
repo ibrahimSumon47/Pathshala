@@ -628,3 +628,13 @@ Stale queues are defined by the session, not by a timer on each row. A dashboard
 The roster CSV is a second endpoint rather than another column set in the attendance export: the two files answer different questions and have different ownership-sensitive fields. Both reuse the formula-safe builder and a private no-store response.
 
 The coupon-cap note is written inside `markOrderPaid`, after the order count becomes authoritative. It fires only when that learner's paid uses equal the cap, so a refund that later frees the use and a genuine re-hit are a new event rather than a duplicate of the same one. Unlimited codes never notify.
+
+## 2026-11-17 — P20 keeps notifications and filters honest
+
+A seat note links to the exact upcoming session with `?session=<id>` rather than a new route. The live page already owns session selection, so it falls back to the next class if the linked session has started or been cancelled. Reminder notes use the same link because the reader should land on the class the note is about.
+
+The audit writer moved into `packages/db/src/audit.ts`. Releasing a seat needs to append an audit row, but importing `admin.ts` from `live.ts` would close the `live -> admin -> commerce -> live` import cycle. The admin module re-exports the helper, so existing callers are unchanged.
+
+Roster filters are plain query parameters validated at the web boundary and handed to `getCourseRoster` as dates. The page and the CSV route share the parser, and the download link embeds the same normalized query, so the file cannot silently ignore the screen's filters. `to` includes the whole selected day.
+
+A recent cap marker needs structure, not a regex over notification text. Cap notes now store the coupon code in `Notification.ref`, and the promotions view reads the latest 30-day note per code. That keeps the marker cheap and lets the body wording change without breaking the lookup.

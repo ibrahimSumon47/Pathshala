@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { MinHeap } from '@pathshala/shared';
+import { recordAuditEvent } from './audit';
 import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { Attendance, type AttendanceDoc } from './models/attendance';
@@ -383,7 +384,7 @@ export async function notifyWaitlistForOpenSeats(sessionId: string): Promise<num
             bn: `${title.bn ?? title.en ?? 'ক্লাস'} — একটি আসন খালি হয়েছে। লাইভ পেজ থেকে নিন।`,
             en: `${title.en ?? title.bn ?? 'Class'} has a free seat. Claim it from the live page.`,
           },
-          href: `/live/${course?.slug ?? ''}`,
+          href: `/live/${course?.slug ?? ''}?session=${session._id}`,
           readAt: null,
         },
       },
@@ -536,6 +537,7 @@ export async function releaseAttendance(input: {
   sessionId: string;
   courseId: string;
   studentId: string;
+  actorId: string;
 }): Promise<{ released: boolean; notified: number }> {
   await connectToDatabase();
   if (![input.sessionId, input.courseId, input.studentId].every((id) => Types.ObjectId.isValid(id))) {
@@ -548,6 +550,13 @@ export async function releaseAttendance(input: {
   });
   if (result.deletedCount === 0) return { released: false, notified: 0 };
   const notified = await notifyWaitlistForOpenSeats(input.sessionId);
+  await recordAuditEvent({
+    actor: input.actorId,
+    action: 'live.seat_release',
+    entityType: 'live_session',
+    entityId: input.sessionId,
+    metadata: { courseId: input.courseId, studentId: input.studentId, notified },
+  });
   return { released: true, notified };
 }
 
@@ -603,7 +612,7 @@ export async function dispatchDueReminders(studentId?: string, now = new Date())
             bn: `${session.title.bn ?? session.title.en ?? 'ক্লাস'} শুরু হবে ${session.startsAt.toLocaleString('bn-BD')}`,
             en: `${session.title.en ?? session.title.bn ?? 'Class'} starts ${session.startsAt.toUTCString()}`,
           },
-          href: `/live/${course?.slug ?? ''}`,
+          href: `/live/${course?.slug ?? ''}?session=${session._id}`,
           readAt: null,
         },
       },

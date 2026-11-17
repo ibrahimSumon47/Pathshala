@@ -336,3 +336,11 @@ An export route is an authorization boundary even when the page already checks t
 A queue read should defend itself even when a cleanup job exists. The dashboard purge handles accumulated rows, but `getWaitlistForStudent` also deletes the caller's rows for sessions that are no longer live, so a race or a missed dashboard visit cannot show a dead queue.
 
 Two exports that look similar can still deserve separate routes. Attendance answers “who came and who waited”; the roster answers “how far did each learner get”. Splitting them keeps each file's columns and authorization intent obvious.
+
+## 2026-11-17 — A filter must travel with its export
+
+A filtered table and an unfiltered CSV are a trust bug. Parse the query once, pass the parsed values to both reads, and build the download URL from the same normalized values. Testing the empty-result filter and the status filter caught the difference immediately.
+
+An audit helper is infrastructure, not an admin feature. Moving it into its own module made it usable from the live service without a circular import, while a re-export kept the public import path stable. Lesson: extract the dependency, not a copy.
+
+Notification text is presentation. When another screen needs to group by an event, add a stable `ref` field and index it; matching on body strings would break the first time the copy is translated or reworded.

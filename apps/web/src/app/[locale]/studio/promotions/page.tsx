@@ -40,6 +40,8 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           perLearnerHint: 'One use stops an account reusing the code on another course.',
           perLearnerColumn: 'Per learner',
           atLimit: 'At limit',
+          recentCap: 'Recent cap',
+          capReached: 'Reached',
           days: 'Days valid (0 = no expiry)',
           submit: 'Create code',
           list: 'Your codes',
@@ -69,6 +71,8 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           perLearnerHint: 'একবার দিলে একই অ্যাকাউন্ট অন্য কোর্সে কোডটি আবার লাগাতে পারবে না।',
           perLearnerColumn: 'প্রতি শিক্ষার্থী',
           atLimit: 'সীমায় পৌঁছেছে',
+          recentCap: 'সাম্প্রতিক সীমা',
+          capReached: 'পূর্ণ হয়েছে',
           days: 'কত দিন বৈধ (০ = মেয়াদ নেই)',
           submit: 'কোড তৈরি করুন',
           list: 'আপনার কোড',
@@ -177,6 +181,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                     <th scope="col">{copy.usage}</th>
                     <th scope="col">{copy.perLearnerColumn}</th>
                     <th scope="col">{copy.atLimit}</th>
+                    <th scope="col">{copy.recentCap}</th>
                     <th scope="col">{copy.status}</th>
                     <th scope="col">{copy.expires}</th>
                     <th scope="col">{copy.toggle}</th>
@@ -199,6 +204,15 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                       </td>
                       <td>{coupon.maxPerLearner === 0 ? '∞' : coupon.maxPerLearner}</td>
                       <td>{coupon.maxPerLearner === 0 ? '—' : coupon.learnersAtLimit}</td>
+                      <td>
+                        {coupon.recentCapAt ? (
+                          <span title={new Date(coupon.recentCapAt).toLocaleString(locale)}>
+                            <Badge tone="warning">{copy.capReached}</Badge>
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>
                         <Badge tone={coupon.active ? 'success' : 'neutral'}>
                           {coupon.active ? (language === 'en' ? 'Active' : 'সক্রিয়') : language === 'en' ? 'Off' : 'বন্ধ'}

@@ -1226,6 +1226,49 @@
         "the note names the code and the cap and links to /studio/promotions, so the teacher can judge whether the limit is too tight",
         "packages/db/src/p19.integration.test.ts pays a one-use code and reads the note, then pays an unlimited code and confirms the count does not move"
       ]
+    },
+    {
+      "id": "p20.session-deep-links",
+      "phase": "P20",
+      "title": "Seat notes deep-link to the exact session",
+      "status": "done",
+      "evidence": [
+        "seat-opening and reminder notifications link to /live/[slug]?session=<id>, and the live page selects that session when it is still upcoming, falling back to the next class",
+        "packages/db/src/p18.integration.test.ts asserts the seat note href starts with /live/live-class?session="
+      ]
+    },
+    {
+      "id": "p20.seat-release-audit",
+      "phase": "P20",
+      "title": "Audit trail for seat releases",
+      "status": "done",
+      "evidence": [
+        "releaseAttendance now writes an append-only live.seat_release row with the actor, course, learner and notification count",
+        "the audit helper moved to packages/db/src/audit.ts so live.ts can record the event without importing the admin module and creating a cycle",
+        "packages/db/src/p19.integration.test.ts reads the audit row's actor and metadata after releasing a seat"
+      ]
+    },
+    {
+      "id": "p20.roster-filters",
+      "phase": "P20",
+      "title": "Filtered roster view and CSV",
+      "status": "done",
+      "evidence": [
+        "the roster filters by active/completed status and enrolment date range, and the CSV link carries the same query so the download matches the screen",
+        "getCourseRoster accepts validated filters; the page and API both parse them through apps/web/src/lib/roster-filters.ts and reject junk values",
+        "packages/db/src/backoffice.integration.test.ts checks completed, active and future-date filters; e2e/backoffice.spec.ts applies the status filter and clears it"
+      ]
+    },
+    {
+      "id": "p20.recent-cap-marker",
+      "phase": "P20",
+      "title": "Recent cap-hit marker in promotions",
+      "status": "done",
+      "evidence": [
+        "cap notes now store the coupon code in Notification.ref, and listInstructorPromotions returns the latest note in the last 30 days as recentCapAt",
+        "the promotions table shows a warning Reached badge with the timestamp in its title, while unlimited codes and codes with no recent hit show a dash",
+        "packages/db/src/p19.integration.test.ts pays a capped code and asserts the note ref and the promotion row's recentCapAt"
+      ]
     }
   ]
 }

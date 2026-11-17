@@ -1,5 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { listAuditEvents } from './admin';
 import { createOrderForCourses, markOrderPaid } from './commerce';
 import { connectToDatabase, disconnectFromDatabase } from './connection';
 import {
@@ -19,7 +20,7 @@ import { Enrolment } from './models/enrolment';
 import { LiveWaitlist } from './models/live-waitlist';
 import { Notification } from './models/notification';
 import { User } from './models/user';
-import { createInstructorCoupon } from './promotions';
+import { createInstructorCoupon, listInstructorPromotions } from './promotions';
 
 let mongo: MongoMemoryServer;
 let instructorId = '';
@@ -93,15 +94,23 @@ describe('releasing a seat from the studio', () => {
     expect(await joinSession(session.id, studentBId, ['student'])).toEqual({ status: 'waitlisted', position: 1 });
 
     expect(
-      await releaseAttendance({ sessionId: session.id, courseId, studentId: studentAId }),
+      await releaseAttendance({ sessionId: session.id, courseId, studentId: studentAId, actorId: instructorId }),
     ).toEqual({ released: true, notified: 1 });
     expect(await listAttendance(session.id)).toEqual([]);
     const notes = await listNotifications(studentBId);
     expect(notes[0]?.title.en).toBe('A seat opened in your live class');
     expect(await joinSession(session.id, studentBId, ['student'])).toEqual({ status: 'checked_in', already: false });
     expect(
-      await releaseAttendance({ sessionId: session.id, courseId, studentId: studentAId }),
+      await releaseAttendance({ sessionId: session.id, courseId, studentId: studentAId, actorId: instructorId }),
     ).toEqual({ released: false, notified: 0 });
+    const audit = await listAuditEvents();
+    expect(audit[0]).toMatchObject({
+      actorName: 'Rafiqul Islam',
+      action: 'live.seat_release',
+      entityType: 'live_session',
+      entityId: session.id,
+    });
+    expect(audit[0]?.metadata.studentId).toBe(studentAId);
   });
 });
 
@@ -164,6 +173,9 @@ describe('coupon cap note for the teacher', () => {
     expect(note?.body.en).toContain('CAP-NOTE');
     expect(note?.body.en).toContain('1-use');
     expect(note?.href).toBe('/studio/promotions');
+    expect(note?.ref).toBe('CAP-NOTE');
+    const promotions = await listInstructorPromotions(instructorId);
+    expect(promotions.coupons.find((row) => row.code === 'CAP-NOTE')?.recentCapAt).toBeTruthy();
   });
 
   it('stays quiet for an unlimited code', async () => {

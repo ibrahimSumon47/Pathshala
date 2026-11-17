@@ -19,6 +19,12 @@ export type RosterStudent = {
   surveySubmitted: boolean;
 };
 
+export type RosterFilters = {
+  status?: 'active' | 'completed';
+  from?: Date;
+  to?: Date;
+};
+
 export type CourseRoster = {
   courseId: string;
   courseSlug: string;
@@ -44,6 +50,7 @@ export async function getCourseRoster(
   courseId: string,
   instructorId: string,
   isAdmin: boolean,
+  filters: RosterFilters = {},
 ): Promise<CourseRoster | null> {
   await connectToDatabase();
   if (!Types.ObjectId.isValid(courseId)) return null;
@@ -53,10 +60,15 @@ export async function getCourseRoster(
   if (!course) return null;
 
   // Refunded enrolments lost access, so they are not part of the current class.
-  const enrolments = await Enrolment.find({ course: course._id, status: { $ne: 'refunded' } })
-    .sort({ enrolledAt: -1 })
-    .limit(500)
-    .lean();
+  const query: Record<string, unknown> = { course: course._id, status: { $ne: 'refunded' } };
+  if (filters.status) query.status = filters.status;
+  if (filters.from || filters.to) {
+    const enrolledAt: Record<string, Date> = {};
+    if (filters.from) enrolledAt.$gte = filters.from;
+    if (filters.to) enrolledAt.$lte = filters.to;
+    query.enrolledAt = enrolledAt;
+  }
+  const enrolments = await Enrolment.find(query).sort({ enrolledAt: -1 }).limit(500).lean();
   const studentIds = enrolments.map((enrolment) => enrolment.student);
   const [students, certificates, surveys] = await Promise.all([
     User.find({ _id: { $in: studentIds } }).select('name email').lean(),
