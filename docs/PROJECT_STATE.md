@@ -54,9 +54,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - Learning: `/learn/[slug]` shows the curriculum, progress, sanitized lesson body, video,
   attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses are
   fulfilled by a signed webhook. Access comes from an enrolment, course ownership or admin.
-- Accounts: credentials sign-in for three seeded roles plus public learner registration on
-  the sign-in page (zod validation, bcrypt cost 12, student-only role, duplicate-email
-  handling). Demo account passwords are listed only when `DEMO_AUTH=true`.
+- Accounts: credentials sign-in at `/sign-in` and public learner registration at `/register`,
+  each a single centred form (zod validation, bcrypt cost 12, student-only role,
+  duplicate-email handling). Demo account passwords are listed only when `DEMO_AUTH=true`.
 - Certificates: completion issues one certificate per learner/course with a random public
   code and printed number. `/verify/[code]` is public and renders a QR code pointing at the
   same page.
@@ -96,7 +96,8 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (142 tests: 12 tokens, 13 shared, 42 database,
   58 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **14/14 pass**. The
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **21/21 pass** on
+  2026-11-17 after the auth split. The
   depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
   card, related courses and refund link, then reads a free preview lesson. The
   journeys register a learner, enrol in the free course, finish all three lessons, pass the

@@ -36,7 +36,20 @@
     "or": "or",
     "invalid": "That email and password do not match. Please try again.",
     "demoTitle": "Demo accounts",
-    "demoNote": "These accounts are for trying Pathshala. They hold no personal data and may be reset from time to time."
+    "demoNote": "These accounts are for trying Pathshala. They hold no personal data and may be reset from time to time.",
+    "registered": "Account created. Sign in to continue.",
+    "signupPrompt": "New to Pathshala?",
+    "signupLink": "Create an account",
+    "registerEyebrow": "New account",
+    "registerTitle": "Create your account",
+    "registerLede": "A learner account keeps your courses, notes and certificates in one place. It takes a minute.",
+    "registerName": "Full name",
+    "registerPasswordHint": "At least 12 characters.",
+    "registerSubmit": "Create account",
+    "registerHaveAccount": "Already have an account?",
+    "registerSignIn": "Sign in",
+    "registerExists": "An account already uses that email. Sign in instead.",
+    "registerInvalid": "Check your name, email and password (at least 12 characters)."
   },
   "Dashboard": {
     "eyebrow": "Your Pathshala",

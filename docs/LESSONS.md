@@ -270,3 +270,9 @@ and have each page verify the record it is about to trust.
 
 `getByText('2 courses')` matched both the cart heading and Next.js's route announcer. Assertions
 that name a heading or a landmark survive navigation announcements; plain text does not.
+
+## 2026-11-17 — The header repeats the page's own link
+
+The sign-in link exists in the masthead, so a page-level "Sign in" link makes
+`getByRole('link', { name: 'Sign in' })` match twice. Scope the assertion to `#main`; the
+same fix applies to any label that also appears in navigation.

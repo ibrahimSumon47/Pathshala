@@ -128,13 +128,13 @@
     {
       "id": "p1.registration",
       "phase": "P1",
-      "title": "Public learner registration on the sign-in page",
+      "title": "Public learner registration on its own page",
       "status": "done",
       "evidence": [
         "apps/web/src/lib/auth/registration.ts validates name, email and a 12-character password with zod, hashes with bcrypt cost 12 and creates a student-only account",
-        "sign-up server action folds duplicate-email and invalid input into one readable message on /sign-in#create-account",
-        "apps/web/src/lib/auth/registration.test.ts covers hash storage, email normalisation, duplicates and rejection before any write",
-        "production 2026-11-17: a new learner registered, signed in and completed a course on https://pathshala-web-eight.vercel.app"
+        "registration lives at /register with one centred form; /sign-in carries only the sign-in form, the optional Google button, the demo list and a link to the register page",
+        "a failed sign-up returns to /register?signupError=…#register-form, a successful one returns to /sign-in?registered=1 with the success note, and registration still never signs anyone in",
+        "e2e/public.spec.ts checks that the two pages are separate, that neither form sits off-centre, and completes registration then sign-in in production (2026-11-17)"
       ]
     },
     {

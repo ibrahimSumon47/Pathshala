@@ -9,8 +9,8 @@ anyone can verify.
 **Gateway:** [pathshala-paybridge.vercel.app](https://pathshala-paybridge.vercel.app) ·
 **Repository:** [github.com/ibrahimSumon47/Pathshala](https://github.com/ibrahimSumon47/Pathshala)
 
-The live app runs on Atlas with the seeded catalogue, and its 20 Playwright journeys pass
-against that deployed origin. Anyone can create a learner account on the sign-in page; the
+The live app runs on Atlas with the seeded catalogue, and its 21 Playwright journeys pass
+against that deployed origin. Anyone can create a learner account on the registration page; the
 test-mode checkout accepts `4242 4242 4242 4242`.
 
 ![English landing page](docs/screenshots/home-en-production.png)
@@ -105,7 +105,7 @@ node scripts/check-done.mjs
 ```
 
 Current results: **163 unit and integration tests** (12 tokens, 13 shared, 58 database,
-63 web, 17 API), **20 Playwright flows against production**, **zero axe violations** on
+63 web, 17 API), **21 Playwright flows against production**, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
 wishlist, cart and notifications, and Lighthouse mobile
 on the deployed origin **100/100/100/100** on landing, **99/100/100/100** on the catalogue and

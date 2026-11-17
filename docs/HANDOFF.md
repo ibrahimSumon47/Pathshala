@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-17, after the discovery slice.
+Updated: 2026-11-17, after splitting the auth pages.
 
 ## Where we are
 
@@ -21,7 +21,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- 20/20 Playwright journeys against the deployed web origin, including a fresh registration,
+- 21/21 Playwright journeys against the deployed web origin, including separate sign-in and
+  registration pages with centred forms, a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
   round-trip (rename, password change, delete account), a completed free course with a
   certificate verified while signed out, a real Stripe Checkout purchase with the 4242 card,

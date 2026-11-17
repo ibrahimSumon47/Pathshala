@@ -6,11 +6,12 @@ const PASSWORD = 'production-learner-pass-2026';
 /** Register a unique learner and return the address that now has an account. */
 async function registerLearner(page: Page): Promise<string> {
   const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@pathshala.dev`;
-  await page.goto('/en/sign-in');
+  await page.goto('/en/register');
   await page.locator('#signup-name').fill('Production Learner');
   await page.locator('#signup-email').fill(email);
   await page.locator('#signup-password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/en\/sign-in\?registered=1/);
   await expect(page.getByRole('status')).toContainText('Account created');
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(PASSWORD);

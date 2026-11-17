@@ -40,12 +40,14 @@ export async function signUpAction(formData: FormData): Promise<void> {
     email: String(formData.get('email') ?? ''),
     password: String(formData.get('password') ?? ''),
   });
-  const base = locale === 'en' ? '/en/sign-in' : '/sign-in';
+  const register = locale === 'en' ? '/en/register' : '/register';
+  const signIn = locale === 'en' ? '/en/sign-in' : '/sign-in';
   if (!result.ok) {
     const code = result.code === 'exists' ? 'exists' : 'invalid';
-    redirect(`${base}?signupError=${code}#create-account`);
+    redirect(`${register}?signupError=${code}#register-form`);
   }
-  redirect(`${base}?registered=1`);
+  // Registration never signs anyone in; the message waits on the sign-in form.
+  redirect(`${signIn}?registered=1`);
 }
 
 /** Start the Google flow; the provider is only rendered when it is configured. */

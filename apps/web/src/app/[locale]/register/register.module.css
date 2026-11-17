@@ -1,0 +1,59 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+/* Same narrow centred column as sign-in, so the two auth pages feel like one flow. */
+.shell {
+  max-width: 460px;
+  margin-inline: auto;
+}
+
+.intro {
+  text-align: center;
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.title {
+  margin-top: var(--space-2);
+  font-size: var(--text-3xl);
+}
+
+.lede {
+  margin-top: var(--space-3);
+  color: var(--color-ink-muted);
+  line-height: var(--leading-relaxed);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.switch {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.switchLink {
+  font-weight: 600;
+}

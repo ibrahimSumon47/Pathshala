@@ -39,16 +39,40 @@ test('a course page carries the full buying information and a free preview lesso
   await expect(page.getByText(/Ask within 14 days/)).toBeVisible();
 });
 
+test('sign-in and registration are separate pages with centred forms', async ({ page }) => {
+  await page.goto('/en/sign-in');
+  await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
+  await expect(page.locator('#signup-name')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Create an account' })).toBeVisible();
+
+  // The form sits in the middle of the viewport, not off to one side.
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  const signInField = await page.locator('#email').boundingBox();
+  expect(Math.abs(signInField!.x + signInField!.width / 2 - viewport!.width / 2)).toBeLessThan(40);
+
+  await page.getByRole('link', { name: 'Create an account' }).click();
+  await expect(page).toHaveURL(/\/en\/register$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Create your account' })).toBeVisible();
+  await expect(page.getByLabel('Full name')).toBeVisible();
+  await expect(page.locator('#email')).toHaveCount(0);
+  await expect(page.locator('#main').getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
+
+  const registerForm = await page.locator('#register-form').boundingBox();
+  expect(Math.abs(registerForm!.x + registerForm!.width / 2 - viewport!.width / 2)).toBeLessThan(40);
+});
+
 test('a new learner can register, then sign in', async ({ page }) => {
   const email = `e2e-${Date.now()}@pathshala.dev`;
-  await page.goto('/en/sign-in');
+  await page.goto('/en/register');
   await page.getByLabel('Full name').fill('Production Learner');
-  await page.getByLabel('Email').nth(1).fill(email);
-  await page.getByLabel('Password').nth(1).fill('production-learner-pass-2026');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('production-learner-pass-2026');
   await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/en\/sign-in\?registered=1/);
   await expect(page.getByRole('status')).toContainText('Account created');
-  await page.getByLabel('Email').first().fill(email);
-  await page.getByLabel('Password').first().fill('production-learner-pass-2026');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('production-learner-pass-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/dashboard/);
   await expect(page.getByText(email)).toBeVisible();

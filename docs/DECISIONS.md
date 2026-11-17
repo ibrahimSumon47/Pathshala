@@ -485,3 +485,13 @@ with no gaps or overlaps. The public API still accepts `price=paid` because it i
 the site never offers a bucket that hides a course by rounding.
 
 Revisit: when regional currencies arrive, buckets become per-currency.
+
+## 2026-11-17 — Sign-in and registration are separate pages
+
+Stacking a sign-up form under the sign-in form made one screen carry two jobs, and the page
+read as a demo page rather than an account door. `/sign-in` now holds one centred sign-in
+form with the optional Google button and the demo list; `/register` holds one centred
+registration form with a link back. Registration still returns to sign-in with a success
+note instead of creating a session, so the two pages stay honest about what each does.
+
+Revisit: if registration ever auto-signs-in, the success note and the second form disappear.

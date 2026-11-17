@@ -26,6 +26,9 @@ test('landing, catalogue, course detail, policy and sign-in have zero axe violat
 
   await page.goto('/en/sign-in');
   expect(await violations(page)).toEqual([]);
+
+  await page.goto('/en/register');
+  expect(await violations(page)).toEqual([]);
 });
 
 test('the signed-in learner pages have zero axe violations', async ({ page }) => {

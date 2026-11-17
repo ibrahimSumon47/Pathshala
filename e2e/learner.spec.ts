@@ -6,11 +6,12 @@ const PASSWORD = 'production-learner-pass-2026';
 /** Register a unique learner so settings and deletion do not touch the seeded accounts. */
 async function registerLearner(page: Page): Promise<string> {
   const email = `e2e-learner-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@pathshala.dev`;
-  await page.goto('/en/sign-in');
+  await page.goto('/en/register');
   await page.locator('#signup-name').fill('Settings Learner');
   await page.locator('#signup-email').fill(email);
   await page.locator('#signup-password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/en\/sign-in\?registered=1/);
   await expect(page.getByRole('status')).toContainText('Account created');
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(PASSWORD);

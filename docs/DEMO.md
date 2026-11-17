@@ -5,7 +5,7 @@ seed. Payments and the gateway are in test mode; no real money moves. To run it 
 the commands at the end of this page. Open `http://127.0.0.1:59800` (not `localhost`, so the
 session cookie sticks).
 
-Anyone can create a learner account from the sign-in page. The seeded role accounts below are
+Anyone can create a learner account from the registration page (`/register`). The seeded role accounts below are
 listed there only when `DEMO_AUTH=true`, which production keeps off:
 
 | Role | Email | Password |
