@@ -1,6 +1,7 @@
 'use server';
 
 import { AuthError } from 'next-auth';
+import { registerStudent } from './registration';
 import { redirect } from 'next/navigation';
 import { signIn, signOut } from '@/auth';
 
@@ -29,6 +30,22 @@ export async function signInWithCredentials(formData: FormData) {
     // A successful sign-in throws a Next redirect, which must not be swallowed.
     throw error;
   }
+}
+
+/** Create a learner account, then return to sign-in with a success indicator. */
+export async function signUpAction(formData: FormData): Promise<void> {
+  const locale = localeFrom(formData);
+  const result = await registerStudent({
+    name: String(formData.get('name') ?? ''),
+    email: String(formData.get('email') ?? ''),
+    password: String(formData.get('password') ?? ''),
+  });
+  const base = locale === 'en' ? '/en/sign-in' : '/sign-in';
+  if (!result.ok) {
+    const code = result.code === 'exists' ? 'exists' : 'invalid';
+    redirect(`${base}?signupError=${code}#create-account`);
+  }
+  redirect(`${base}?registered=1`);
 }
 
 /** Start the Google flow; the provider is only rendered when it is configured. */

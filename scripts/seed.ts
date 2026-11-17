@@ -314,15 +314,17 @@ export async function seedDatabase(): Promise<void> {
   ]);
 
   const firstLesson = await Lesson.findOne({ course: programming._id, order: 1 });
+  const completedLessons = await Lesson.find({ course: programming._id }).select('_id').lean();
   await Enrolment.findOneAndUpdate(
     { student: studentId, course: programming._id },
     {
-      $setOnInsert: {
-        status: 'active',
-        completedLessonIds: firstLesson ? [firstLesson._id] : [],
-        progressPercent: firstLesson ? 33 : 0,
-        enrolledAt: new Date('2026-11-12T09:00:00Z'),
+      $set: {
+        status: 'completed',
+        completedLessonIds: completedLessons.map((lesson) => lesson._id),
+        progressPercent: 100,
+        completedAt: new Date('2026-11-15T09:00:00Z'),
       },
+      $setOnInsert: { enrolledAt: new Date('2026-11-12T09:00:00Z') },
     },
     { upsert: true, returnDocument: 'after' },
   );
@@ -356,7 +358,7 @@ export async function seedDatabase(): Promise<void> {
         bn: 'প্রথম সপ্তাহের প্রশ্ন নিয়ে সরাসরি কথা।',
         en: 'A live hour for questions from the first week.',
       },
-      startsAt: new Date(Date.now() + 30 * 60 * 1000),
+      startsAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
       durationMinutes: 60,
       roomName: 'pathshala-demo-live',
       status: 'scheduled',

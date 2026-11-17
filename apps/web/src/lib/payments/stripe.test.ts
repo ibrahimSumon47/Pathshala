@@ -27,6 +27,11 @@ describe('stripeCheckoutBody', () => {
     expect(body.get('metadata[orderId]')).toBe(order.id);
     expect(body.get('client_reference_id')).toBe(order.orderNumber);
   });
+
+  it('lets Stripe choose its dashboard payment methods instead of pinning a card type', () => {
+    const body = stripeCheckoutBody(order, 'https://example.com/ok', 'https://example.com/cancel');
+    expect(body.has('payment_method_types[0]')).toBe(false);
+  });
 });
 
 describe('paidOrderFromStripeEvent', () => {

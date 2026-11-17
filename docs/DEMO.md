@@ -1,19 +1,12 @@
 # Six-minute demo
 
-Everything below runs locally with the seeded database. Payments and the gateway are in test
-mode; no real money moves. Open `http://127.0.0.1:59800` (not `localhost`, so the session
-cookie sticks).
+Open the live app at https://pathshala-web-eight.vercel.app — it runs on Atlas with the same
+seed. Payments and the gateway are in test mode; no real money moves. To run it locally, use
+the commands at the end of this page. Open `http://127.0.0.1:59800` (not `localhost`, so the
+session cookie sticks).
 
-## Before the clock starts
-
-```bash
-pnpm db:dev
-MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm db:seed
-MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm --filter @pathshala/web exec next dev -p 59800
-pnpm --filter @pathshala/paybridge dev
-```
-
-Demo accounts are on the sign-in page:
+Anyone can create a learner account from the sign-in page. The seeded role accounts below are
+listed there only when `DEMO_AUTH=true`, which production keeps off:
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -51,7 +44,7 @@ Demo accounts are on the sign-in page:
 4. Show the receipt, the active enrolment and the ledger split on the PayBridge dashboard
    (`http://127.0.0.1:59801/login`, password is in `apps/paybridge/.env.local`).
 5. Say clearly: test mode, no real money. The order became paid only after the signed
-   webhook, not on the browser return.
+   webhook, not on the browser return. The same flow works with the Stripe test rail.
 
 ## 4:40 — Instructor studio
 
@@ -68,6 +61,15 @@ Demo accounts are on the sign-in page:
    sessions and test revenue.
 3. Unpublish and republish a course, then point at the new **Audit log** row.
 4. Download **Export CSV**; mention that cells are quoted and formula-safe.
+
+## Local commands
+
+```bash
+pnpm db:dev
+MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm db:seed
+MONGODB_URI=mongodb://127.0.0.1:27018/pathshala pnpm --filter @pathshala/web exec next dev -p 59800
+pnpm --filter @pathshala/paybridge dev
+```
 
 ## If something is missing
 

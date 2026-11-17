@@ -9,6 +9,12 @@ test('a student reaches the learning room, live room and certificate', async ({ 
   await page.getByRole('link', { name: /First Steps in JavaScript/ }).first().click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('First Steps in JavaScript');
   await expect(page.getByText('Your first exercise')).toBeVisible();
+  await page.getByRole('link', { name: /A short quiz/ }).click();
+  await page.getByLabel('const', { exact: true }).check();
+  await page.getByLabel('"hello"', { exact: true }).check();
+  await page.getByLabel("'pathshala'", { exact: true }).check();
+  await page.getByRole('button', { name: 'Submit answers' }).click();
+  await expect(page.getByText(/Last score: 3\/3/)).toBeVisible();
 
   await page.goto('/en/live/javascript-first-steps');
   await expect(page.getByRole('heading', { name: /First Steps in JavaScript/ })).toBeVisible();

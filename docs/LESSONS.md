@@ -198,3 +198,41 @@ failed, so the retry was treated as a duplicate. `markOrderPaid` now resolves ei
 id or our order number, and the event row is written in the same guarded path as the order
 update. Lesson: write the idempotency marker and the state change as one unit, or make the
 marker lookup tolerant of both gateway and local identifiers.
+
+## 2026-11-17 — Echoing a connection string into a shell command leaks it
+
+A diagnostic `node -e` script interpolated the Atlas URI into a Windows `cmd` argument. The
+shell rejected the syntax and printed the whole string, password included, into the log. The
+database password was rotated immediately, and the three ignored env files plus the Vercel
+projects and the GitHub secret were updated. Lesson: never interpolate a secret into a shell
+argument; pass it through the child process environment and read it inside the script.
+
+## 2026-11-17 — A Vercel project's rootDirectory is relative to the deploy directory
+
+Running `vercel --prod --cwd apps/paybridge` failed with "The specified Root Directory
+apps/paybridge does not exist" because the CLI joined the two paths. Deploy monorepo projects
+with `--cwd .` and `--project <name>`; for a prebuilt output, build inside the app directory
+and deploy from the repository root. The same mistake created a stray `api` project, which is
+a reminder to pass `--project` explicitly.
+
+## 2026-11-17 — Stripe's hosted Checkout is an iframe form now
+
+The production Stripe test failed on `#cardNumber` because current Checkout renders its card
+fields inside an iframe and exposes them by role and label. Playwright has to use
+`page.frameLocator('iframe').first()` with `getByRole('textbox', { name: 'Card number' })`.
+Lesson: locate hosted payment fields by their accessible names, and re-check the page snapshot
+rather than assuming the legacy element ids.
+
+## 2026-11-17 — A demo fixture 30 minutes out expires mid-suite
+
+The seeded live class started 30 minutes after seeding, so the later tests in a three-minute
+production run found no upcoming room. Anchoring it two hours ahead keeps the room upcoming
+for a full run and still reads as a real class. Lesson: fixtures that other tests depend on
+need a window longer than the suite, not just longer than the next page load.
+
+## 2026-11-17 — Playwright writes to the real database
+
+The journey suite registers a learner and publishes a course on every run, so Atlas
+accumulates `e2e-*` rows. That is the right trade-off for production proof, but the demo needs
+a cleanup step and the seed must stay idempotent. Lesson: end-to-end tests against production
+should own a recognisable namespace that can be deleted safely.

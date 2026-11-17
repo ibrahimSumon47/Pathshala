@@ -15,7 +15,6 @@ export function stripeCheckoutBody(order: OrderView, successUrl: string, cancelU
   body.set('line_items[0][price_data][currency]', 'bdt');
   body.set('line_items[0][price_data][unit_amount]', String(order.totalPaisa));
   body.set('line_items[0][price_data][product_data][name]', order.courseTitle.en ?? order.courseTitle.bn ?? 'Pathshala course');
-  body.set('payment_method_types[0]', 'card');
   return body;
 }
 

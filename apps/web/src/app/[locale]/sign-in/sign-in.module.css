@@ -38,6 +38,22 @@
   max-width: 520px;
 }
 
+.signup {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-line);
+}
+
+.success {
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  background: var(--color-surface-muted);
+}
+
 .form {
   display: grid;
   gap: var(--space-5);
@@ -107,6 +123,10 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
     gap: var(--space-6);
+  }
+
+  .gridSingle {
+    grid-template-columns: minmax(0, 520px);
   }
 
   .gridSingle {

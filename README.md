@@ -4,14 +4,16 @@ A bilingual (বাংলা / English) course marketplace where instructors pub
 and live classes, and learners enrol, track progress, pay in test mode and earn a certificate
 anyone can verify.
 
-**Live API:** [pathshala-api-lake.vercel.app/health](https://pathshala-api-lake.vercel.app/health) ·
+**Live app:** [pathshala-web-eight.vercel.app](https://pathshala-web-eight.vercel.app) ·
+**API:** [pathshala-api-lake.vercel.app/health](https://pathshala-api-lake.vercel.app/health) ·
+**Gateway:** [pathshala-paybridge.vercel.app](https://pathshala-paybridge.vercel.app) ·
 **Repository:** [github.com/ibrahimSumon47/Pathshala](https://github.com/ibrahimSumon47/Pathshala)
 
-The web app is built and passing its full production-build suite locally. Its public
-deployment waits on the owner's free MongoDB Atlas URI; see [docs/DEPLOY.md](docs/DEPLOY.md)
-and [docs/OWNER_TODO.md](docs/OWNER_TODO.md). No demo URL is claimed before it works.
+The live app runs on Atlas with the seeded catalogue, and its 13 Playwright journeys pass
+against that deployed origin. Anyone can create a learner account on the sign-in page; the
+test-mode checkout accepts `4242 4242 4242 4242`.
 
-![English landing page](docs/screenshots/home-en.png)
+![English landing page](docs/screenshots/home-en-production.png)
 
 ## What it does
 
@@ -31,7 +33,7 @@ and [docs/OWNER_TODO.md](docs/OWNER_TODO.md). No demo URL is claimed before it w
   that needs no login; admins approve courses, change instructor access and export an audit
   CSV that cannot execute spreadsheet formulas.
 
-![Course catalogue](docs/screenshots/courses-en.png)
+![Course catalogue](docs/screenshots/courses-en-production-desktop.png)
 
 ## Architecture
 
@@ -61,7 +63,9 @@ Browser ──► Next.js (session, server actions) ──► MongoDB
 
 | Certificate verification | Bangla landing |
 | --- | --- |
-| ![Certificate with QR code](docs/screenshots/certificate.png) | ![Bangla landing page](docs/screenshots/home-bn.png) |
+| ![Certificate with QR code](docs/screenshots/certificate-production.png) | ![Bangla landing page](docs/screenshots/home-bn-production.png) |
+
+All four images are captures of the production deployment on 2026-11-17.
 
 ## Stack
 
@@ -98,10 +102,11 @@ pnpm audit           # production advisories
 node scripts/check-done.mjs
 ```
 
-Current results: **125 unit and integration tests** (12 tokens, 13 shared, 35 database,
-48 web, 17 API), **8 Playwright flows**, **zero axe violations** on landing, catalogue,
-sign-in and dashboard, and Lighthouse mobile **99/100/100/100** on landing and
-**97/100/100/100** on the catalogue (performance/accessibility/best-practices/SEO).
+Current results: **129 unit and integration tests** (12 tokens, 13 shared, 35 database,
+52 web, 17 API), **13 Playwright flows against production**, **zero axe violations** on
+landing, catalogue, sign-in and dashboard, and Lighthouse mobile on the deployed origin
+**100/100/100/100** on landing and **99/100/100/100** on the catalogue
+(performance/accessibility/best-practices/SEO), each with FCP and LCP at 0.9 s and CLS 0.
 
 ## Security
 
@@ -119,14 +124,14 @@ residual risks are in [docs/SECURITY.md](docs/SECURITY.md).
 - [docs/DECISIONS.md](docs/DECISIONS.md) — why the stack looks like this.
 - [docs/SECURITY.md](docs/SECURITY.md) — OWASP review.
 - [docs/HANDOFF.md](docs/HANDOFF.md) — the next step for a new maintainer.
-- [docs/OWNER_TODO.md](docs/OWNER_TODO.md) — the two owner-only console steps left.
+- [docs/OWNER_TODO.md](docs/OWNER_TODO.md) — the optional owner-only console steps left.
 
 ## Limits
 
-- Payments are a sandbox: no real card is charged. A live Stripe redirect needs the owner's
-  sandbox keys; the signature path is proven with recorded fixtures.
-- The deployed web origin and Atlas catalogue are pending `MONGODB_URI`; the API is live and
-  honestly returns `503 database_unavailable` until then.
+- Payments are a sandbox: no real card is charged. Both rails work end to end in test mode,
+  and Stripe still needs a live-mode account and price review before real money.
+- The demo accounts print their passwords only when `DEMO_AUTH=true`; production keeps it
+  off, so use the registration form instead.
 - Optional reminder email needs `RESEND_API_KEY` and a verified sender.
 - In-process rate limits are per function instance, not global.
 - The local memory database resets on restart; it is not production storage.

@@ -4,35 +4,29 @@ Only the owner can do these: they need a browser session, an OAuth console or a 
 Each item says exactly where the resulting value goes. Never paste a secret into chat; put
 it in `private/.env.local` (gitignored). Check items off as they are done.
 
-## 1. MongoDB Atlas — re-authenticate and create the free cluster (needed for real data)
+## 1. MongoDB Atlas — done 2026-11-17
 
-1. In a terminal on this PC run `atlas auth login` and finish the browser step. The CLI
-   session expired on 2026-11-16.
-2. Go to https://cloud.mongodb.com → **Create** (new project) → name it `Pathshala`.
-3. **Build a Database** → **M0 / Free** → provider AWS → region `Singapore (ap-southeast-1)`
-   → **Create**.
-4. **Database Access** → **Add New Database User** → password authentication → user
-   `pathshala_app`, generate a password, role **Read and write to any database**.
-5. **Network Access** → **Add IP Address** → `0.0.0.0/0`, comment `Vercel serverless`.
-   (Serverless functions have no fixed IP; this is acceptable for a portfolio database and
-   is documented as a limitation.)
-6. **Connect** → **Drivers** → Node.js → copy the `mongodb+srv://…` string, replace
-   `<password>` with the real one.
-7. Put it in `private/.env.local` as `MONGODB_URI=…` and tell me it is there. I will copy
-   it into `apps/web/.env.local` and the API environment; auth then reads Mongo users and the
-   catalogue stops returning `database_unavailable`. Seeded demo users replace the public
-   demo list at that point.
+Created with the Atlas CLI: project `Pathshala` (`6afb4e8ab5ac3f005bc29444`), free M0
+cluster `Pathshala` on AWS `AP_SOUTHEAST_1`, database user `pathshala_app` with
+`readWriteAnyDatabase`, network access `0.0.0.0/0` for Vercel. `pnpm db:seed` populated six
+bilingual courses, three demo accounts, a quiz, a live session and one certificate. The URI
+lives only in gitignored `.env.local` and in Vercel/GitHub secrets.
 
-## 2. Stripe — a dedicated sandbox (implemented with fixtures; real redirect waits)
+Owner action: none. If the cluster is ever recreated, update `MONGODB_URI` in all three
+Vercel projects and the GitHub secret, then redeploy.
 
-1. https://dashboard.stripe.com → **Sandboxes** → **Create sandbox** → name `Pathshala`.
-2. Open the sandbox → **Developers → API keys** → copy the **secret key** (`sk_test_…`)
-   and the **publishable key** (`pk_test_…`).
-3. In `private/.env.local` add `STRIPE_SECRET_KEY=…` and
-   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=…`.
-4. Do not add a payment method. Test mode needs no card and takes no real money.
-5. The webhook signing secret (`STRIPE_WEBHOOK_SECRET`) comes later, once the endpoint
-   exists; the CLI can create it and I will read it from there.
+## 2. Stripe — sandbox keys are in place (done 2026-11-17)
+
+`STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` come from the owner's sandbox
+and are set in Vercel. The webhook endpoint
+`https://pathshala-web-eight.vercel.app/api/payments/stripe/webhook` was created through the
+Stripe API for `checkout.session.completed` and
+`checkout.session.async_payment_succeeded`; its signing secret is in Vercel and gitignored
+env files. A real test checkout with `4242 4242 4242 4242` was verified on production.
+
+Owner action: none for test mode. Real money would need a live-mode account, a review of
+Stripe's BDT support and a live webhook — deliberately out of scope.
+
 
 ## 3. Google Cloud — OAuth client for sign-in (optional; credentials sign-in works)
 
@@ -47,11 +41,10 @@ it in `private/.env.local` (gitignored). Check items off as they are done.
    `Pathshala web`. Authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google`
    - `http://localhost:59800/api/auth/callback/google` (the preview server used this session)
-   - the production web callback, which I will give you once the web app is deployed
-     (the API domain is not an OAuth callback).
+   - `https://pathshala-web-eight.vercel.app/api/auth/callback/google` (production)
 6. Copy the client ID and client secret into `private/.env.local` as `AUTH_GOOGLE_ID` and
-   `AUTH_GOOGLE_SECRET`. The Google button appears only when both are set; without Atlas the
-   session gets the student role and no stored user, so connect Atlas first for real accounts.
+   `AUTH_GOOGLE_SECRET`, then add both to Vercel project `pathshala-web`. The Google button
+   appears only when both are set. Email/password accounts and registration work without it.
 
 ## 4. Email sender (optional; in-app reminders already ship)
 
@@ -61,21 +54,28 @@ verify one sender domain, and put both values in `private/.env.local` as `RESEND
 and `REMINDER_EMAIL_FROM`. The free tier has to be rechecked before relying on it; without
 it, in-app reminders and `.ics` files work fully.
 
-## 5. Vercel — API deployed (done 2026-11-16)
+## 5. Vercel — web, API and PayBridge deployed (done 2026-11-17)
 
-The API is live at `https://pathshala-api-lake.vercel.app` in project `pathshala-api`
-(Hobby, function region `iad1`). `/health` is verified, including a 1.411s cold start and a
-0.674s warm request. `/courses` correctly returns 503 `database_unavailable` until Atlas is
-configured. Three Hobby deployments were used: the first two failed on module resolution
-and the third, a self-contained bundle, is live.
+| App | Project | Production URL |
+| --- | --- | --- |
+| Web | `pathshala-web` | https://pathshala-web-eight.vercel.app |
+| API | `pathshala-api` | https://pathshala-api-lake.vercel.app |
+| Gateway | `pathshala-paybridge` | https://pathshala-paybridge.vercel.app |
 
-Remaining owner action: item 1 (Atlas). Once `MONGODB_URI` is in `private/.env.local`, the
-web, API and PayBridge deployments follow `docs/DEPLOY.md`, then I will verify a Mongo-backed
-`/courses` 200, a complete sign-in/checkout flow and the production Playwright suite. Do not
-spend another deployment before the URI exists.
+`pathshala-web.vercel.app` was already taken, so the web project keeps the
+`pathshala-web-eight` alias; every environment variable and the Stripe endpoint use that
+host. The API is deployed prebuilt from the repository root (see `docs/DEPLOY.md`) because
+its project root directory is `apps/api`. Production checks: `/health` 200, `/courses` 200
+from Atlas, and 13/13 Playwright journeys.
+
+Owner action: none.
 
 ## 6. Secrets distribution (I do this, not you)
 
-Once the values are in `private/.env.local` I will push them to GitHub with
-`gh secret set` and to Vercel with `vercel env add`, reading the file directly so no value
-appears in chat or logs.
+GitHub secrets are `MONGODB_URI`, `AUTH_SECRET`, `STRIPE_SECRET_KEY` and
+`STRIPE_WEBHOOK_SECRET`. Vercel holds the same values plus the PayBridge merchant key,
+webhook secret, dashboard password and dashboard secret. All were written by path from
+ignored files with `gh secret set` and `vercel env add`, so no value appears in chat or logs.
+
+Owner action: rotate the Stripe keys or the PayBridge merchant key in both places if one is
+ever exposed.

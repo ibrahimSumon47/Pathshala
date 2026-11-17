@@ -1,0 +1,38 @@
+{
+  "measuredAt": "2026-11-17",
+  "origin": "https://pathshala-web-eight.vercel.app",
+  "formFactor": "mobile",
+  "lighthouseVersion": "13.6.0",
+  "pages": {
+    "home": {
+      "url": "https://pathshala-web-eight.vercel.app/en",
+      "scores": {
+        "performance": 1,
+        "accessibility": 1,
+        "bestPractices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "firstContentfulPaint": "0.9 s",
+        "largestContentfulPaint": "0.9 s",
+        "cumulativeLayoutShift": "0",
+        "totalBlockingTime": "90 ms"
+      }
+    },
+    "catalogue": {
+      "url": "https://pathshala-web-eight.vercel.app/en/courses",
+      "scores": {
+        "performance": 0.99,
+        "accessibility": 1,
+        "bestPractices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "firstContentfulPaint": "0.9 s",
+        "largestContentfulPaint": "0.9 s",
+        "cumulativeLayoutShift": "0",
+        "totalBlockingTime": "110 ms"
+      }
+    }
+  }
+}

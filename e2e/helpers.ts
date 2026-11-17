@@ -3,8 +3,8 @@ import { expect, type Page } from '@playwright/test';
 /** Sign in through the real credentials form and wait for the dashboard. */
 export async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/en/sign-in');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
+  await page.locator('#email').fill(email);
+  await page.locator('#password').fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/dashboard/);
 }

@@ -1,6 +1,19 @@
 # Project state
 
-Snapshot: 2026-11-16, Phase 8 complete. The build, quality suite, portfolio README, demo script and deployment guide are finished; `node scripts/check-done.mjs` is 47/47. Only the owner's Atlas URI and the resulting web deployment remain.
+Snapshot: 2026-11-17. All ten phases are complete, the three apps are deployed together on
+Atlas, and `node scripts/check-done.mjs` reports 48/48 with production evidence.
+
+## Live deployment
+
+| App | URL | Notes |
+| --- | --- | --- |
+| Web | https://pathshala-web-eight.vercel.app | Next.js 16 on Vercel Hobby, Atlas data |
+| API | https://pathshala-api-lake.vercel.app | NestJS bundle, `/courses` 200 from Atlas |
+| Gateway | https://pathshala-paybridge.vercel.app | PayBridge sandbox, own Vercel project |
+| Database | Atlas M0, `AP_SOUTHEAST_1` | project `Pathshala`, user `pathshala_app` |
+
+The plain `pathshala-web.vercel.app` name belongs to another account, so the web app uses the
+`-eight` alias everywhere, including `APP_URL`, `WEB_ORIGIN` and the Stripe endpoint.
 
 ## Phase status
 
@@ -8,16 +21,15 @@ Snapshot: 2026-11-16, Phase 8 complete. The build, quality suite, portfolio READ
 | --- | --- | --- |
 | Intake | Owner questions, environment audit, documentation system | done — 2026-11-16 |
 | P0 | Repo hygiene, hooks, CI, workspace, check-done | done — 2026-11-16 |
-| P1 | Design system, i18n, models | done — 2026-11-16 |
-| P1 | Auth with roles, API hardening | done — 2026-11-16 |
-| P1 | API hosting spike | done — 2026-11-16, cold 1.411s, warm 0.674s |
-| P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-16 |
-| P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-16 |
-| P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-16 (real Stripe redirect waits on owner keys) |
-| P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-16 (optional email waits on a sender key) |
-| P6 | Certificates, analytics, admin area, audit log | done — 2026-11-16 |
-| P7 | Seed data, production e2e, a11y, performance, security review | done — 2026-11-16 (deployed-origin pass waits on Atlas) |
-| P8 | Portfolio README, demo script, deploy guide | done — 2026-11-16 |
+| P1 | Design system, i18n, models, auth, registration, API hardening | done — 2026-11-17 |
+| P1 | API hosting | done — 2026-11-17, Mongo-backed 200 in production |
+| P2 | Categories, courses, sections, lessons, authoring, catalog | done — 2026-11-17 |
+| P3 | Enrolment, progress, quizzes, Q&A, notes, reviews, wishlist | done — 2026-11-17 |
+| P4 | Stripe test mode, PayBridge gateway, coupons, ledgers | done — 2026-11-17, both rails verified live |
+| P5 | Live classes, attendance, reminders, calendar files | done — 2026-11-17 |
+| P6 | Certificates, analytics, admin area, audit log | done — 2026-11-17 |
+| P7 | Seed data, production e2e, a11y, performance, security review | done — 2026-11-17 |
+| P8 | Portfolio README, demo script, deploy guide | done — 2026-11-17 |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -26,156 +38,81 @@ Snapshot: 2026-11-16, Phase 8 complete. The build, quality suite, portfolio READ
 - `packages/tokens`: warm paper palette, one deep-teal accent, light and dark roles, a
   4/8 point spacing grid, type scale, radii, shadows and motion durations.
 - `packages/shared`: money in integer paisa with Bangla and English formatting.
-- `packages/db`: Mongoose models plus the catalogue query module. `scripts/dev-db.ts`
-  starts a throwaway MongoDB with `mongodb-memory-server` and seeds six bilingual courses;
-  `MONGODB_URI` switches the same code to Atlas when the owner provides it.
+- `packages/db`: Mongoose models plus catalogue, commerce, learning, live, certificate, admin
+  and analytics modules. `scripts/dev-db.ts` starts a throwaway MongoDB for local work;
+  `MONGODB_URI` switches the same code to Atlas.
 - Catalogue: search, subject/level/language/price filters, bounded pagination and a public
   detail view. API `/courses` and `/courses/:slug` call the same query module.
 - Authoring: instructor studio at `/studio` with course create/edit, sections, lessons,
-  sanitized HTML, https video slots, validated attachment metadata and draft/publish, plus
-  a quiz builder per quiz lesson with single, multiple and true/false questions.
+  sanitized HTML, https video slots, validated attachment metadata, draft/publish and a quiz
+  builder per quiz lesson.
 - Learning: `/learn/[slug]` shows the curriculum, progress, sanitized lesson body, video,
-  attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses wait
-  for P4 checkout. Access comes from an enrolment, course ownership or the admin role.
-- Learner surfaces: course detail has enrol, wishlist and review forms; the dashboard lists
-  enrolled courses with progress, saved courses, receipts and orders. Models: Enrolment,
-  QuizQuestion, QuizAttempt, Note, Question, Review, Wishlist, Order, Coupon, Payment,
-  LedgerEntry, WebhookEvent.
+  attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses are
+  fulfilled by a signed webhook. Access comes from an enrolment, course ownership or admin.
+- Accounts: credentials sign-in for three seeded roles plus public learner registration on
+  the sign-in page (zod validation, bcrypt cost 12, student-only role, duplicate-email
+  handling). Demo account passwords are listed only when `DEMO_AUTH=true`.
 - Certificates: completion issues one certificate per learner/course with a random public
   code and printed number. `/verify/[code]` is public and renders a QR code pointing at the
-  same page; the dashboard links to it.
+  same page.
 - Analytics and admin: `/studio` shows revenue, sales, students, completion, attendance and
   a per-course table. `/admin` reports operating counts, approves course status, grants or
-  revokes instructor access and lists the audit trail. The audited CSV export is quoted and
+  revokes instructor access and lists the audit trail. The CSV export is quoted and
   formula-safe.
 - Live classes: the studio schedules a session with a generated Jitsi room; `/live/[slug]`
   embeds the next room with a new-tab fallback, records one attendance row per learner and
-  offers `.ics` downloads. A min-heap drains due reminders into in-app notifications with
-  an idempotent status guard; `pnpm reminders:dispatch` is the cron entry point and email
-  is attempted only when `RESEND_API_KEY` and `REMINDER_EMAIL_FROM` exist.
-- Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test
-  rails. `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook
-  events, payment references and order status guards. Signed webhooks live at
-  `/api/payments/stripe/webhook` and `/api/payments/paybridge/webhook`.
-- `apps/paybridge`: a separate Next.js sandbox gateway with merchant API keys, hosted
-  checkout, signed webhooks with retry, refunds, a ledger and a password-gated dashboard.
-  It reads the same local memory MongoDB; its deployment waits on Atlas.
-- `apps/web`: Next.js 16 with next-intl. Bangla lives at `/` and English at `/en`; pages
-  are server-rendered because the header reads the session. Routes: landing, catalogue,
-  sign-in, dashboard, admin and the Auth.js handler.
-- Auth.js v5 with credentials plus optional Google, JWT sessions and roles in the token.
-  Demo accounts are bcrypt-hashed in code; setting `MONGODB_URI` switches the same account
-  functions to Mongo. `/dashboard` needs a session and `/admin` needs the admin role.
-- `apps/api`: NestJS with health and `GET /courses`, a repository seam, Zod validation, a
-  single error envelope and a per-instance rate limit. It ships as one self-contained
-  esbuild CJS bundle and is live at `https://pathshala-api-lake.vercel.app`; the function
-  runs in `iad1`.
-- Theme: `apps/web/src/lib/theme.ts` owns a cookie name; the layout reads it and renders
-  `data-theme` on `<html>`, and the toggle writes the cookie. There is no boot script, so a
-  soft navigation cannot drop the theme.
-- Primitives in `apps/web/src/components/ui`: Button, Field, Select, Card, Badge, Skeleton,
-  EmptyState. Header adds account state, a language switch and a cookie-backed toggle.
+  offers `.ics` downloads. A min-heap drains due reminders into in-app notifications;
+  `pnpm reminders:dispatch` is the cron entry point and email needs `RESEND_API_KEY`.
+- Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test rails.
+  `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook events,
+  payment references and order status guards. Stripe creates a BDT Checkout Session and its
+  hosted page is filled in the production test; PayBridge is our own gateway with a merchant
+  API key, hosted checkout, HMAC webhooks, retries, refunds and a ledger.
+- Theme: a server-read cookie renders `data-theme` on `<html>` before paint; the toggle writes
+  the cookie. There is no boot script, so soft navigation cannot drop the theme.
 - Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
-- Guards, CI and the feature gate from P0 are unchanged and still green.
 
-## Verification recorded 2026-11-16
+## Verification recorded 2026-11-17 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (116 tests: 12 tokens, 30 db, 13 shared,
-  44 web, 17 API) and `pnpm build` all exit 0 locally, including the PayBridge build. The
-  API and live integration tests boot `mongodb-memory-server`; no Atlas credentials are needed.
-- Visual pass on 2026-11-16: landing (Bangla and English), courses, sign-in, dashboard and
-  admin at 1440px in light and dark; earlier phone pass at 390px and a 320px overflow
-  check. This pass found and fixed two real theme defects: a soft language switch dropped
-  `data-theme` and reverted dark to light, and the `next/script` boot still warned because
-  the locale layout is not the true root layout. The theme now comes from a server-read
-  cookie and the warning is gone.
-- Browser auth flow: student signs in, gets the student dashboard and a 404 on `/admin`;
-  sign-out works; admin signs in and sees the account table; a wrong password returns to
-  the form with an accessible error.
-- API on `http://localhost:4000`: health 200, courses 503 `database_unavailable`, invalid
-  query 400, missing route 404, the 61st request in a minute 429.
-- Deployed API on 2026-11-16: `/health` 200; idle first request 1.411s total (`uptime: 0`,
-  so a fresh process), warm second request 0.674s; `/courses` 503
-  `database_unavailable`; `limit=99` 400 `validation_failed`; unknown route 404
-  `not_found`. Three Hobby deployments were used: two failed on module resolution and the
-  third, a self-contained bundle, is live.
-- Phase 2 browser flow: instructor sign-in from the seeded Mongo user, studio list,
-  course create, section and lesson add, publish, public detail 200 and catalogue search
-  hit. Admin category form is wired and available.
-- Phase 2 API on the seeded memory DB: `/courses?limit=2&price=free` 200, course detail 200,
-  limit 99 400, unknown slug 404. Catalogue integration tests cover published-only,
-  filters, search and detail.
-- Phase 3 browser flow as `student@pathshala.dev` against the seeded memory DB: dashboard
-  listed the enrolled course at 33% and a saved course; marking a lesson moved progress to
-  67%; the quiz scored 3/3, showed the last score and completed the course at 100%; a Bangla
-  note persisted after redirect; a lesson question appeared in the thread; updating a review
-  changed the text and kept the rating count; wishlist toggled both ways. Quiz scoring has
-  four unit tests and progress rounding has three.
-- Phase 4 browser flow: EARLYBIRD took a ৳1,200 course to ৳960; PayBridge hosted checkout
-  accepted the 4242 card, delivered a signed webhook and Pathshala showed receipt
-  RCPT-20261116-52EE67 with an active enrolment. The ledger had ৳768 instructor and ৳192
-  platform; a refund reversed both and set the enrolment to refunded. The failed delivery
-  retry moved to delivered. A signed Stripe fixture event fulfilled another order and the
-  replay returned `duplicate: true`.
-- Phase 5 browser flow: the instructor scheduled "Debugging clinic" for 2026-11-20, 90
-  minutes; the enrolled student opened the seeded room with the Jitsi iframe and a new-tab
-  fallback, checked in, saw "You are marked present" and appeared in the studio attendance
-  log. The dashboard delivered one in-app reminder and listed the upcoming class; the
-  authenticated `.ics` download returned a valid VCALENDAR with DTSTART and SUMMARY.
-  `pnpm reminders:dispatch` exited 0 against the seeded memory DB.
-- Phase 6 browser flow: completing the JavaScript course issued certificate
-  PS-2026-TP8VTU (code TP8VTU59XX) with a server-generated QR; `/verify/TP8VTU59XX` returned
-  200 without a session. The instructor studio showed ৳1,200 revenue, 1 paid sale, 1 student,
-  50% completion, 1 attendance and per-course rows. The admin unpublished and republished
-  Studio Smoke Course, granted and revoked the student's instructor role, saw both audit
-  rows and downloaded a 200 `text/csv` export with a BOM.
-- Phase 8 package: README has architecture, four screenshots, measured checks and the
-  live-API link; `docs/DEMO.md` is a six-minute walkthrough; `docs/DEPLOY.md` covers Atlas,
-  Vercel web/API/PayBridge, secrets, post-deploy checks and rollback. No secret value is in
-  any tracked file.
-- Phase 7 quality pass: 8 Playwright tests pass against the production build on
-  `127.0.0.1:59802`, including catalogue search, student learning, live room, certificate,
-  student/admin boundary and admin audit export. axe reports zero violations on landing,
-  catalogue, sign-in and dashboard after fixing brand naming, progress labels and contrast.
-  Lighthouse mobile: landing 99/100/100/100 with FCP 0.7s, LCP 0.7s, CLS 0 and TBT 120ms;
-  catalogue 97/100/100/100 with FCP 0.6s, LCP 0.6s, CLS 0 and TBT 190ms. `pnpm audit --prod`
-  is clean; the dev-only minimatch advisory remains documented.
-- Not verified yet: a real Stripe redirect and signature (test keys absent; fixture path is
-  proven), a deployed Mongo-backed catalogue and deployed Playwright run (no Atlas URI),
-  Google sign-in, optional email delivery (no Resend key and no owned sender domain), and
-  cross-instance rate limiting.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (129 tests: 12 tokens, 13 shared, 35 database,
+  52 web, 17 API) and `pnpm build` all exit 0 locally.
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **13/13 pass**. The
+  journeys register a learner, enrol in the free course, finish all three lessons, pass the
+  quiz, earn a certificate and verify it in a signed-out context; buy one course through
+  PayBridge with `EARLYBIRD`; buy another through a real Stripe Checkout with the 4242 card;
+  publish a course in the studio; and unpublish/republish it as the admin with audit rows.
+  Other tests cover catalogue search, the student/admin boundary, the live room, the audit
+  CSV and two axe passes.
+- axe: zero violations on landing, catalogue, sign-in and the student dashboard.
+- Lighthouse mobile on the deployed origin: landing **100/100/100/100**, catalogue
+  **99/100/100/100** (performance/accessibility/best-practices/SEO); FCP 0.9 s, LCP 0.9 s,
+  CLS 0, TBT 90-110 ms. JSON reports are in `docs/screenshots/*-production.json`.
+- API: `/health` 200, `/courses` 200 with Atlas rows, `limit=99` 400, unknown route 404.
+- PayBridge: `/login` 200 and a hosted checkout that fulfilled a real order.
+- `pnpm audit --prod --audit-level high` reports no known vulnerabilities.
 
 ## Environment facts
 
-- Node 24.22.1, pnpm 12.15.0, git 2.56.0, gh 2.103.3 signed in as `ibrahimSumon47`.
-- Vercel CLI 65.4.0 on Hobby; Stripe CLI against another sandbox; gcloud signed in;
-  `atlas` installed but its session expired.
-- gitleaks 8.30.1 under gitignored `tools/gitleaks/`.
-- Docker is not installed.
+- Node 24.22.1, pnpm 12.15.0, git 2.56.0, gh signed in as `ibrahimSumon47`.
+- Vercel CLI 65.4.0 on Hobby; Atlas CLI authenticated; Stripe CLI on the owner's sandbox;
+  gcloud signed in.
+- gitleaks 8.30.1 under gitignored `tools/gitleaks/`; Docker is not installed.
 
 ## Known risks
 
-- Vercel Hobby daily deployment cap — this slice used three deployments, two of them
-  failed attempts, so batch the next ones.
-- Atlas, Google OAuth and a dedicated Stripe sandbox need the owner; see `OWNER_TODO.md`.
-  Local development uses the memory server and resets on restart.
-- The deployed function has never connected to Mongo, so its bundled Mongoose path is not
-  proven at runtime. `/courses` stays 503 until `MONGODB_URI` is set and redeployed.
-- The in-process rate limit is per function instance, not global; it is not a security
-  boundary across scale-out.
-- A full dev-dependency `pnpm audit` flags the known moderate minimatch 10.2.6 advisory
-  (`GHSA-g3hv-75wg-m249`) through typescript-eslint. It is not in the production tree, and
-  `pnpm audit --prod --audit-level high` (the CI gate) is clean. Revisit when
-  typescript-eslint moves to minimatch 11.
-- Demo accounts are off in production unless `DEMO_AUTH=true`; while enabled their
-  credentials are public and admin is read-only. Seed real accounts when Atlas lands, then
-  remove the demo flag before any destructive admin action ships.
-- Google sign-in without Mongo creates a session with the student role and no stored user.
-- Next.js downloads the two fonts at build time; CI needs network access to Google Fonts.
-- Tailwind is not installed yet. Tokens are CSS variables, so the P2 mapping is additive.
+- Vercel Hobby has a daily deployment cap, and env-var changes need a redeploy. Batch changes.
+- Playwright writes real rows to Atlas: a fresh learner and a temporary instructor course per
+  run. The suites are idempotent by unique data, but the demo catalogue should be cleaned
+  after a run (see `docs/DEPLOY.md`).
+- The demo live class is seeded two hours ahead so an upcoming room exists during a full
+  suite; reseed when it passes.
+- The in-process rate limit is per function instance, not global.
+- A full dev-dependency `pnpm audit` still flags the known moderate minimatch advisory through
+  typescript-eslint; the production tree is clean.
+- Next.js downloads the two fonts at build time, so CI needs network access.
 
 ## Next action
 
-All 47 tracked features are done. The only remaining work is owner-gated: create the Atlas
-M0 cluster (`docs/OWNER_TODO.md`), then follow `docs/DEPLOY.md` for the web app, PayBridge
-and the production Playwright run. See `docs/HANDOFF.md`.
+Deployment is finished. The only remaining work is optional and owner-gated: Google OAuth, a
+transactional email sender, and any live-mode payment work. See `docs/OWNER_TODO.md` and
+`docs/HANDOFF.md`.

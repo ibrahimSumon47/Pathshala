@@ -388,3 +388,36 @@ trusts the browser return. The gateway uses the same MongoDB locally but its own
 prefixed `PayBridge`. It is deliberately a sandbox: the only accepted card is 4242 4242 4242
 4242 and every screen says test mode.
 Revisit: if the gateway needs its own database in production; Atlas can hold a separate one.
+
+## 2026-11-17 — Production runs on Atlas M0, the web alias is `-eight`
+
+The free M0 cluster (AWS `AP_SOUTHEAST_1`) is created through the Atlas CLI with a generated
+`pathshala_app` password and `0.0.0.0/0` egress for serverless. `pathshala-web.vercel.app` was
+already taken, so the web project keeps the auto-assigned `pathshala-web-eight.vercel.app`
+alias, and `APP_URL`, `WEB_ORIGIN`, the Stripe endpoint and the README all use it. Aliases are
+global, so a deployment must never assume its preferred name is free.
+Revisit: if a custom domain is added, point it at the same project and update `APP_URL`.
+
+## 2026-11-17 — Stripe Checkout no longer accepts `payment_method_types`
+
+Current Stripe rejects a Checkout Session that pins `payment_method_types`; payment methods
+now come from the dashboard's dynamic configuration. The request body drops the field, and a
+unit test asserts it stays out so a future refactor cannot reintroduce a 400 at checkout.
+Revisit: never; the dashboard owns payment methods.
+
+## 2026-11-17 — The API is deployed prebuilt from the repository root
+
+`pathshala-api` sets its root directory to `apps/api`, but the CLI resolves that setting
+against the directory it is run from. Deploying with `--cwd apps/api` looked for
+`apps/api/apps/api` and also auto-created an unrelated project once. `vercel build` inside
+`apps/api` writes the output where the project expects it, and `vercel deploy --prebuilt
+--project pathshala-api` from the repository root uploads it correctly.
+Revisit: if the API moves to a repository root of its own.
+
+## 2026-11-17 — Public registration replaces the demo account list in production
+
+Visitors need a way in without the seeded passwords. A zod-validated, rate-limited-by-auth
+server action creates a student-only account with a bcrypt hash and folds duplicate emails
+into one message. `DEMO_AUTH` stays `false` in production, so the seeded role list is a local
+demo tool only.
+Revisit: when email verification is added, gate the account until the address is confirmed.

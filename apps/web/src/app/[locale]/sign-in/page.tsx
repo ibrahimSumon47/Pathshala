@@ -6,19 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { DEMO_ACCOUNTS, demoAuthEnabled } from '@/lib/auth/demo-accounts';
-import { signInWithCredentials, signInWithGoogle } from '@/lib/auth/actions';
+import { signInWithCredentials, signInWithGoogle, signUpAction } from '@/lib/auth/actions';
 import { cn } from '@/lib/cn';
 import styles from './sign-in.module.css';
 
 type SignInPageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; registered?: string; signupError?: string }>;
 };
 
 /** Credentials form, optional Google button and the public demo accounts. */
 export default async function SignInPage({ params, searchParams }: SignInPageProps) {
   const { locale } = await params;
-  const { error } = await searchParams;
+  const { error, registered, signupError } = await searchParams;
   const isEnglish = locale === 'en';
 
   const session = await auth();
@@ -59,8 +59,27 @@ export default async function SignInPage({ params, searchParams }: SignInPagePro
                   {t('invalid')}
                 </p>
               ) : null}
+              {registered ? <p className={styles.success} role="status">{isEnglish ? 'Account created. Sign in to continue.' : 'অ্যাকাউন্ট তৈরি হয়েছে। এগিয়ে যেতে সাইন ইন করুন।'}</p> : null}
               <Button type="submit">{t('submit')}</Button>
             </form>
+
+            <section id="create-account" className={styles.signup} aria-labelledby="signup-heading">
+              <h2 id="signup-heading" className={styles.demoTitle}>{isEnglish ? 'Create a learner account' : 'শিক্ষার্থী অ্যাকাউন্ট খুলুন'}</h2>
+              {signupError ? (
+                <p className={styles.error} role="alert">
+                  {signupError === 'exists'
+                    ? (isEnglish ? 'An account already uses that email. Sign in instead.' : 'এই ইমেইলে অ্যাকাউন্ট আছে। সাইন ইন করুন।')
+                    : (isEnglish ? 'Check your name, email and password (at least 12 characters).' : 'নাম, ইমেইল ও পাসওয়ার্ড দেখুন (কমপক্ষে ১২ অক্ষর)।')}
+                </p>
+              ) : null}
+              <form action={signUpAction} className={styles.form}>
+                <input type="hidden" name="locale" value={locale} />
+                <Field id="signup-name" name="name" label={isEnglish ? 'Full name' : 'পুরো নাম'} minLength={2} maxLength={80} autoComplete="name" required />
+                <Field id="signup-email" name="email" type="email" label={t('email')} maxLength={200} autoComplete="email" required />
+                <Field id="signup-password" name="password" type="password" label={t('password')} minLength={12} maxLength={72} autoComplete="new-password" required />
+                <Button type="submit" variant="secondary">{isEnglish ? 'Create account' : 'অ্যাকাউন্ট তৈরি করুন'}</Button>
+              </form>
+            </section>
 
             {googleEnabled ? (
               <>
