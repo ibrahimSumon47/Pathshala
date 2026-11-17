@@ -1017,6 +1017,83 @@
         "raising the price sends nothing, and the note links straight to the course page",
         "packages/db/src/expansion.integration.test.ts asserts the drop sends one note and a raise sends none"
       ]
+    },
+    {
+      "id": "p16.student-roster",
+      "phase": "P16",
+      "title": "Per-course student roster",
+      "status": "done",
+      "evidence": [
+        "/studio/[id]/roster lists active and completed learners with progress, enrolment and completion dates, certificate links and whether they answered the survey",
+        "refunded enrolments are excluded and the desk is scoped to the owning teacher or an admin in packages/db/src/roster.ts",
+        "packages/db/src/backoffice.integration.test.ts checks totals, the average progress and the ownership refusal"
+      ]
+    },
+    {
+      "id": "p16.lesson-ordering",
+      "phase": "P16",
+      "title": "Lesson reordering in the studio",
+      "status": "done",
+      "evidence": [
+        "each lesson row on the course editor has Move up and Move down controls, disabled at the edges",
+        "packages/db/src/curriculum.ts rewrites sibling positions in two passes so the unique (section, order) index never collides",
+        "packages/db/src/backoffice.integration.test.ts moves a lesson up and back down and refuses the edges and a foreign teacher"
+      ]
+    },
+    {
+      "id": "p16.certificate-desk",
+      "phase": "P16",
+      "title": "Certificate revocation desk",
+      "status": "done",
+      "evidence": [
+        "/admin/certificates lists issued certificates with learner, course, instructor and issue date, and can revoke or restore each one",
+        "revoking sets the same revokedAt field the public /verify/[code] page already reports, and the action writes an audit row",
+        "packages/db/src/backoffice.integration.test.ts flips the state and reads it back through getCertificateByCode"
+      ]
+    },
+    {
+      "id": "p16.question-bank",
+      "phase": "P16",
+      "title": "Reusable instructor question bank",
+      "status": "done",
+      "evidence": [
+        "the quiz builder can save any authored question to the teacher’s bank and append a saved question to another quiz lesson",
+        "ownership is checked on both sides in packages/db/src/question-bank.ts; the same prompt is stored once per teacher and inserted once per quiz",
+        "packages/db/src/backoffice.integration.test.ts covers save, duplicate, foreign ownership, reuse and the copied explanation"
+      ]
+    },
+    {
+      "id": "p16.coupon-timeline",
+      "phase": "P16",
+      "title": "Coupon redemption timeline",
+      "status": "done",
+      "evidence": [
+        "/admin/coupons shows each paid order that used a code, with date, buyer, course, discount and paid total",
+        "getCouponRedemptionTimeline reads paid orders only, so a refund that reverses a redemption does not inflate the campaign",
+        "packages/db/src/backoffice.integration.test.ts pays a coupon order and asserts the timeline row and its discount"
+      ]
+    },
+    {
+      "id": "p16.automatic-saved-searches",
+      "phase": "P16",
+      "title": "Automatic saved-search checks",
+      "status": "done",
+      "evidence": [
+        "the learner dashboard runs checkDueSavedSearches on load, and the stored lastCheckedAt keeps it to once every 24 hours",
+        "no cron or email is required; the same checkSavedSearches path writes the in-app note",
+        "packages/db/src/backoffice.integration.test.ts proves a stale search runs once and an immediate second pass is skipped"
+      ]
+    },
+    {
+      "id": "p16.completion-surveys",
+      "phase": "P16",
+      "title": "Completion survey for finished courses",
+      "status": "done",
+      "evidence": [
+        "/dashboard/surveys asks three 1-5 questions and an optional comment, only for courses with a completed enrolment, and lets the learner edit the answer",
+        "the teacher roster shows anonymous averages and a count; the learner’s own answer is never shown with their name",
+        "packages/db/src/backoffice.integration.test.ts covers the completed-only rule, scale validation, the edit and the averages"
+      ]
     }
   ]
 }

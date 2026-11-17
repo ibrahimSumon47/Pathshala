@@ -9,7 +9,7 @@ import { Link } from '@/i18n/navigation';
 import { requireRole } from '@/lib/auth/guard';
 import { faqsToLines, listToLines } from '@/lib/course-content';
 import { getStudioCourse } from '@/lib/studio';
-import { addLessonAction, addSectionAction, scheduleSessionAction, updateCourseAction } from '../actions';
+import { addLessonAction, addSectionAction, moveLessonAction, scheduleSessionAction, updateCourseAction } from '../actions';
 import { studioCopy } from '../copy';
 import styles from '../studio.module.css';
 
@@ -47,7 +47,12 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
             <p className={styles.eyebrow}>{copy.courseTitle}</p>
             <h1 className={styles.title}>{course.title[language] || course.title.en || course.title.bn}</h1>
           </div>
-          <Badge tone={published ? 'success' : 'neutral'}>{published ? copy.published : copy.draft}</Badge>
+          <div className={styles.titleActions}>
+            <Link href={`/studio/${course.id}/roster`} className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+              {copy.roster}
+            </Link>
+            <Badge tone={published ? 'success' : 'neutral'}>{published ? copy.published : copy.draft}</Badge>
+          </div>
         </div>
         {error ? <Alert tone="error">{error}</Alert> : null}
         {saved ? <Alert tone="success">{copy.saved}</Alert> : null}
@@ -213,22 +218,57 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
               <h3 className={styles.sectionTitle}>{section.title[language] || section.title.en || section.title.bn}</h3>
               {section.lessons.length === 0 ? <p className={styles.meta}>{copy.noLessons}</p> : null}
               <ol className={styles.lessonList}>
-                {section.lessons.map((lesson) => (
-                  <li key={lesson.id} className={styles.lessonRow}>
-                    {lesson.type === 'quiz' ? (
-                      <Link href={`/studio/${course.id}/lesson/${lesson.id}`} className={styles.lessonLink}>
-                        {lesson.title[language] || lesson.title.en || lesson.title.bn} →
-                      </Link>
-                    ) : (
-                      <span>{lesson.title[language] || lesson.title.en || lesson.title.bn}</span>
-                    )}
-                    <span className={styles.meta}>
-                      {copy[lesson.type]} · {lesson.durationMinutes} {copy.duration}
-                      {lesson.isPreview ? ' · preview' : ''}
-                      {lesson.attachmentCount > 0 ? ` · ${lesson.attachmentCount}` : ''}
-                    </span>
-                  </li>
-                ))}
+                {section.lessons.map((lesson, index) => {
+                  const title = lesson.title[language] || lesson.title.en || lesson.title.bn;
+                  return (
+                    <li key={lesson.id} className={styles.lessonRow}>
+                      <div className={styles.lessonMain}>
+                        {lesson.type === 'quiz' ? (
+                          <Link href={`/studio/${course.id}/lesson/${lesson.id}`} className={styles.lessonLink}>
+                            {title} →
+                          </Link>
+                        ) : (
+                          <span>{title}</span>
+                        )}
+                        <span className={styles.meta}>
+                          {copy[lesson.type]} · {lesson.durationMinutes} {copy.duration}
+                          {lesson.isPreview ? ' · preview' : ''}
+                          {lesson.attachmentCount > 0 ? ` · ${lesson.attachmentCount}` : ''}
+                        </span>
+                      </div>
+                      <div className={styles.lessonActions}>
+                        <form action={moveLessonAction}>
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="courseId" value={course.id} />
+                          <input type="hidden" name="lessonId" value={lesson.id} />
+                          <input type="hidden" name="direction" value="up" />
+                          <button
+                            type="submit"
+                            disabled={index === 0}
+                            aria-label={`${copy.moveUp}: ${title}`}
+                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                          >
+                            {copy.moveUp}
+                          </button>
+                        </form>
+                        <form action={moveLessonAction}>
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="courseId" value={course.id} />
+                          <input type="hidden" name="lessonId" value={lesson.id} />
+                          <input type="hidden" name="direction" value="down" />
+                          <button
+                            type="submit"
+                            disabled={index === section.lessons.length - 1}
+                            aria-label={`${copy.moveDown}: ${title}`}
+                            className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                          >
+                            {copy.moveDown}
+                          </button>
+                        </form>
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
               <details className={styles.disclosure}>
                 <summary>{copy.addLesson}</summary>

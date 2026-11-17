@@ -297,6 +297,18 @@ The reply lives on the review row so hiding a review cannot leave an orphan answ
 
 A payout marker is not a payment. Naming the action "Mark paid" and showing the date keeps the record honest while the actual transfer stays outside the product.
 
+## 2026-11-17 — A unique order index needs a two-pass move
+
+Swapping two lessons' `order` values one update at a time hits the unique `(course, section, order)` index on the first write, because the second row still holds the target value. Parking every sibling above the real range and then writing `1..n` avoids the collision and normalises gaps. Lesson: an ordering feature is a schema constraint problem before it is a UI one.
+
+## 2026-11-17 — Automatic can mean "on the next visit"
+
+A saved-search cron would need a scheduler and an owner account. The dashboard already runs a due check on load and the stored timestamp limits it to once a day, which is enough for an in-app inbox. Lesson: define what “automatic” has to guarantee before adding infrastructure; here it only had to mean “without pressing a button”.
+
+## 2026-11-17 — A revocation is a field, not a delete
+
+Deleting a certificate would break a printed verification code and erase the reason it was issued. `revokedAt` keeps the record, the public page reports it, and the operator can restore it. Lesson: when the artefact may exist offline, removal is a state change.
+
 ## 2026-11-17 — Test names that read like UI labels collide with aria-labelledby
 
 A Playwright label lookup is substring-based by default, so `getByLabel('Code')` matched both the code input and the two `<section aria-labelledby>` regions whose names contained "code". Use `{ exact: true }` for a short label when nearby headings share its word. The same run also showed that an in-memory Mongo can accept a duplicate before its unique index is built; application-level existence checks make the first request win deterministically, and the index stays as the race guard.

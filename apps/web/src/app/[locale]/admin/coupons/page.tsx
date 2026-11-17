@@ -1,4 +1,4 @@
-import { getCouponReport } from '@pathshala/db';
+import { getCouponRedemptionTimeline, getCouponReport } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { Badge } from '@/components/ui/badge';
 import { Link } from '@/i18n/navigation';
@@ -22,6 +22,15 @@ const COPY = {
     active: 'চালু',
     inactive: 'বন্ধ',
     expired: 'মেয়াদ শেষ',
+    timeline: 'ব্যবহারের ধারা',
+    timelineLede: 'কোন কোড কবে, কার অর্ডারে, কত ছাড়ে ব্যবহার হয়েছে।',
+    timelineEmpty: 'এখনো কোনো পরিশোধিত অর্ডারে কুপন ব্যবহার হয়নি।',
+    when: 'সময়',
+    order: 'অর্ডার',
+    buyer: 'ক্রেতা',
+    course: 'কোর্স',
+    discount: 'ছাড়',
+    paid: 'পরিশোধিত',
   },
   en: {
     back: '← Admin',
@@ -37,6 +46,15 @@ const COPY = {
     active: 'Active',
     inactive: 'Inactive',
     expired: 'Expired',
+    timeline: 'Redemption timeline',
+    timelineLede: 'When each code was used, by whom, and how much it took off the order.',
+    timelineEmpty: 'No paid order has used a coupon yet.',
+    when: 'When',
+    order: 'Order',
+    buyer: 'Buyer',
+    course: 'Course',
+    discount: 'Discount',
+    paid: 'Paid',
   },
 } as const;
 
@@ -46,7 +64,7 @@ export default async function AdminCouponsPage({ params }: CouponsProps) {
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
   await requireRole('admin');
-  const coupons = await getCouponReport();
+  const [coupons, timeline] = await Promise.all([getCouponReport(), getCouponRedemptionTimeline()]);
 
   return (
     <div className={styles.page}>
@@ -90,6 +108,46 @@ export default async function AdminCouponsPage({ params }: CouponsProps) {
           </table>
           {coupons.length === 0 ? <p className={styles.empty}>{copy.empty}</p> : null}
         </div>
+
+        <section className={styles.section} aria-labelledby="coupon-timeline">
+          <h2 id="coupon-timeline" className={styles.sectionTitle}>
+            {copy.timeline}
+          </h2>
+          <p className={styles.lede}>{copy.timelineLede}</p>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">{copy.when}</th>
+                  <th scope="col">{copy.code}</th>
+                  <th scope="col">{copy.order}</th>
+                  <th scope="col">{copy.buyer}</th>
+                  <th scope="col">{copy.course}</th>
+                  <th scope="col">{copy.discount}</th>
+                  <th scope="col">{copy.paid}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeline.map((row) => (
+                  <tr key={row.orderNumber}>
+                    <td>{new Date(row.paidAt).toLocaleDateString(locale)}</td>
+                    <td>{row.code}</td>
+                    <td className={styles.email}>{row.orderNumber}</td>
+                    <td>
+                      {row.buyerName}
+                      <br />
+                      <span className={styles.email}>{row.buyerEmail}</span>
+                    </td>
+                    <td>{row.courseTitle[language] ?? row.courseTitle.en ?? row.courseTitle.bn ?? ''}</td>
+                    <td className={styles.num}>{formatPaisa(row.discountPaisa, language)}</td>
+                    <td className={styles.num}>{formatPaisa(row.totalPaisa, language)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {timeline.length === 0 ? <p className={styles.empty}>{copy.timelineEmpty}</p> : null}
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -206,6 +206,48 @@ export type CouponReportRow = {
   expired: boolean;
 };
 
+export type CouponRedemptionRow = {
+  orderNumber: string;
+  code: string;
+  buyerName: string;
+  buyerEmail: string;
+  courseTitle: { bn?: string; en?: string };
+  discountPaisa: number;
+  totalPaisa: number;
+  paidAt: string;
+};
+
+/** Every paid order that used a code, newest first: the actual timeline behind a campaign. */
+export async function getCouponRedemptionTimeline(limit = 50): Promise<CouponRedemptionRow[]> {
+  await connectToDatabase();
+  const orders = await Order.find({ status: 'paid', couponCode: { $exists: true, $ne: null } })
+    .sort({ paidAt: -1 })
+    .limit(Math.max(1, Math.min(200, limit)))
+    .select('orderNumber couponCode courseTitle discountPaisa totalPaisa paidAt user')
+    .lean();
+  if (orders.length === 0) return [];
+  const buyers = await User.find({ _id: { $in: orders.map((order) => order.user) } })
+    .select('name email')
+    .lean();
+  const people = new Map(buyers.map((buyer) => [String(buyer._id), buyer]));
+  return orders.flatMap((order) => {
+    if (!order.couponCode || !order.paidAt) return [];
+    const buyer = people.get(String(order.user));
+    return [
+      {
+        orderNumber: order.orderNumber,
+        code: order.couponCode,
+        buyerName: buyer?.name ?? 'Learner',
+        buyerEmail: buyer?.email ?? '',
+        courseTitle: order.courseTitle,
+        discountPaisa: order.discountPaisa,
+        totalPaisa: order.totalPaisa,
+        paidAt: order.paidAt.toISOString(),
+      },
+    ];
+  });
+}
+
 /** Coupon performance from paid orders, so the code's cost and revenue sit side by side. */
 export async function getCouponReport(): Promise<CouponReportRow[]> {
   await connectToDatabase();

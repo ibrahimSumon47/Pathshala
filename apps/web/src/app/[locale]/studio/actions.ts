@@ -8,9 +8,12 @@ import {
   Lesson,
   QuizQuestion,
   Section,
+  addBankItemToQuiz,
   connectToDatabase,
   createLiveSession,
+  moveLesson,
   notifyWishlistPriceDrop,
+  saveQuestionToBank,
   scheduleSessionReminders,
   type QuizType,
 } from '@pathshala/db';
@@ -312,6 +315,59 @@ export async function addQuizQuestionAction(form: FormData): Promise<void> {
   });
   revalidatePath(`/studio/${courseId}/lesson/${lessonId}`);
   redirect(localePath(form, `/studio/${courseId}/lesson/${lessonId}?saved=1`));
+}
+
+/** Move one lesson up or down inside its section, normalising sibling positions. */
+export async function moveLessonAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const direction = text(form, 'direction') === 'up' ? 'up' : 'down';
+  const result = await moveLesson({
+    courseId,
+    lessonId: text(form, 'lessonId'),
+    instructorId: user.id,
+    isAdmin: user.roles.includes('admin'),
+    direction,
+  });
+  if (result === 'not_found') fail(form, `/studio/${courseId}`, 'Lesson not found.');
+  if (result === 'edge') fail(form, `/studio/${courseId}`, 'That lesson is already at the end.');
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath('/courses');
+  revalidatePath('/learn');
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Copy one authored question into the teacher's reusable bank. */
+export async function saveQuestionToBankAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const lessonId = text(form, 'lessonId');
+  const result = await saveQuestionToBank({
+    instructorId: user.id,
+    questionId: text(form, 'questionId'),
+    isAdmin: user.roles.includes('admin'),
+  });
+  const base = `/studio/${courseId}/lesson/${lessonId}`;
+  if (result === 'not_found') fail(form, base, 'Question not found.');
+  revalidatePath(base);
+  redirect(localePath(form, `${base}?bank=${result}`));
+}
+
+/** Append one saved bank question to the quiz lesson being edited. */
+export async function addBankQuestionAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const lessonId = text(form, 'lessonId');
+  const result = await addBankItemToQuiz({
+    bankItemId: text(form, 'bankItemId'),
+    lessonId,
+    instructorId: user.id,
+    isAdmin: user.roles.includes('admin'),
+  });
+  const base = `/studio/${courseId}/lesson/${lessonId}`;
+  if (result === 'not_found') fail(form, base, 'That saved question cannot be added here.');
+  revalidatePath(base);
+  redirect(localePath(form, `${base}?bank=${result === 'duplicate' ? 'duplicate' : 'added'}`));
 }
 
 /** Add a lesson, with a validated attachment and a video slot when supplied. */

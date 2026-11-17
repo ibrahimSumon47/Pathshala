@@ -1,14 +1,18 @@
 import mongoose from 'mongoose';
 import {
   Certificate,
+  CompletionSurvey,
   Course,
   Enrolment,
   Lesson,
   Note,
+  Notification,
   Order,
+  QuestionBankItem,
   QuizAttempt,
   QuizQuestion,
   Review,
+  SavedSearch,
   Section,
   User,
   Wishlist,
@@ -36,6 +40,8 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     const lessonIds = lessons.map((lesson) => lesson._id);
     record('quizQuestions', await QuizQuestion.deleteMany({ lesson: { $in: lessonIds } }));
     record('quizAttempts', await QuizAttempt.deleteMany({ course: { $in: courseIds } }));
+    record('completionSurveys', await CompletionSurvey.deleteMany({ course: { $in: courseIds } }));
+    record('questionBankItems', await QuestionBankItem.deleteMany({ sourceCourse: { $in: courseIds } }));
     record('notes', await Note.deleteMany({ course: { $in: courseIds } }));
     record('lessons', await Lesson.deleteMany({ course: { $in: courseIds } }));
     record('sections', await Section.deleteMany({ course: { $in: courseIds } }));
@@ -50,6 +56,10 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     record('notes', await Note.deleteMany({ student: { $in: userIds } }));
     record('wishlist', await Wishlist.deleteMany({ student: { $in: userIds } }));
     record('quizAttempts', await QuizAttempt.deleteMany({ student: { $in: userIds } }));
+    record('completionSurveys', await CompletionSurvey.deleteMany({ student: { $in: userIds } }));
+    record('questionBankItems', await QuestionBankItem.deleteMany({ instructor: { $in: userIds } }));
+    record('savedSearches', await SavedSearch.deleteMany({ user: { $in: userIds } }));
+    record('notifications', await Notification.deleteMany({ user: { $in: userIds } }));
     record('users', await User.deleteMany({ _id: { $in: userIds } }));
   }
 

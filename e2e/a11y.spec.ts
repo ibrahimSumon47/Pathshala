@@ -45,6 +45,7 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
     '/en/cart',
     '/en/dashboard/notifications',
     '/en/dashboard/saved-searches',
+    '/en/dashboard/surveys',
   ]) {
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
@@ -64,6 +65,7 @@ test('the operator money and moderation pages have zero axe violations', async (
     '/en/admin/coupons',
     '/en/admin/payouts',
     '/en/admin/refunds',
+    '/en/admin/certificates',
     '/en/studio/earnings',
     '/en/studio/community',
     '/en/studio/questions',
@@ -72,4 +74,17 @@ test('the operator money and moderation pages have zero axe violations', async (
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
   }
+
+  // The roster and the quiz question bank live under the studio, reached from a course.
+  await page.goto('/en/studio');
+  const card = page.locator('div[class*="courseCard"]').filter({ hasText: 'First Steps in JavaScript' });
+  await card.getByRole('link', { name: 'Edit' }).click();
+  await page.getByRole('link', { name: 'Student roster' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: /Student roster/ })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+
+  await page.getByRole('link', { name: '← Back to course' }).click();
+  await page.getByRole('link', { name: /A short quiz/ }).click();
+  await expect(page.getByRole('heading', { name: 'Question bank' })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
 });

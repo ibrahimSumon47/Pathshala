@@ -81,6 +81,25 @@ export async function deleteSavedSearch(userId: string, searchId: string): Promi
   return result.deletedCount > 0;
 }
 
+export const SAVED_SEARCH_INTERVAL_HOURS = 24;
+
+/**
+ * The dashboard calls this on load. A learner who has not opened their account for a day
+ * gets the same check without a cron job, and the stored timestamp keeps it to once a day.
+ */
+export async function checkDueSavedSearches(
+  userId: string,
+  now = new Date(),
+  intervalHours = SAVED_SEARCH_INTERVAL_HOURS,
+): Promise<{ checked: number; newMatches: number; skipped: boolean }> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(userId)) return { checked: 0, newMatches: 0, skipped: true };
+  const cutoff = new Date(now.getTime() - Math.max(1, intervalHours) * 60 * 60 * 1000);
+  const due = await SavedSearch.exists({ user: userId, lastCheckedAt: { $lte: cutoff } });
+  if (!due) return { checked: 0, newMatches: 0, skipped: true };
+  return { ...(await checkSavedSearches(userId, now)), skipped: false };
+}
+
 /**
  * Re-run every saved search for one learner and put one inbox note per search with new
  * courses. The window is the time since the previous check, so a course is announced once.

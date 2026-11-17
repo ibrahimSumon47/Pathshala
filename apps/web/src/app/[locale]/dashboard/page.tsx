@@ -8,7 +8,15 @@ import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { signOutAction } from '@/lib/auth/actions';
 import { requireUser } from '@/lib/auth/guard';
-import { Review, dispatchDueReminders, getLearnerHome, getNotifications, getUpcomingForStudent, recommendedForStudent } from '@pathshala/db';
+import {
+  Review,
+  checkDueSavedSearches,
+  dispatchDueReminders,
+  getLearnerHome,
+  getNotifications,
+  getUpcomingForStudent,
+  recommendedForStudent,
+} from '@pathshala/db';
 import { CourseShelf } from '@/components/course-shelf';
 import { getDashboardLearning } from '@/lib/learning';
 import { markNotificationReadAction } from './notification-actions';
@@ -37,6 +45,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const roles = await getTranslations('Roles');
   const roleLabel = (role: UserRole) => roles(role);
   const reminders = await dispatchDueReminders(user.id);
+  // Saved searches check themselves at most once a day, on the learner's next visit.
+  await checkDueSavedSearches(user.id).catch(() => undefined);
   const [learning, notifications, upcoming, reviewsWritten] = await Promise.all([
     getDashboardLearning(user.id),
     getNotifications(user.id),
@@ -77,6 +87,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               <Link href="/dashboard/wishlist">{locale === 'en' ? 'Saved' : 'পরে দেখার তালিকা'}</Link>
               <Link href="/dashboard/notes">{locale === 'en' ? 'Notes' : 'নোট'}</Link>
               <Link href="/dashboard/saved-searches">{locale === 'en' ? 'Saved searches' : 'সংরক্ষিত খোঁজ'}</Link>
+              <Link href="/dashboard/surveys">{locale === 'en' ? 'Course surveys' : 'কোর্স সমীক্ষা'}</Link>
               <Link href="/cart">{locale === 'en' ? 'Cart' : 'ঝুড়ি'}</Link>
               <Link href="/dashboard/settings">{locale === 'en' ? 'Settings' : 'সেটিংস'}</Link>
             </nav>

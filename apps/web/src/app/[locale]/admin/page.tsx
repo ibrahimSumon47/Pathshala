@@ -139,6 +139,7 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
           <Link href="/admin/coupons">{copy.coupons}</Link>
           <Link href="/admin/payouts">{copy.payouts}</Link>
           <Link href="/admin/refunds">{locale === 'en' ? 'Refunds' : 'রিফান্ড'}</Link>
+          <Link href="/admin/certificates">{locale === 'en' ? 'Certificates' : 'সার্টিফিকেট'}</Link>
         </nav>
         {error ? <Alert tone="error">{error}</Alert> : null}
         {saved ? <Alert tone="success">{copy.saved}</Alert> : null}

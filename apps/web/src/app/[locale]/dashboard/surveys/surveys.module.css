@@ -1,0 +1,78 @@
+.page {
+  padding-block: var(--space-7) var(--space-9);
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 65ch;
+  margin-top: var(--space-3);
+  color: var(--color-ink-muted);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.meta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-3);
+}
+
+.textareaField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.textareaLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.back {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+}

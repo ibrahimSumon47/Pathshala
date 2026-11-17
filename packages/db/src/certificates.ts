@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { Certificate, type CertificateDoc } from './models/certificate';
 import { Course } from './models/course';
@@ -148,6 +148,64 @@ export async function getStudentCertificates(userId: string): Promise<Certificat
     if (!course) return [];
     return [toView(row as Doc<CertificateDoc>, student?.name || 'Learner', course, instructorMap.get(String(row.instructor)) || 'Instructor')];
   });
+}
+
+export type AdminCertificateRow = {
+  id: string;
+  code: string;
+  number: string;
+  studentName: string;
+  studentEmail: string;
+  courseTitle: { bn?: string; en?: string };
+  courseSlug: string;
+  instructorName: string;
+  issuedAt: string;
+  revokedAt: string | null;
+};
+
+/** Most recently issued certificates first, with the names the operator desk needs. */
+export async function listAdminCertificates(limit = 100): Promise<AdminCertificateRow[]> {
+  await connectToDatabase();
+  const rows = await Certificate.find().sort({ issuedAt: -1 }).limit(Math.min(Math.max(limit, 1), 200)).lean();
+  if (rows.length === 0) return [];
+  const [students, courses, instructors] = await Promise.all([
+    User.find({ _id: { $in: rows.map((row) => row.student) } }).select('name email').lean(),
+    Course.find({ _id: { $in: rows.map((row) => row.course) } }).select('title slug').lean(),
+    User.find({ _id: { $in: rows.map((row) => row.instructor) } }).select('name').lean(),
+  ]);
+  const studentMap = new Map(students.map((student) => [String(student._id), student]));
+  const courseMap = new Map(courses.map((course) => [String(course._id), course]));
+  const instructorMap = new Map(instructors.map((instructor) => [String(instructor._id), instructor.name]));
+  return rows.flatMap((row) => {
+    const course = courseMap.get(String(row.course));
+    if (!course) return [];
+    const student = studentMap.get(String(row.student));
+    return [
+      {
+        id: String(row._id),
+        code: row.code,
+        number: row.number,
+        studentName: student?.name ?? 'Learner',
+        studentEmail: student?.email ?? '',
+        courseTitle: course.title,
+        courseSlug: course.slug,
+        instructorName: instructorMap.get(String(row.instructor)) ?? 'Instructor',
+        issuedAt: row.issuedAt.toISOString(),
+        revokedAt: row.revokedAt?.toISOString() ?? null,
+      },
+    ];
+  });
+}
+
+/** Revoke or restore one certificate. The public verification page already reports the state. */
+export async function setCertificateRevoked(certificateId: string, revoked: boolean): Promise<boolean> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(certificateId)) return false;
+  const result = await Certificate.updateOne(
+    { _id: certificateId },
+    { revokedAt: revoked ? new Date() : null },
+  );
+  return result.matchedCount > 0;
 }
 
 /** Certificate for one course, used for the dashboard link and the completion action. */

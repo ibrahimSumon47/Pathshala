@@ -1,14 +1,15 @@
 # Handoff
 
-Updated: 2026-11-17, after the profile slice.
+Updated: 2026-11-17, after the P16 studio and operations slice.
 
 ## Where we are
 
 The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
-streaks and badges) and discovery (item 2: both-script search, price buckets, sorting, best-rated
-shelf, learner recommendations) and the P12-P15 polish slices are live and verified;
-`docs/features.json` tracks 90 features and `node scripts/check-done.mjs` exits 0.
+streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
+shelf, learner recommendations), the P12-P15 polish slices and P16's studio and operations work
+are live and verified; `docs/features.json` tracks 97 features and
+`node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -21,10 +22,10 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 32/32
-  Playwright journeys now finish in about 3 minutes, and the five loading placeholders mirror the
-  catalogue, course, dashboard, lesson and cart grids.
-- 33/33 Playwright journeys against the deployed web origin, including the private profile edit,
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 36/36
+  Playwright journeys now finish in about four minutes, and the five loading placeholders mirror
+  the catalogue, course, dashboard, lesson and cart grids.
+- 36/36 Playwright journeys against the deployed web origin, including the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
@@ -32,10 +33,13 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   certificate verified while signed out, a real Stripe Checkout purchase with the 4242 card,
   instructor publishing and admin publish/unpublish with audit rows, a Bangla catalogue search,
   URL-backed filters and both recommendation rails, plus a new promo code, a saved-search
-  round-trip and the operator refund desk.
+  round-trip, the operator refund desk, a roster read, a lesson moved down and back up, a
+  question saved to the bank, the completion survey, certificate revoke/restore and the
+  coupon redemption timeline.
 - axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
-  notes, wishlist, cart, notifications, saved searches, admin orders/coupons/payouts/refunds
-  and the studio earnings, community, questions and promotions pages.
+  notes, wishlist, cart, notifications, saved searches, surveys, admin
+  orders/coupons/payouts/refunds/certificates and the studio earnings, community, questions,
+  promotions, roster and quiz-bank pages.
 - Lighthouse mobile: 100/100/100/100 on landing, 99/100/100/100 on the catalogue, FCP/LCP
   0.9 s, CLS 0, TBT under 120 ms. JSON reports sit in `docs/screenshots`.
 - API `/health` and `/courses` are 200 from Atlas; `/courses?limit=99` is 400; unknown routes
@@ -53,12 +57,12 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-P15 is live: refund requests with an operator decision, quiz explanations and attempt review,
-teacher promo codes, the instructor question desk, saved searches with in-app new-course notes
-and wishlist price-drop notes. Item 13 of the agreed expansion order is still next; its wording
-is not in the repository yet, so `docs/EXPANSION_PLAN.md` carries the order, the finished items
-and an explicit placeholder for every remaining item. Replace the placeholder with the brief's
-sentence before writing code.
+P16 is live: a per-course student roster, lesson reordering, the certificate revocation desk,
+a reusable question bank, the coupon redemption timeline, saved searches that check themselves
+once a day on the dashboard, and completion surveys with anonymous teacher averages. Item 13 of
+the agreed expansion order is still next; its wording is not in the repository yet, so
+`docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
+every remaining item. Replace the placeholder with the brief's sentence before writing code.
 
 ## Exact next step
 
@@ -98,7 +102,11 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 - `packages/db/src/commerce.ts` — orders, coupons, paid/refund state machine and ledger.
 - `packages/db/src/refunds.ts` — refund window, request queue and the approval path.
 - `packages/db/src/promotions.ts` — course-scoped teacher codes.
-- `packages/db/src/saved-searches.ts` — stored filters and the new-course check.
+- `packages/db/src/roster.ts` — the per-course class list and survey averages.
+- `packages/db/src/curriculum.ts` — two-pass lesson reordering.
+- `packages/db/src/question-bank.ts` — save and reuse quiz questions.
+- `packages/db/src/surveys.ts` — completion survey rules and averages.
+- `packages/db/src/saved-searches.ts` — stored filters, the new-course check and the daily due check.
 - `apps/paybridge` — merchant API, hosted checkout, signed deliveries, dashboard.
 - `packages/db/src/certificates.ts` — eligibility, issuance, public lookup and codes.
 - `packages/db/src/live.ts` — scheduling, access checks, attendance, reminders.
@@ -108,4 +116,4 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 
 ## Current gate
 
-`node scripts/check-done.mjs` reports **90/90 — every feature is done with evidence**.
+`node scripts/check-done.mjs` reports **97/97 — every feature is done with evidence**.

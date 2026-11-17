@@ -72,6 +72,9 @@ const copy = {
     lessonCount: 'পাঠ',
     view: 'পাবলিক পেজ',
     back: 'সব কোর্স',
+    moveUp: 'উপরে',
+    moveDown: 'নিচে',
+    roster: 'শিক্ষার্থী তালিকা',
   },
   en: {
     eyebrow: 'Instructor studio',
@@ -144,6 +147,9 @@ const copy = {
     lessonCount: 'lessons',
     view: 'Public page',
     back: 'All courses',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    roster: 'Student roster',
   },
 } as const;
 

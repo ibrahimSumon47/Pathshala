@@ -7,6 +7,7 @@ import {
   connectToDatabase,
   decideRefundRequest,
   recordAuditEvent,
+  setCertificateRevoked,
   setCourseStatus,
   setInstructorAccess,
   setQuestionHidden,
@@ -183,6 +184,24 @@ export async function decideRefundAction(form: FormData): Promise<void> {
   revalidatePath('/admin');
   revalidatePath('/dashboard/orders');
   redirect(`${localePath(form, '/admin/refunds')}?saved=1`);
+}
+
+/** Revoke or restore one certificate; the public verification row is the same record. */
+export async function setCertificateRevokedAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const certificateId = String(form.get('certificateId') ?? '');
+  const revoked = form.get('revoked') === 'true';
+  const ok = await setCertificateRevoked(certificateId, revoked);
+  if (!ok) redirect(`${localePath(form, '/admin/certificates')}?error=${encodeURIComponent('Certificate not found.')}`);
+  await recordAuditEvent({
+    actor: user.id,
+    action: revoked ? 'certificate.revoke' : 'certificate.restore',
+    entityType: 'certificate',
+    entityId: certificateId,
+  });
+  revalidatePath('/admin/certificates');
+  revalidatePath('/verify');
+  redirect(`${localePath(form, '/admin/certificates')}?saved=1`);
 }
 
 /** Hide or restore a lesson question without deleting the conversation. */

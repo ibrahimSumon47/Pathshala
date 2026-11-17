@@ -582,3 +582,19 @@ The instructor question desk reads the same `Question` threads learners write. A
 A saved search stores only the filters the catalogue already understands, and "new" means published after that search's previous check. The check writes at most one inbox note per search per run, then moves the timestamp; there is no background job and no email, so the feature stays free. Wishlist price notes are emitted only on a real price cut in the studio and link to the course page.
 
 Quiz explanations live on the question row and are returned only with an attempt. Before submitting, the quiz payload still has no correct indexes; after submitting, `reviewQuiz` pairs each question with the learner's selection, the correct set and the explanation. The helper is pure so the rules are tested without a database.
+
+## 2026-11-17 — P16 keeps teacher tools on the records learners already see
+
+The roster reads enrolments, users, certificates and surveys rather than adding a class table. Refunded enrolments are excluded because they no longer have access. Survey answers are stored once per learner and course, and a resubmission edits that row: a learner who misread a scale can correct it, while the teacher still sees one honest average and never a named answer.
+
+Lesson order is the one place where a naive swap cannot work. `Section` and `Lesson` carry unique `(course, section, order)` indexes, so changing two rows one at a time would collide halfway. Reordering rewrites every sibling to a temporary band first, then to `1..n`. The operation normalises the whole section, which also repairs gaps left by earlier deletes.
+
+The question bank is a separate collection owned by the instructor, not a flag on a quiz question: a question is reusable after its source lesson is edited or deleted. Saving checks ownership through the source course; adding checks the target course and refuses a prompt already present in that quiz, so a double click cannot duplicate a question. The prompt, options, correct set and explanation are copied at save time; later edits in one place do not silently change the other.
+
+Certificate revocation changes `revokedAt` on the existing certificate. Deleting it would break a printed code and the audit trail; the public verification page already reports the revoked state. The admin action writes an audit row like every other operator decision.
+
+The coupon timeline reads paid orders, not the ledger or the denormalised redemption counter: it can show the buyer and the discount that was actually charged, and a refunded order drops out because its status is no longer paid.
+
+Saved searches check themselves when a learner opens the dashboard, guarded by the stored `lastCheckedAt` and a 24-hour interval. That keeps the feature free and needs no scheduler; the trade-off is that a learner who never returns gets no notification, which is acceptable because the inbox only exists for them anyway. The manual check stays available.
+
+Surveys are five-point integers with an optional 500-character comment. The scales are deliberately consistent so averages are comparable; the page words both ends of each scale instead of labelling only the middle. Only the teacher roster reads them, and only as averages and a count.
