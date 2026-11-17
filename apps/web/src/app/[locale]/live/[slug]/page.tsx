@@ -1,4 +1,4 @@
-import { hasCheckedIn, jitsiUrl, listCourseSessions } from '@pathshala/db';
+import { getWaitlistPosition, hasCheckedIn, jitsiUrl, listCourseSessions } from '@pathshala/db';
 import { getLearningCourse } from '@/lib/learning';
 import { type Locale } from '@pathshala/shared';
 import { notFound, redirect } from 'next/navigation';
@@ -14,7 +14,7 @@ import styles from './live.module.css';
 
 type LivePageProps = {
   params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{ checked?: string; error?: string }>;
+  searchParams: Promise<{ checked?: string; waitlisted?: string; error?: string }>;
 };
 
 const COPY = {
@@ -31,6 +31,12 @@ const COPY = {
     noSessions: 'এখনো কোনো লাইভ ক্লাস নেই।',
     past: 'আগের ক্লাস',
     attendance: 'জন উপস্থিত',
+    onWaitlist: 'অপেক্ষার তালিকায় · #',
+    waiting: 'জন অপেক্ষায়',
+    joinWaitlist: 'অপেক্ষার তালিকায় যোগ দিন',
+    claimSeat: 'আসনটি নিন',
+    waitlistedNotice: (position: string) => `রুম পূর্ণ। আপনি অপেক্ষার তালিকায় #${position} নম্বরে আছেন।`,
+    seats: 'আসন',
     error: 'উপস্থিতি নেওয়া যায়নি',
     jitsiNote: 'রুম নতুন ট্যাবে না খুললে নিচের লিংক ব্যবহার করুন।',
     minutes: 'মিনিট',
@@ -48,6 +54,12 @@ const COPY = {
     noSessions: 'No live classes scheduled yet.',
     past: 'Past classes',
     attendance: 'attending',
+    onWaitlist: 'On the waitlist · #',
+    waiting: 'waiting',
+    joinWaitlist: 'Join the waitlist',
+    claimSeat: 'Claim your seat',
+    waitlistedNotice: (position: string) => `The room is full. You are #${position} on the waitlist.`,
+    seats: 'seats',
     error: 'Attendance could not be recorded',
     jitsiNote: 'If the room does not open, use the new-tab link below.',
     minutes: 'minutes',
@@ -57,7 +69,7 @@ const COPY = {
 /** Course live room: next class embed, schedule, attendance and calendar download. */
 export default async function LivePage({ params, searchParams }: LivePageProps) {
   const { locale, slug } = await params;
-  const { checked, error } = await searchParams;
+  const { checked, waitlisted, error } = await searchParams;
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
   const user = await requireUser();
@@ -71,6 +83,8 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
   const sessions = [...upcoming, ...past];
   const next = upcoming[0] ?? null;
   const checkedIn = next ? await hasCheckedIn(next.id, user.id) : false;
+  const waitlistPosition = next ? await getWaitlistPosition(next.id, user.id) : null;
+  const seatsFull = Boolean(next && next.capacity > 0 && next.attendanceCount >= next.capacity);
 
   return (
     <div className={styles.page}>
@@ -82,6 +96,7 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
         <h1>{course.title[language] || course.title.en || course.title.bn}</h1>
         {error ? <Alert tone="error">{copy.error}: {error}</Alert> : null}
         {checked ? <Alert tone="success">{copy.checked}</Alert> : null}
+        {waitlisted ? <Alert tone="success">{copy.waitlistedNotice(waitlisted)}</Alert> : null}
 
         {sessions.length === 0 ? (
           <EmptyState title={copy.noSessions} body={copy.live} />
@@ -95,8 +110,9 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
                       <Badge tone="accent">{copy.room}</Badge>
                       <h2>{next.title[language] || next.title.en || next.title.bn}</h2>
                       <p className={styles.meta}>
-                        {new Date(next.startsAt).toLocaleString(locale)} · {next.durationMinutes} {copy.minutes} · {next.attendanceCount}{' '}
-                        {copy.attendance}
+                        {new Date(next.startsAt).toLocaleString(locale)} · {next.durationMinutes} {copy.minutes} · {next.attendanceCount}
+                        {next.capacity > 0 ? `/${next.capacity} ${copy.seats}` : ''} {copy.attendance}
+                        {next.waitlistCount > 0 ? ` · ${next.waitlistCount} ${copy.waiting}` : ''}
                       </p>
                     </div>
                     <a href={jitsiUrl(next.roomName)} target="_blank" rel="noopener noreferrer" className={buttonStyles({ variant: 'secondary' })}>
@@ -114,8 +130,20 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
                     <form action={checkInAction}>
                       <input type="hidden" name="sessionId" value={next.id} />
                       <input type="hidden" name="slug" value={slug} />
-                      <Button type="submit" variant={checkedIn ? 'secondary' : 'primary'} disabled={checkedIn}>
-                        {checkedIn ? copy.attended : copy.checkIn}
+                      <Button
+                        type="submit"
+                        variant={checkedIn || (waitlistPosition && seatsFull) ? 'secondary' : 'primary'}
+                        disabled={checkedIn || Boolean(waitlistPosition && seatsFull)}
+                      >
+                        {checkedIn
+                          ? copy.attended
+                          : waitlistPosition
+                            ? seatsFull
+                              ? `${copy.onWaitlist}${waitlistPosition}`
+                              : copy.claimSeat
+                            : seatsFull
+                              ? copy.joinWaitlist
+                              : copy.checkIn}
                       </Button>
                     </form>
                     <a href={`/api/sessions/${next.id}/calendar`} className={buttonStyles({ variant: 'secondary' })}>
@@ -135,6 +163,7 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
                         <p className={styles.itemTitle}>{session.title[language] || session.title.en || session.title.bn}</p>
                         <p className={styles.meta}>
                           {new Date(session.startsAt).toLocaleString(locale)} · {session.durationMinutes} {copy.minutes}
+                          {session.capacity > 0 ? ` · ${session.attendanceCount}/${session.capacity} ${copy.seats}` : ''}
                         </p>
                       </div>
                       <a href={`/api/sessions/${session.id}/calendar`} className={styles.calendarLink}>

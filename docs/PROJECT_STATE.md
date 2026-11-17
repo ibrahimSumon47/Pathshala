@@ -2,8 +2,9 @@
 
 Snapshot: 2026-11-17. The first ten phases are complete and the expansion slices are live:
 course depth (P9), the learner account slice (P10, item 1), discovery (P11, item 2), the
-P12-P15 polish slices and the P16 studio/operations slice. 97/97 features carry production
-evidence, the three apps run on Atlas and Vercel, and `node scripts/check-done.mjs` exits 0.
+P12-P15 polish slices, the P16 studio/operations slice and the P17 classroom/commerce
+slice. 101/101 features carry production evidence, the three apps run on Atlas and Vercel,
+and `node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
 
@@ -40,6 +41,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P14 | Review replies, payout settlement, bulk moderation, announcements, search limit, palette close | done — 2026-11-17, 32/32 production journeys |
 | P15 | Refund requests, quiz explanations, teacher promo codes, question desk, saved searches, price-drop notes | done — 2026-11-17, 33/33 production journeys |
 | P16 | Student roster, lesson reordering, certificate desk, question bank, coupon timeline, automatic saved searches, completion surveys | done — 2026-11-17, 36/36 production journeys |
+| P17 | Live waitlist and capacity, per-learner coupon limit, moderated survey comments, zero-result catalogue help with saved search | done — 2026-11-17, 38/38 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -71,10 +73,13 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   a per-course table. `/admin` reports operating counts, approves course status, grants or
   revokes instructor access and lists the audit trail. The CSV export is quoted and
   formula-safe.
-- Live classes: the studio schedules a session with a generated Jitsi room; `/live/[slug]`
-  embeds the next room with a new-tab fallback, records one attendance row per learner and
-  offers `.ics` downloads. A min-heap drains due reminders into in-app notifications;
-  `pnpm reminders:dispatch` is the cron entry point and email needs `RESEND_API_KEY`.
+- Live classes: the studio schedules a session with a generated Jitsi room and an optional
+  seat cap; `/live/[slug]` embeds the next room with a new-tab fallback, checks a learner in
+  while a seat remains and otherwise adds one waitlist row with a stable position. Learners
+  see their place on the dashboard, and the studio schedule shows attendance/capacity/waiting.
+  Attendance is one row per learner and `.ics` downloads are offered. A min-heap drains due
+  reminders into in-app notifications; `pnpm reminders:dispatch` is the cron entry point and
+  email needs `RESEND_API_KEY`.
 - Payments: `/checkout/[orderNumber]` shows an order summary, coupon form and both test rails.
   `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook events,
   payment references and order status guards. Stripe creates a BDT Checkout Session and its
@@ -88,7 +93,8 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - Refunds: `/dashboard/orders` lets a learner ask once per paid order inside the 14-day,
   under-a-quarter window. `/admin/refunds` approves (the shared signed-refund path reverses the
   ledger and closes access) or declines, and the learner gets an inbox note either way.
-- Teaching tools: `/studio/promotions` makes percent or fixed codes scoped to one owned course;
+- Teaching tools: `/studio/promotions` makes percent or fixed codes scoped to one owned course,
+  with a uses-per-learner cap (0 = unlimited) enforced against paid orders;
   `/studio/questions` lists lesson questions unanswered first and writes answers into the same
   public thread. Quiz questions carry an explanation, and a finished attempt shows per-question
   chosen and correct answers.
@@ -100,12 +106,17 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   certificate links and survey answers. Lessons can be moved up or down inside a section,
   and the quiz builder saves questions to a reusable bank or appends one to another quiz.
 - Completion surveys: `/dashboard/surveys` asks three 1-5 questions and one optional comment
-  for each finished course. Answers are editable, one per course, and only the anonymous
-  averages reach the teacher roster.
+  for each finished course. Answers are editable, one per course, and only anonymous averages
+  and up to ten comment excerpts reach the teacher roster. `/admin` adds a third bulk form
+  that hides or restores survey comments, and hidden rows leave both the averages and excerpts.
 - Certificate operations: `/admin/certificates` lists every issued certificate and can revoke
   or restore one. The public `/verify/[code]` page reads the same `revokedAt` field.
 - Coupons: `/admin/coupons` keeps the per-code cost/revenue table and adds the paid-order
-  redemption timeline with date, buyer, course and discount.
+  redemption timeline with date, buyer, course and discount. Checkout, cart and coupon
+  application all pass the buyer, so a one-use code cannot be reused on another course.
+- Empty catalogue results: `/courses` lists up to six other subjects with published courses
+  and counts, and a signed-in learner can store the current query and filters as a saved
+  search in one click.
 - Search is limited to 30 requests a minute per client address, and the palette has a close
   control with a Tab trap.
 - Theme: a server-read cookie renders `data-theme` on `<html>` before paint; the toggle writes
@@ -129,12 +140,14 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 ## Verification recorded 2026-11-17 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (206 tests: 12 tokens, 13 shared, 92 database,
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (212 tests: 12 tokens, 13 shared, 98 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **36/36 pass** on
-  2026-11-17 after the P16 slice; the new journeys cover the roster, a lesson moved down and
-  back up, saving a question to the bank, the completion survey, certificate revoke/restore
-  and the coupon timeline. The
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **38/38 pass** on
+  2026-11-17 after the P17 slice; the new journeys cover an empty catalogue search saving and
+  removing its search, and a survey comment reaching the teacher roster before an admin hides
+  and restores it. Earlier journeys still cover the roster, a lesson moved down and back up,
+  saving a question to the bank, the completion survey, certificate revoke/restore and the
+  coupon timeline. The
   depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
   card, related courses and refund link, then reads a free preview lesson. The
   journeys register a learner, enrol in the free course, finish all three lessons, pass the
@@ -146,8 +159,8 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   student dashboard.
 - axe: zero violations on landing, catalogue, course detail, refund policy, sign-in,
   registration, the learner pages (including saved searches and surveys), the operator pages
-  (including refunds, certificates and coupons) and the teacher studio pages, including the
-  course roster and the quiz question bank.
+  (including the moderation desk, refunds, certificates and coupons) and the teacher studio
+  pages, including the course roster and the quiz question bank.
 - Lighthouse mobile on the deployed origin: landing **100/100/100/100**, catalogue
   **99/100/100/100**, course page **97/100/100/100** (performance/accessibility/best-practices/
   SEO); LCP 0.9-1.0 s, CLS 0, TBT 50-110 ms. The measured scores are in

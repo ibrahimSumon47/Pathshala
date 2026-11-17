@@ -11,6 +11,8 @@ export type CompletionSurveyDoc = {
   /** 1 = not confident, 5 = very confident. */
   confidence: number;
   comment: string;
+  /** Hidden comments are excluded from teacher averages, like a hidden review. */
+  hidden: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -35,6 +37,7 @@ const completionSurveySchema = new Schema<CompletionSurveyDoc>(
     pace: scaleField,
     confidence: scaleField,
     comment: { type: String, trim: true, maxlength: 500, default: '' },
+    hidden: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

@@ -11,6 +11,8 @@ export type CouponDoc = {
   value: number;
   minAmountPaisa: number;
   maxRedemptions: number;
+  /** 0 means unlimited; the default stops one account reusing a platform-wide code. */
+  maxPerLearner: number;
   redeemedCount: number;
   active: boolean;
   course: Types.ObjectId | null;
@@ -32,6 +34,7 @@ const couponSchema = new Schema<CouponDoc>(
     },
     minAmountPaisa: { type: Number, default: 0, min: 0 },
     maxRedemptions: { type: Number, default: 100, min: 1 },
+    maxPerLearner: { type: Number, default: 1, min: 0, max: 100 },
     redeemedCount: { type: Number, default: 0, min: 0 },
     active: { type: Boolean, default: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', default: null },

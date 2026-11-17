@@ -68,7 +68,7 @@ export async function getCartView(userId: string): Promise<CartView> {
   let couponError: string | null = null;
   if (cart.couponCode && ordered.length > 0) {
     try {
-      const quote = await quoteCoupon(cart.couponCode, subtotalPaisa, ordered[0]!.id);
+      const quote = await quoteCoupon(cart.couponCode, subtotalPaisa, ordered[0]!.id, { userId });
       if (quote.coupon?.course && ordered.length > 1) {
         couponError = 'That coupon covers a single course.';
       } else {

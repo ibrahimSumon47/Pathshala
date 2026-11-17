@@ -5,6 +5,7 @@ import {
   Course,
   Enrolment,
   Lesson,
+  LiveWaitlist,
   Note,
   Notification,
   Order,
@@ -42,6 +43,7 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     record('quizAttempts', await QuizAttempt.deleteMany({ course: { $in: courseIds } }));
     record('completionSurveys', await CompletionSurvey.deleteMany({ course: { $in: courseIds } }));
     record('questionBankItems', await QuestionBankItem.deleteMany({ sourceCourse: { $in: courseIds } }));
+    record('liveWaitlists', await LiveWaitlist.deleteMany({ course: { $in: courseIds } }));
     record('notes', await Note.deleteMany({ course: { $in: courseIds } }));
     record('lessons', await Lesson.deleteMany({ course: { $in: courseIds } }));
     record('sections', await Section.deleteMany({ course: { $in: courseIds } }));
@@ -59,6 +61,7 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     record('completionSurveys', await CompletionSurvey.deleteMany({ student: { $in: userIds } }));
     record('questionBankItems', await QuestionBankItem.deleteMany({ instructor: { $in: userIds } }));
     record('savedSearches', await SavedSearch.deleteMany({ user: { $in: userIds } }));
+    record('liveWaitlists', await LiveWaitlist.deleteMany({ student: { $in: userIds } }));
     record('notifications', await Notification.deleteMany({ user: { $in: userIds } }));
     record('users', await User.deleteMany({ _id: { $in: userIds } }));
   }

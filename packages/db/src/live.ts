@@ -6,6 +6,7 @@ import { Attendance, type AttendanceDoc } from './models/attendance';
 import { Course } from './models/course';
 import { Enrolment } from './models/enrolment';
 import { LiveSession, type LiveSessionDoc } from './models/live-session';
+import { LiveWaitlist } from './models/live-waitlist';
 import { Notification } from './models/notification';
 import { Reminder, type ReminderDoc } from './models/reminder';
 import { User } from './models/user';
@@ -20,9 +21,12 @@ export type LiveSessionView = {
   description: { bn?: string; en?: string };
   startsAt: string;
   durationMinutes: number;
+  /** 0 means no seat cap. */
+  capacity: number;
   roomName: string;
   status: string;
   attendanceCount: number;
+  waitlistCount: number;
 };
 
 export type AttendanceView = { studentName: string; joinedAt: string };
@@ -46,7 +50,7 @@ export function jitsiUrl(roomName: string): string {
 }
 
 /** Map a session to the safe shape the web pages render. */
-function toView(session: Doc<LiveSessionDoc>, attendanceCount = 0): LiveSessionView {
+function toView(session: Doc<LiveSessionDoc>, attendanceCount = 0, waitlistCount = 0): LiveSessionView {
   return {
     id: String(session._id),
     courseId: String(session.course),
@@ -55,9 +59,11 @@ function toView(session: Doc<LiveSessionDoc>, attendanceCount = 0): LiveSessionV
     description: session.description,
     startsAt: session.startsAt.toISOString(),
     durationMinutes: session.durationMinutes,
+    capacity: session.capacity ?? 0,
     roomName: session.roomName,
     status: session.status,
     attendanceCount,
+    waitlistCount,
   };
 }
 
@@ -69,8 +75,10 @@ export async function createLiveSession(input: {
   description: { bn?: string; en?: string };
   startsAt: Date;
   durationMinutes: number;
+  capacity?: number;
 }): Promise<LiveSessionView> {
   await connectToDatabase();
+  const capacity = Math.max(0, Math.min(1000, Math.floor(input.capacity ?? 0)));
   const session = await LiveSession.create({
     course: input.courseId,
     instructor: input.instructorId,
@@ -78,6 +86,7 @@ export async function createLiveSession(input: {
     description: input.description,
     startsAt: input.startsAt,
     durationMinutes: input.durationMinutes,
+    capacity,
     roomName: jitsiRoomFor(randomUUID()),
     status: 'scheduled',
   });
@@ -98,12 +107,26 @@ export async function listCourseSessions(
     .sort({ startsAt: window === 'past' ? -1 : 1 })
     .limit(30)
     .lean();
-  const counts = await Attendance.aggregate<{ _id: Types.ObjectId; count: number }>([
-    { $match: { session: { $in: sessions.map((session) => session._id) } } },
-    { $group: { _id: '$session', count: { $sum: 1 } } },
+  const sessionIds = sessions.map((session) => session._id);
+  const [counts, waitlists] = await Promise.all([
+    Attendance.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { session: { $in: sessionIds } } },
+      { $group: { _id: '$session', count: { $sum: 1 } } },
+    ]),
+    LiveWaitlist.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { session: { $in: sessionIds } } },
+      { $group: { _id: '$session', count: { $sum: 1 } } },
+    ]),
   ]);
   const countMap = new Map(counts.map((row) => [String(row._id), row.count]));
-  return sessions.map((session) => ({ ...toView(session as Doc<LiveSessionDoc>), attendanceCount: countMap.get(String(session._id)) ?? 0 }));
+  const waitlistMap = new Map(waitlists.map((row) => [String(row._id), row.count]));
+  return sessions.map((session) => ({
+    ...toView(
+      session as Doc<LiveSessionDoc>,
+      countMap.get(String(session._id)) ?? 0,
+      waitlistMap.get(String(session._id)) ?? 0,
+    ),
+  }));
 }
 
 /** Load one session and prove the viewer may enter its course. */
@@ -168,13 +191,12 @@ export async function ensureRemindersForEnrolment(studentId: string, courseId: s
   return sessions.length;
 }
 
-/** Record attendance once per enrolled student; staff may check in too. */
-export async function checkInToSession(
+/** Load a session only when this viewer may enter it, as staff or as an enrolled learner. */
+async function sessionForParticipant(
   sessionId: string,
   userId: string,
   roles: string[],
-): Promise<{ attendance: AttendanceDoc; already: boolean } | null> {
-  await connectToDatabase();
+): Promise<Doc<LiveSessionDoc> | null> {
   const session = await LiveSession.findById(sessionId).lean();
   if (!session) return null;
   const course = await Course.findById(session.course).select('instructor').lean();
@@ -184,10 +206,131 @@ export async function checkInToSession(
     const enrolled = await Enrolment.exists({ student: userId, course: course._id, status: { $ne: 'refunded' } });
     if (!enrolled) return null;
   }
+  return session as Doc<LiveSessionDoc>;
+}
+
+/** Record attendance once per enrolled student; staff may check in too. */
+export async function checkInToSession(
+  sessionId: string,
+  userId: string,
+  roles: string[],
+): Promise<{ attendance: AttendanceDoc; already: boolean } | null> {
+  await connectToDatabase();
+  const session = await sessionForParticipant(sessionId, userId, roles);
+  if (!session) return null;
   const existing = await Attendance.findOne({ session: session._id, student: userId }).lean();
   if (existing) return { attendance: existing as Doc<AttendanceDoc>, already: true };
   const attendance = await Attendance.create({ session: session._id, course: session.course, student: userId, joinedAt: new Date() });
   return { attendance: attendance.toObject() as Doc<AttendanceDoc>, already: false };
+}
+
+export type JoinSessionResult =
+  | { status: 'checked_in'; already: boolean }
+  | { status: 'waitlisted'; position: number };
+
+/** Count a learner's place in line by arrival time, one-based. */
+async function waitlistPosition(sessionId: Types.ObjectId, waitlistId: Types.ObjectId): Promise<number> {
+  const rows = await LiveWaitlist.find({ session: sessionId }).sort({ createdAt: 1, _id: 1 }).select('_id').lean();
+  const index = rows.findIndex((row) => String(row._id) === String(waitlistId));
+  return Math.max(1, index + 1);
+}
+
+/**
+ * Join a live class. A capped session checks the learner into the room while a seat is
+ * free and puts them in the waitlist once it is full; joining twice keeps one place.
+ */
+export async function joinSession(
+  sessionId: string,
+  userId: string,
+  roles: string[],
+): Promise<JoinSessionResult | null> {
+  await connectToDatabase();
+  const session = await sessionForParticipant(sessionId, userId, roles);
+  if (!session) return null;
+
+  const existing = await Attendance.findOne({ session: session._id, student: userId }).lean();
+  if (existing) return { status: 'checked_in', already: true };
+
+  const capacity = session.capacity ?? 0;
+  if (capacity > 0 && (await Attendance.countDocuments({ session: session._id })) >= capacity) {
+    const entry = await LiveWaitlist.findOneAndUpdate(
+      { session: session._id, student: userId },
+      { $setOnInsert: { course: session.course } },
+      { upsert: true, returnDocument: 'after' },
+    );
+    return { status: 'waitlisted', position: await waitlistPosition(session._id, entry!._id) };
+  }
+
+  await Attendance.create({ session: session._id, course: session.course, student: userId, joinedAt: new Date() });
+  // A seat can open after someone waits, so a successful check-in leaves the queue.
+  await LiveWaitlist.deleteOne({ session: session._id, student: userId });
+  return { status: 'checked_in', already: false };
+}
+
+/** The learner's place in one session's queue, or null when they are not waiting. */
+export async function getWaitlistPosition(sessionId: string, userId: string): Promise<number | null> {
+  await connectToDatabase();
+  const entry = await LiveWaitlist.findOne({ session: sessionId, student: userId }).select('_id session').lean();
+  if (!entry) return null;
+  return waitlistPosition(entry.session, entry._id);
+}
+
+export type WaitlistView = {
+  sessionId: string;
+  courseSlug: string;
+  courseTitle: { bn?: string; en?: string };
+  sessionTitle: { bn?: string; en?: string };
+  startsAt: string;
+  position: number;
+  capacity: number;
+};
+
+/** Upcoming classes this learner is waiting for, with a live position in each queue. */
+export async function getWaitlistForStudent(userId: string): Promise<WaitlistView[]> {
+  await connectToDatabase();
+  const entries = await LiveWaitlist.find({ student: userId }).sort({ createdAt: 1 }).limit(20).lean();
+  if (entries.length === 0) return [];
+  const sessions = await LiveSession.find({
+    _id: { $in: entries.map((entry) => entry.session) },
+    startsAt: { $gte: new Date() },
+    status: 'scheduled',
+  })
+    .select('course title startsAt capacity')
+    .lean();
+  if (sessions.length === 0) return [];
+  const sessionMap = new Map(sessions.map((session) => [String(session._id), session]));
+  const [courses, queue] = await Promise.all([
+    Course.find({ _id: { $in: sessions.map((session) => session.course) } }).select('title slug').lean(),
+    LiveWaitlist.find({ session: { $in: sessions.map((session) => session._id) } })
+      .sort({ createdAt: 1, _id: 1 })
+      .select('session')
+      .lean(),
+  ]);
+  const courseMap = new Map(courses.map((course) => [String(course._id), course]));
+  const queueMap = new Map<string, string[]>();
+  for (const row of queue) {
+    const key = String(row.session);
+    const rows = queueMap.get(key) ?? [];
+    if (!rows.includes(String(row._id))) rows.push(String(row._id));
+    queueMap.set(key, rows);
+  }
+  return entries.flatMap((entry) => {
+    const session = sessionMap.get(String(entry.session));
+    if (!session) return [];
+    const course = courseMap.get(String(session.course));
+    const queueRows = queueMap.get(String(entry.session)) ?? [];
+    return [
+      {
+        sessionId: String(session._id),
+        courseSlug: course?.slug ?? '',
+        courseTitle: course?.title ?? {},
+        sessionTitle: session.title,
+        startsAt: session.startsAt.toISOString(),
+        position: Math.max(1, queueRows.indexOf(String(entry._id)) + 1),
+        capacity: session.capacity ?? 0,
+      },
+    ];
+  });
 }
 
 /** Whether this viewer already checked in to a session. */

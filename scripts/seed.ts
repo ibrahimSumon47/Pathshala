@@ -339,6 +339,7 @@ export async function seedDatabase(): Promise<void> {
         value: 20,
         minAmountPaisa: 0,
         maxRedemptions: 100,
+        maxPerLearner: 1,
         active: true,
         createdBy: adminId,
         expiresAt: new Date('2027-12-31T23:59:59Z'),

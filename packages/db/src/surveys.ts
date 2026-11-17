@@ -19,11 +19,15 @@ export type SurveyableCourse = {
   survey: SurveyAnswers & { updatedAt: string } | null;
 };
 
+export type SurveyComment = { id: string; body: string; updatedAt: string };
+
 export type CourseSurveySummary = {
   count: number;
   difficulty: number;
   pace: number;
   confidence: number;
+  /** Anonymous excerpts; hidden rows are excluded just like a hidden review. */
+  comments: SurveyComment[];
 };
 
 /** Average one survey scale, rounded to one decimal so the UI can print it honestly. */
@@ -114,17 +118,22 @@ export async function submitCompletionSurvey(
   return 'saved';
 }
 
-/** Anonymous averages for one course, used by the teacher roster. */
+/** Anonymous averages and comment excerpts for one course, used by the teacher roster. */
 export async function getCourseSurveySummary(courseId: string): Promise<CourseSurveySummary> {
   await connectToDatabase();
-  if (!Types.ObjectId.isValid(courseId)) return { count: 0, difficulty: 0, pace: 0, confidence: 0 };
-  const rows = await CompletionSurvey.find({ course: courseId })
-    .select('difficulty pace confidence')
+  if (!Types.ObjectId.isValid(courseId)) return { count: 0, difficulty: 0, pace: 0, confidence: 0, comments: [] };
+  const rows = await CompletionSurvey.find({ course: courseId, hidden: { $ne: true } })
+    .sort({ updatedAt: -1 })
+    .select('difficulty pace confidence comment updatedAt')
     .lean();
   return {
     count: rows.length,
     difficulty: average(rows.map((row) => row.difficulty)),
     pace: average(rows.map((row) => row.pace)),
     confidence: average(rows.map((row) => row.confidence)),
+    comments: rows
+      .filter((row) => row.comment.trim().length > 0)
+      .slice(0, 10)
+      .map((row) => ({ id: String(row._id), body: row.comment, updatedAt: row.updatedAt.toISOString() })),
   };
 }

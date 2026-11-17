@@ -250,10 +250,14 @@ export async function scheduleSessionAction(form: FormData): Promise<void> {
   const startsAtRaw = text(form, 'startsAt');
   const startsAt = new Date(startsAtRaw);
   const duration = Number.parseInt(text(form, 'durationMinutes') || '60', 10);
+  const capacity = Number.parseInt(text(form, 'capacity') || '0', 10);
   if (!titleBn && !titleEn) fail(form, `/studio/${courseId}`, 'Give the class a title.');
   if (!startsAtRaw || Number.isNaN(startsAt.getTime())) fail(form, `/studio/${courseId}`, 'Choose a valid date and time.');
   if (startsAt.getTime() <= Date.now()) fail(form, `/studio/${courseId}`, 'The class must start in the future.');
   if (!Number.isInteger(duration) || duration < 15 || duration > 240) fail(form, `/studio/${courseId}`, 'Duration is 15-240 minutes.');
+  if (!Number.isInteger(capacity) || capacity < 0 || capacity > 1000) {
+    fail(form, `/studio/${courseId}`, 'Capacity is 0-1000; 0 means no cap.');
+  }
 
   const session = await createLiveSession({
     courseId: course.id,
@@ -262,6 +266,7 @@ export async function scheduleSessionAction(form: FormData): Promise<void> {
     description: { bn: text(form, 'descriptionBn').trim().slice(0, 800), en: text(form, 'descriptionEn').trim().slice(0, 800) },
     startsAt,
     durationMinutes: duration,
+    capacity,
   });
   await scheduleSessionReminders(session.id);
   revalidatePath(`/studio/${courseId}`);

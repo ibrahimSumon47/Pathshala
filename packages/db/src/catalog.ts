@@ -49,6 +49,7 @@ export type CatalogPage = {
 };
 
 export type CatalogCategory = { id: string; slug: string; name: CategoryDoc['name'] };
+export type CategoryCount = CatalogCategory & { count: number };
 
 export type CourseLesson = {
   id: string;
@@ -154,6 +155,35 @@ export async function listCategories(): Promise<CatalogCategory[]> {
     slug: document.slug,
     name: document.name,
   }));
+}
+
+/**
+ * Published course counts per subject, used when a search finds nothing. Excluding the
+ * current subject keeps the suggestions genuinely elsewhere; empty subjects are dropped.
+ */
+export async function listCategoryCounts(options: { excludeSlug?: string; limit?: number } = {}): Promise<CategoryCount[]> {
+  await connectToDatabase();
+  const [categories, counts] = await Promise.all([
+    Category.find({ isActive: true }).sort({ order: 1 }).lean() as unknown as Promise<
+      Array<CategoryDoc & { _id: Types.ObjectId }>
+    >,
+    Course.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { status: 'published' } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+    ]),
+  ]);
+  const byCategory = new Map(counts.map((row) => [String(row._id), row.count]));
+  return categories
+    .filter((category) => category.slug !== options.excludeSlug)
+    .map((category) => ({
+      id: String(category._id),
+      slug: category.slug,
+      name: category.name,
+      count: byCategory.get(String(category._id)) ?? 0,
+    }))
+    .filter((category) => category.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, Math.max(1, Math.min(12, options.limit ?? 6)));
 }
 
 /** Query the published catalogue with search, filters and a bounded page size. */

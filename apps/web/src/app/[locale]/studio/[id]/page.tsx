@@ -343,6 +343,10 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
               <p className={styles.meta}>
                 {new Date(session.startsAt).toLocaleString(locale)} · {session.durationMinutes} min · {session.status} ·{' '}
                 {language === 'en' ? 'attending' : 'উপস্থিত'}: {attendance[index]?.length ?? 0}
+                {session.capacity > 0 ? `/${session.capacity}` : ''}
+                {session.waitlistCount > 0
+                  ? ` · ${session.waitlistCount} ${language === 'en' ? 'waiting' : 'অপেক্ষায়'}`
+                  : ''}
               </p>
               {attendance[index]?.length ? (
                 <p className={styles.meta}>{attendance[index].map((row) => row.studentName).join(', ')}</p>
@@ -361,9 +365,18 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                 <Field id="live-title-bn" name="titleBn" label={copy.titleBn} maxLength={160} />
                 <Field id="live-title-en" name="titleEn" label={copy.titleEn} maxLength={160} />
               </div>
-              <div className={styles.two}>
+              <div className={styles.three}>
                 <Field id="live-starts" name="startsAt" type="datetime-local" label={language === 'en' ? 'Starts (server local time)' : 'শুরু (সার্ভারের স্থানীয় সময়)'} required />
                 <Field id="live-duration" name="durationMinutes" type="number" min={15} max={240} defaultValue={60} label={language === 'en' ? 'Minutes' : 'মিনিট'} />
+                <Field
+                  id="live-capacity"
+                  name="capacity"
+                  type="number"
+                  min={0}
+                  max={1000}
+                  defaultValue={0}
+                  label={language === 'en' ? 'Seats (0 = no cap)' : 'আসন (০ = সীমা নেই)'}
+                />
               </div>
               <div className={styles.two}>
                 <Textarea id="live-description-bn" name="descriptionBn" label={copy.descriptionBn} defaultValue="" />

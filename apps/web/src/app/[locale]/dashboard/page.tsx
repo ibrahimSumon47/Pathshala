@@ -15,6 +15,7 @@ import {
   getLearnerHome,
   getNotifications,
   getUpcomingForStudent,
+  getWaitlistForStudent,
   recommendedForStudent,
 } from '@pathshala/db';
 import { CourseShelf } from '@/components/course-shelf';
@@ -53,9 +54,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     getUpcomingForStudent(user.id),
     Review.countDocuments({ student: user.id }),
   ]);
-  const [home, recommended] = await Promise.all([
+  const [home, recommended, waiting] = await Promise.all([
     getLearnerHome(user.id, reviewsWritten),
     recommendedForStudent(user.id, 3),
+    getWaitlistForStudent(user.id),
   ]);
   const earned = home.badges.filter((badge) => badge.earned);
 
@@ -224,6 +226,25 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                       </button>
                     </form>
                   </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {waiting.length > 0 ? (
+          <section className={styles.saved}>
+            <h2 className={styles.panelTitle}>{locale === 'en' ? 'Live-class waitlist' : 'লাইভ ক্লাসের অপেক্ষার তালিকা'}</h2>
+            <ul className={styles.wishlist}>
+              {waiting.map((entry) => (
+                <li key={entry.sessionId}>
+                  <Link href={`/live/${entry.courseSlug}`}>
+                    {entry.sessionTitle[locale === 'en' ? 'en' : 'bn'] ?? entry.sessionTitle.en ?? entry.courseTitle.en}
+                  </Link>
+                  <span>
+                    {new Date(entry.startsAt).toLocaleString(locale)} ·{' '}
+                    {locale === 'en' ? `#${entry.position} in line` : `তালিকায় #${entry.position}`}
+                  </span>
                 </li>
               ))}
             </ul>

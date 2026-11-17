@@ -15,6 +15,7 @@ export type InstructorCouponRow = {
   active: boolean;
   redeemedCount: number;
   maxRedemptions: number;
+  maxPerLearner: number;
   expiresAt: string | null;
 };
 
@@ -52,6 +53,7 @@ export async function listInstructorPromotions(instructorId: string, isAdmin = f
       active: coupon.active,
       redeemedCount: coupon.redeemedCount,
       maxRedemptions: coupon.maxRedemptions,
+      maxPerLearner: coupon.maxPerLearner ?? 1,
       expiresAt: coupon.expiresAt?.toISOString() ?? null,
     })),
   };
@@ -68,6 +70,7 @@ export async function createInstructorCoupon(input: {
   value: number;
   courseId: string;
   maxRedemptions: number;
+  maxPerLearner?: number;
   days: number;
   now?: Date;
 }): Promise<CreateCouponResult> {
@@ -84,6 +87,10 @@ export async function createInstructorCoupon(input: {
   if (!Number.isInteger(input.maxRedemptions) || input.maxRedemptions < 1 || input.maxRedemptions > 5000) {
     return { ok: false, error: 'value' };
   }
+  const maxPerLearner = input.maxPerLearner ?? 1;
+  if (!Number.isInteger(maxPerLearner) || maxPerLearner < 0 || maxPerLearner > 10) {
+    return { ok: false, error: 'value' };
+  }
   if (!Number.isInteger(input.days) || input.days < 0 || input.days > 365) return { ok: false, error: 'value' };
 
   const now = input.now ?? new Date();
@@ -95,6 +102,7 @@ export async function createInstructorCoupon(input: {
       course: course._id,
       createdBy: input.instructorId,
       maxRedemptions: input.maxRedemptions,
+      maxPerLearner,
       minAmountPaisa: 0,
       active: true,
       expiresAt: input.days > 0 ? new Date(now.getTime() + input.days * 24 * 60 * 60 * 1000) : null,

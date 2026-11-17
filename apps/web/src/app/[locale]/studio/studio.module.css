@@ -200,6 +200,20 @@
   font-size: var(--text-xl);
 }
 
+.commentList {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--color-accent);
+  background: var(--color-surface-muted);
+}
+
 .lessonList {
   display: grid;
   gap: var(--space-2);

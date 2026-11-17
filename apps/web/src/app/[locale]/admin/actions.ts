@@ -15,6 +15,7 @@ import {
   setReviewHidden,
   setReviewsHidden,
   setStatementPaid,
+  setSurveysHidden,
 } from '@pathshala/db';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/guard';
@@ -115,10 +116,15 @@ export async function bulkModerationAction(form: FormData): Promise<void> {
   if (ids.length === 0) {
     redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Select at least one row.')}`);
   }
-  if (kind !== 'review' && kind !== 'question') {
+  if (kind !== 'review' && kind !== 'question' && kind !== 'survey') {
     redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Unknown moderation type.')}`);
   }
-  const count = kind === 'review' ? await setReviewsHidden(ids, hidden) : await setQuestionsHidden(ids, hidden);
+  const count =
+    kind === 'review'
+      ? await setReviewsHidden(ids, hidden)
+      : kind === 'question'
+        ? await setQuestionsHidden(ids, hidden)
+        : await setSurveysHidden(ids, hidden);
   if (count === 0) {
     redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Nothing matched those rows.')}`);
   }

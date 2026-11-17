@@ -36,6 +36,9 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           value: 'Value',
           valueHint: 'Percent, or taka for a fixed amount',
           limit: 'Redemptions',
+          perLearner: 'Uses per learner (0 = unlimited)',
+          perLearnerHint: 'One use stops an account reusing the code on another course.',
+          perLearnerColumn: 'Per learner',
           days: 'Days valid (0 = no expiry)',
           submit: 'Create code',
           list: 'Your codes',
@@ -61,6 +64,9 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
           value: 'মান',
           valueHint: 'শতাংশ, বা নির্দিষ্ট টাকায় ছাড়',
           limit: 'কতবার ব্যবহার',
+          perLearner: 'একজন কতবার ব্যবহার করতে পারবে (০ = সীমা নেই)',
+          perLearnerHint: 'একবার দিলে একই অ্যাকাউন্ট অন্য কোর্সে কোডটি আবার লাগাতে পারবে না।',
+          perLearnerColumn: 'প্রতি শিক্ষার্থী',
           days: 'কত দিন বৈধ (০ = মেয়াদ নেই)',
           submit: 'কোড তৈরি করুন',
           list: 'আপনার কোড',
@@ -137,6 +143,16 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                 max={5000}
                 defaultValue={50}
               />
+              <Field
+                id="promo-per-learner"
+                name="maxPerLearner"
+                type="number"
+                label={copy.perLearner}
+                hint={copy.perLearnerHint}
+                min={0}
+                max={10}
+                defaultValue={1}
+              />
               <Field id="promo-days" name="days" type="number" label={copy.days} min={0} max={365} defaultValue={30} />
               <Button type="submit">{copy.submit}</Button>
             </form>
@@ -157,6 +173,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                     <th scope="col">{copy.course}</th>
                     <th scope="col">{copy.type}</th>
                     <th scope="col">{copy.usage}</th>
+                    <th scope="col">{copy.perLearnerColumn}</th>
                     <th scope="col">{copy.status}</th>
                     <th scope="col">{copy.expires}</th>
                     <th scope="col">{copy.toggle}</th>
@@ -177,6 +194,7 @@ export default async function StudioPromotionsPage({ params, searchParams }: Pro
                       <td>
                         {coupon.redeemedCount}/{coupon.maxRedemptions}
                       </td>
+                      <td>{coupon.maxPerLearner === 0 ? '∞' : coupon.maxPerLearner}</td>
                       <td>
                         <Badge tone={coupon.active ? 'success' : 'neutral'}>
                           {coupon.active ? (language === 'en' ? 'Active' : 'সক্রিয়') : language === 'en' ? 'Off' : 'বন্ধ'}

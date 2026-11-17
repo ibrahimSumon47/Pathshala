@@ -11,6 +11,8 @@ export type LiveSessionDoc = {
   description: { bn?: string; en?: string };
   startsAt: Date;
   durationMinutes: number;
+  /** 0 means no seat cap; a positive number is the attendance limit before the waitlist. */
+  capacity: number;
   roomName: string;
   status: LiveSessionStatus;
   createdAt: Date;
@@ -31,6 +33,7 @@ const liveSessionSchema = new Schema<LiveSessionDoc>(
     },
     startsAt: { type: Date, required: true },
     durationMinutes: { type: Number, default: 60, min: 15, max: 240 },
+    capacity: { type: Number, default: 0, min: 0, max: 1000 },
     roomName: { type: String, required: true, unique: true, trim: true },
     status: { type: String, enum: LIVE_SESSION_STATUSES, default: 'scheduled' },
   },

@@ -1,15 +1,15 @@
 # Handoff
 
-Updated: 2026-11-17, after the P16 studio and operations slice.
+Updated: 2026-11-17, after the P17 classroom and commerce slice.
 
 ## Where we are
 
 The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
 streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
-shelf, learner recommendations), the P12-P15 polish slices and P16's studio and operations work
-are live and verified; `docs/features.json` tracks 97 features and
-`node scripts/check-done.mjs` exits 0.
+shelf, learner recommendations), the P12-P15 polish slices, P16's studio and operations work
+and P17's classroom and commerce work are live and verified; `docs/features.json` tracks 101
+features and `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -22,10 +22,10 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 36/36
-  Playwright journeys now finish in about four minutes, and the five loading placeholders mirror
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 38/38
+  Playwright journeys finish in about 4.3 minutes, and the five loading placeholders mirror
   the catalogue, course, dashboard, lesson and cart grids.
-- 36/36 Playwright journeys against the deployed web origin, including the private profile edit,
+- 38/38 Playwright journeys against the deployed web origin, including the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
@@ -34,11 +34,12 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   instructor publishing and admin publish/unpublish with audit rows, a Bangla catalogue search,
   URL-backed filters and both recommendation rails, plus a new promo code, a saved-search
   round-trip, the operator refund desk, a roster read, a lesson moved down and back up, a
-  question saved to the bank, the completion survey, certificate revoke/restore and the
-  coupon redemption timeline.
+  question saved to the bank, the completion survey, certificate revoke/restore, the coupon
+  redemption timeline, saving and removing a search from an empty catalogue result, and a
+  survey comment read on the roster then hidden and restored by the admin.
 - axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
-  notes, wishlist, cart, notifications, saved searches, surveys, admin
-  orders/coupons/payouts/refunds/certificates and the studio earnings, community, questions,
+  notes, wishlist, cart, notifications, saved searches, surveys, the admin overview and
+  orders/coupons/payouts/refunds/certificates, and the studio earnings, community, questions,
   promotions, roster and quiz-bank pages.
 - Lighthouse mobile: 100/100/100/100 on landing, 99/100/100/100 on the catalogue, FCP/LCP
   0.9 s, CLS 0, TBT under 120 ms. JSON reports sit in `docs/screenshots`.
@@ -57,9 +58,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-P16 is live: a per-course student roster, lesson reordering, the certificate revocation desk,
-a reusable question bank, the coupon redemption timeline, saved searches that check themselves
-once a day on the dashboard, and completion surveys with anonymous teacher averages. Item 13 of
+P17 is live: live sessions can carry a seat cap and queue overflow, coupons can be limited per
+learner, survey comments reach the teacher roster and the admin moderation desk, and an empty
+catalogue result suggests other subjects and saves the search in one click. Item 13 of
 the agreed expansion order is still next; its wording is not in the repository yet, so
 `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
 every remaining item. Replace the placeholder with the brief's sentence before writing code.
@@ -116,4 +117,4 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 
 ## Current gate
 
-`node scripts/check-done.mjs` reports **97/97 — every feature is done with evidence**.
+`node scripts/check-done.mjs` reports **101/101 — every feature is done with evidence**.

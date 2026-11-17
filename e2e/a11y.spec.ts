@@ -61,6 +61,7 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
 test('the operator money and moderation pages have zero axe violations', async ({ page }) => {
   await signIn(page, accounts.admin.email, accounts.admin.password);
   for (const path of [
+    '/en/admin',
     '/en/admin/orders',
     '/en/admin/coupons',
     '/en/admin/payouts',

@@ -335,9 +335,12 @@ describe('completion surveys', () => {
       survey: { difficulty: 3, pace: 4, confidence: 5, comment: 'Edited answer' },
     });
 
-    expect(await getCourseSurveySummary(courseId)).toEqual({ count: 1, difficulty: 3, pace: 4, confidence: 5 });
+    expect(await getCourseSurveySummary(courseId)).toMatchObject({ count: 1, difficulty: 3, pace: 4, confidence: 5 });
+    expect((await getCourseSurveySummary(courseId)).comments).toHaveLength(1);
+    expect((await getCourseSurveySummary(courseId)).comments[0]?.body).toBe('Edited answer');
     const roster = await getCourseRoster(courseId, instructorId, false);
     expect(roster!.students.find((row) => row.id === studentId)?.surveySubmitted).toBe(true);
-    expect(roster!.survey).toEqual({ count: 1, difficulty: 3, pace: 4, confidence: 5 });
+    expect(roster!.survey).toMatchObject({ count: 1, difficulty: 3, pace: 4, confidence: 5 });
+    expect(roster!.survey.comments[0]?.body).toBe('Edited answer');
   });
 });

@@ -598,3 +598,13 @@ The coupon timeline reads paid orders, not the ledger or the denormalised redemp
 Saved searches check themselves when a learner opens the dashboard, guarded by the stored `lastCheckedAt` and a 24-hour interval. That keeps the feature free and needs no scheduler; the trade-off is that a learner who never returns gets no notification, which is acceptable because the inbox only exists for them anyway. The manual check stays available.
 
 Surveys are five-point integers with an optional 500-character comment. The scales are deliberately consistent so averages are comparable; the page words both ends of each scale instead of labelling only the middle. Only the teacher roster reads them, and only as averages and a count.
+
+## 2026-11-17 — P17 caps the room, the code and the empty result
+
+A waitlist is a separate row keyed by session and student, not a status on attendance. That keeps the existing check-in path and its tests intact, and it lets the queue survive a learner who leaves and returns. Position is derived from `createdAt` rather than stored, so removing the head cannot leave stale numbers behind. Capacity defaults to 0 (no cap), which means every existing session keeps its old behaviour without a data migration. When a seat opens, the waiting learner can claim it: `joinSession` takes the capped path, `checkInToSession` writes attendance, and the queue row is deleted in the same request.
+
+The per-learner coupon cap counts only paid orders. A refund therefore frees the use, which is the same rule the public redemption counter already follows. `0` is an explicit unlimited value rather than a missing field, so a teacher can deliberately make a code reusable. Every quote path now receives the buyer; enforcing only at final checkout would let the cart show a discount that checkout then refuses.
+
+Survey comments are read through the same visible set as the averages. Hiding is applied in the query, so a hidden comment cannot linger in one view after disappearing from another. The roster returns anonymous text and a timestamp only, and the admin bulk form reuses the bounded 200-id moderation pattern.
+
+An empty catalogue result does not guess at similar titles. It aggregates published course counts per subject, excludes the subject already being viewed, and lists up to six subjects that actually have courses. Saving from that state reuses `createSavedSearch`, including its validation and ten-search limit, so the shortcut cannot create a record the dashboard could not create itself.

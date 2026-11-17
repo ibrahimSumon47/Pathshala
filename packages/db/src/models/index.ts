@@ -24,6 +24,8 @@ export { LEDGER_ACCOUNTS, LEDGER_TYPES, LedgerEntry } from './ledger-entry';
 export { LEARNING_EVENT_TYPES, LearningEvent } from './learning-event';
 export type { LearningEventDoc, LearningEventType } from './learning-event';
 export { LIVE_SESSION_STATUSES, LiveSession } from './live-session';
+export { LiveWaitlist } from './live-waitlist';
+export type { LiveWaitlistDoc } from './live-waitlist';
 export type { LiveSessionDoc, LiveSessionStatus } from './live-session';
 export type { LedgerAccount, LedgerEntryDoc, LedgerType } from './ledger-entry';
 export { ORDER_STATUSES, Order, PAYMENT_PROVIDERS } from './order';

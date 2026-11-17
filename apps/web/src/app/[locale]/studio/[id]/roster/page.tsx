@@ -35,6 +35,8 @@ const COPY = {
     difficulty: 'কঠিনতা',
     pace: 'গতি',
     confidence: 'আত্মবিশ্বাস',
+    comments: 'নাম ছাড়া মন্তব্য',
+    noComments: 'এখনো কেউ লিখিত মন্তব্য দেননি।',
     noSurveys: 'এখনো কোনো সমীক্ষার উত্তর আসেনি।',
   },
   en: {
@@ -61,6 +63,8 @@ const COPY = {
     difficulty: 'Difficulty',
     pace: 'Pace',
     confidence: 'Confidence',
+    comments: 'Anonymous comments',
+    noComments: 'No written comments yet.',
     noSurveys: 'No survey answers yet.',
   },
 } as const;
@@ -127,6 +131,24 @@ export default async function StudioRosterPage({ params }: RosterPageProps) {
                 <p className={styles.statValue}>{roster.survey.confidence}</p>
               </div>
             </div>
+          )}
+        </section>
+
+        <section className={styles.panel} aria-labelledby="survey-comments">
+          <h2 id="survey-comments" className={styles.sectionHeading}>
+            {copy.comments}
+          </h2>
+          {roster.survey.comments.length === 0 ? (
+            <p className={styles.empty}>{copy.noComments}</p>
+          ) : (
+            <ul className={styles.commentList}>
+              {roster.survey.comments.map((comment) => (
+                <li key={comment.id} className={styles.comment}>
+                  <p>{comment.body}</p>
+                  <p className={styles.meta}>{new Date(comment.updatedAt).toLocaleDateString(locale)}</p>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

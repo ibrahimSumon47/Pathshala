@@ -1,5 +1,7 @@
 import type { CatalogSort, CourseLevel, PriceBucket } from '@pathshala/db';
-import { listCatalog, listCategories } from '@pathshala/db';
+import { listCatalog, listCategories, listCategoryCounts } from '@pathshala/db';
+import { Button } from '@/components/ui/button';
+import { auth } from '@/auth';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { Badge } from '@/components/ui/badge';
 import { buttonStyles } from '@/components/ui/button';
@@ -7,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
+import { saveCatalogueSearchAction } from './actions';
 import { coursesCopy } from './copy';
 import styles from './courses.module.css';
 
@@ -38,7 +41,7 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
   const sort = SORTS.includes(sortValue as CatalogSort) ? (sortValue as CatalogSort) : 'newest';
   const page = Math.max(1, Number.parseInt(one('page') ?? '1', 10) || 1);
 
-  const [result, categories] = await Promise.all([
+  const [result, categories, nearby, session] = await Promise.all([
     listCatalog({
       ...(q ? { q } : {}),
       ...(category ? { category } : {}),
@@ -49,7 +52,12 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
       page,
     }),
     listCategories(),
+    listCategoryCounts(category ? { excludeSlug: category } : {}),
+    auth(),
   ]);
+  const hasFilters = Boolean(q || category || level || courseLanguage || price !== 'all');
+  const categoryName = categories.find((item) => item.slug === category)?.name;
+  const savedSearchLabel = q || categoryName?.[language] || copy.allResults;
 
   const paramsForPage = (nextPage: number) => {
     const next = new URLSearchParams();
@@ -156,7 +164,49 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
         </p>
 
         {result.courses.length === 0 ? (
-          <EmptyState title={copy.emptyTitle} body={copy.emptyBody} />
+          <div className={styles.emptyHelp}>
+            <EmptyState title={copy.emptyTitle} body={copy.emptyBody} />
+            {nearby.length > 0 ? (
+              <section className={styles.nearby} aria-labelledby="nearby-subjects">
+                <h2 id="nearby-subjects" className={styles.nearbyTitle}>
+                  {copy.nearby}
+                </h2>
+                <p className={styles.nearbyHint}>{copy.nearbyHint}</p>
+                <ul className={styles.nearbyList}>
+                  {nearby.map((item) => (
+                    <li key={item.id}>
+                      <Link href={`/courses?category=${item.slug}`} className={styles.nearbyLink}>
+                        <span>{item.name[language] ?? item.name.en ?? item.slug}</span>
+                        <span className={styles.nearbyCount}>
+                          {item.count} {copy.results}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {hasFilters ? (
+              session?.user ? (
+                <form action={saveCatalogueSearchAction} className={styles.saveForm}>
+                  <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="q" value={q} />
+                  <input type="hidden" name="label" value={savedSearchLabel} />
+                  <input type="hidden" name="level" value={level ?? ''} />
+                  <input type="hidden" name="language" value={courseLanguage ?? ''} />
+                  <input type="hidden" name="price" value={price} />
+                  <Button type="submit" variant="secondary">
+                    {copy.saveSearch}
+                  </Button>
+                  <p className={styles.saveHint}>{copy.saveSearchHint}</p>
+                </form>
+              ) : (
+                <p className={styles.saveHint}>
+                  <Link href="/sign-in">{copy.signInToSave}</Link>
+                </p>
+              )
+            ) : null}
+          </div>
         ) : (
           <ul className={styles.grid}>
             {result.courses.map((course) => (

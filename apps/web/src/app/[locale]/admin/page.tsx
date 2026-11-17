@@ -55,6 +55,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         moderation: 'Reviews and questions',
         reviews: 'Recent reviews',
         questions: 'Recent lesson questions',
+        surveyComments: 'Completion survey comments',
+        noSurveys: 'No survey comments yet.',
         hidden: 'Hidden',
         visible: 'Visible',
         hide: 'Hide',
@@ -100,6 +102,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         moderation: 'মতামত ও প্রশ্ন',
         reviews: 'সাম্প্রতিক মতামত',
         questions: 'সাম্প্রতিক পাঠ-প্রশ্ন',
+        surveyComments: 'কোর্স সমীক্ষার মন্তব্য',
+        noSurveys: 'এখনো কোনো সমীক্ষার মন্তব্য নেই।',
         hidden: 'লুকানো',
         visible: 'দৃশ্যমান',
         hide: 'লুকান',
@@ -336,6 +340,50 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
                 </tbody>
               </table>
               {moderation.questions.length === 0 ? <p className={styles.empty}>{copy.noQuestions}</p> : null}
+            </div>
+            <div className={styles.bulkBar} aria-label={copy.selection}>
+              <button type="submit" name="hidden" value="true" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+                {copy.hideSelected}
+              </button>
+              <button type="submit" name="hidden" value="false" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+                {copy.restoreSelected}
+              </button>
+            </div>
+          </form>
+
+          <form action={bulkModerationAction} className={styles.bulkForm}>
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="kind" value="survey" />
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">{copy.select}</th>
+                    <th scope="col">{copy.surveyComments}</th>
+                    <th scope="col">{copy.status}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {moderation.surveys.map((survey) => (
+                    <tr key={survey.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          name="ids"
+                          value={survey.id}
+                          aria-label={`${copy.select} ${copy.surveyComments}: ${survey.comment.slice(0, 40)}`}
+                        />
+                      </td>
+                      <td>
+                        {survey.courseTitle[locale === 'en' ? 'en' : 'bn'] ?? survey.courseTitle.en ?? ''}
+                        <span className={styles.email}> · {survey.comment}</span>
+                      </td>
+                      <td>{survey.hidden ? copy.hidden : copy.visible}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {moderation.surveys.length === 0 ? <p className={styles.empty}>{copy.noSurveys}</p> : null}
             </div>
             <div className={styles.bulkBar} aria-label={copy.selection}>
               <button type="submit" name="hidden" value="true" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>

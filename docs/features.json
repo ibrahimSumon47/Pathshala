@@ -1094,6 +1094,50 @@
         "the teacher roster shows anonymous averages and a count; the learner’s own answer is never shown with their name",
         "packages/db/src/backoffice.integration.test.ts covers the completed-only rule, scale validation, the edit and the averages"
       ]
+    },
+    {
+      "id": "p17.live-waitlist",
+      "phase": "P17",
+      "title": "Live-class capacity and waitlist",
+      "status": "done",
+      "evidence": [
+        "a session accepts a capacity (0 = no cap); joinSession checks the learner in while a seat remains and otherwise adds one queue row and returns their one-based position",
+        "the live page shows seats/waiting counts and turns the button into Join the waitlist or a disabled position; the dashboard lists each waiting class with its place, and the studio schedule shows attendance/capacity/waiting",
+        "packages/db/src/p17.integration.test.ts seats one learner, queues the next with a stable position, refuses a non-enrolled account and checks the session counters"
+      ]
+    },
+    {
+      "id": "p17.coupon-per-learner",
+      "phase": "P17",
+      "title": "Per-learner coupon limit",
+      "status": "done",
+      "evidence": [
+        "Coupon.maxPerLearner defaults to 1 and accepts 0 as unlimited; quoteCoupon counts the account’s paid orders with that code and throws coupon_learner_limit at the cap",
+        "every quote path passes the buyer (cart, checkout, order creation and applying a coupon to a pending order), and the studio promotion form exposes the limit with a table column",
+        "packages/db/src/p17.integration.test.ts pays one order then refuses a second code use, and proves 0 still allows a second course"
+      ]
+    },
+    {
+      "id": "p17.survey-comments",
+      "phase": "P17",
+      "title": "Survey comment excerpts and moderation",
+      "status": "done",
+      "evidence": [
+        "the teacher roster lists up to ten anonymous written comments beside the averages; no learner name or id is returned by getCourseSurveySummary",
+        "the admin moderation desk lists survey comments in a third bulk form, and setSurveysHidden removes a hidden comment from both the averages and the excerpts",
+        "packages/db/src/p17.integration.test.ts submits a comment, reads it on the roster summary, hides it through the queue and restores it"
+      ]
+    },
+    {
+      "id": "p17.empty-catalogue-help",
+      "phase": "P17",
+      "title": "Zero-result catalogue help and one-click saved search",
+      "status": "done",
+      "evidence": [
+        "an empty catalogue result lists up to six other subjects that have published courses, with their counts and links",
+        "a signed-in learner can save the current query, subject, level, language and price cap as a saved search from the empty state; signed-out visitors get a sign-in link",
+        "packages/db/src/p17.integration.test.ts checks the counts and the excluded subject, and e2e/backoffice.spec.ts saves and removes the search through the UI"
+      ]
     }
   ]
 }

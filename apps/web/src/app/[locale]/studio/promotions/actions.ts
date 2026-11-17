@@ -18,6 +18,7 @@ export async function createPromotionAction(form: FormData): Promise<void> {
   const courseId = String(form.get('courseId') ?? '');
   const rawValue = Number(String(form.get('value') ?? '0'));
   const maxRedemptions = Number.parseInt(String(form.get('maxRedemptions') ?? '50'), 10);
+  const maxPerLearner = Number.parseInt(String(form.get('maxPerLearner') ?? '1'), 10);
   const days = Number.parseInt(String(form.get('days') ?? '0'), 10);
   const base = localePath(form, '/studio/promotions');
 
@@ -33,6 +34,7 @@ export async function createPromotionAction(form: FormData): Promise<void> {
     value,
     courseId,
     maxRedemptions,
+    maxPerLearner,
     days,
   });
   if (!result.ok) {

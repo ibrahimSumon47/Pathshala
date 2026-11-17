@@ -24,7 +24,8 @@ export class CommerceError extends Error {
       | 'coupon_expired'
       | 'coupon_exhausted'
       | 'coupon_minimum'
-      | 'coupon_course',
+      | 'coupon_course'
+      | 'coupon_learner_limit',
     message: string,
   ) {
     super(message);
@@ -62,13 +63,16 @@ export type CouponQuote = {
   totalPaisa: number;
 };
 
-/** Validate an active coupon against a course and subtotal, including its cap and expiry. */
+export type CouponQuoteOptions = { userId?: string; now?: Date };
+
+/** Validate an active coupon against a course and subtotal, including its caps and expiry. */
 export async function quoteCoupon(
   code: string,
   subtotalPaisa: number,
   courseId: string,
-  now = new Date(),
+  options: CouponQuoteOptions = {},
 ): Promise<CouponQuote> {
+  const now = options.now ?? new Date();
   const clean = code.trim().toUpperCase();
   if (!clean) return { coupon: null, discountPaisa: 0, totalPaisa: subtotalPaisa };
   const coupon = await Coupon.findOne({ code: clean }).lean();
@@ -84,6 +88,13 @@ export async function quoteCoupon(
   }
   if (coupon.course && String(coupon.course) !== courseId) {
     throw new CommerceError('coupon_course', 'This coupon is for a different course.');
+  }
+  const perLearner = coupon.maxPerLearner ?? 1;
+  if (options.userId && perLearner > 0) {
+    const used = await Order.countDocuments({ user: options.userId, couponCode: coupon.code, status: 'paid' });
+    if (used >= perLearner) {
+      throw new CommerceError('coupon_learner_limit', 'This coupon has already been used on this account.');
+    }
   }
   const discountPaisa = discountFor(coupon, subtotalPaisa);
   return { coupon, discountPaisa, totalPaisa: subtotalPaisa - discountPaisa };
@@ -159,7 +170,7 @@ export async function createOrderForCourses({
     pricePaisa: payablePaisa(course),
   }));
   const subtotal = items.reduce((total, item) => total + item.pricePaisa, 0);
-  const quote = await quoteCoupon(couponCode, subtotal, String(items[0]?.course ?? ''));
+  const quote = await quoteCoupon(couponCode, subtotal, String(items[0]?.course ?? ''), { userId });
   if (quote.coupon?.course && items.length > 1) {
     throw new CommerceError('coupon_course', 'That coupon covers a single course; remove it from the cart.');
   }
@@ -211,7 +222,7 @@ export async function applyCouponToOrder(
   await connectToDatabase();
   const order = await Order.findOne({ orderNumber, user: userId, status: 'pending' });
   if (!order) throw new CommerceError('order_not_pending', 'This order is no longer editable.');
-  const quote = await quoteCoupon(code, order.amountPaisa, String(order.course));
+  const quote = await quoteCoupon(code, order.amountPaisa, String(order.course), { userId });
   order.couponCode = quote.coupon ? quote.coupon.code : undefined;
   order.discountPaisa = quote.discountPaisa;
   order.totalPaisa = quote.totalPaisa;

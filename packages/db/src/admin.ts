@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { connectToDatabase } from './connection';
 import { AuditEvent } from './models/audit-event';
 import { Certificate } from './models/certificate';
+import { CompletionSurvey } from './models/completion-survey';
 import { Course, type CourseStatus } from './models/course';
 import { Enrolment } from './models/enrolment';
 import { LiveSession } from './models/live-session';
@@ -285,17 +286,36 @@ export type ModerationQuestionRow = {
   createdAt: string;
 };
 
+export type ModerationSurveyRow = {
+  id: string;
+  courseTitle: { bn?: string; en?: string };
+  comment: string;
+  hidden: boolean;
+  createdAt: string;
+};
+
 /** Recent reviews and lesson questions, including hidden ones, for the moderation desk. */
-export async function listModerationQueue(): Promise<{ reviews: ModerationReviewRow[]; questions: ModerationQuestionRow[] }> {
+export async function listModerationQueue(): Promise<{
+  reviews: ModerationReviewRow[];
+  questions: ModerationQuestionRow[];
+  surveys: ModerationSurveyRow[];
+}> {
   await connectToDatabase();
   const { Review } = await import('./models/review');
   const { Question } = await import('./models/question');
   const { Lesson } = await import('./models/lesson');
-  const [reviews, questions] = await Promise.all([
+  const [reviews, questions, surveys] = await Promise.all([
     Review.find().sort({ createdAt: -1 }).limit(20).lean(),
     Question.find().sort({ createdAt: -1 }).limit(20).lean(),
+    CompletionSurvey.find({ comment: { $ne: '' } }).sort({ createdAt: -1 }).limit(20).lean(),
   ]);
-  const courseIds = [...new Set([...reviews.map((review) => review.course), ...questions.map((question) => question.course)])];
+  const courseIds = [
+    ...new Set([
+      ...reviews.map((review) => review.course),
+      ...questions.map((question) => question.course),
+      ...surveys.map((survey) => survey.course),
+    ]),
+  ];
   const lessonIds = [...new Set(questions.map((question) => question.lesson))];
   const authorIds = [...new Set([...reviews.map((review) => review.student), ...questions.map((question) => question.author)])];
   const [courses, lessons, authors] = await Promise.all([
@@ -325,6 +345,13 @@ export async function listModerationQueue(): Promise<{ reviews: ModerationReview
       answers: question.answers.length,
       hidden: Boolean(question.hidden),
       createdAt: question.createdAt.toISOString(),
+    })),
+    surveys: surveys.map((survey) => ({
+      id: String(survey._id),
+      courseTitle: courseTitles.get(String(survey.course)) ?? {},
+      comment: survey.comment,
+      hidden: Boolean(survey.hidden),
+      createdAt: survey.createdAt.toISOString(),
     })),
   };
 }
@@ -368,6 +395,15 @@ export async function setReviewsHidden(reviewIds: string[], hidden: boolean): Pr
   const result = await Review.updateMany({ _id: { $in: ids } }, { hidden });
   const courses = [...new Set(reviews.map((review) => String(review.course)))].filter((id) => Types.ObjectId.isValid(id));
   await Promise.all(courses.map((id) => refreshCourseRating(new Types.ObjectId(id))));
+  return result.matchedCount;
+}
+
+/** Hide or restore survey comments; hidden rows drop out of the teacher averages. */
+export async function setSurveysHidden(surveyIds: string[], hidden: boolean): Promise<number> {
+  await connectToDatabase();
+  const ids = surveyIds.filter((id) => Types.ObjectId.isValid(id)).slice(0, 200);
+  if (ids.length === 0) return 0;
+  const result = await CompletionSurvey.updateMany({ _id: { $in: ids } }, { hidden });
   return result.matchedCount;
 }
 

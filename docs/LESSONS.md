@@ -312,3 +312,11 @@ Deleting a certificate would break a printed verification code and erase the rea
 ## 2026-11-17 — Test names that read like UI labels collide with aria-labelledby
 
 A Playwright label lookup is substring-based by default, so `getByLabel('Code')` matched both the code input and the two `<section aria-labelledby>` regions whose names contained "code". Use `{ exact: true }` for a short label when nearby headings share its word. The same run also showed that an in-memory Mongo can accept a duplicate before its unique index is built; application-level existence checks make the first request win deterministically, and the index stays as the race guard.
+
+## 2026-11-17 — Derive a queue position; do not store it
+
+A stored waitlist position needs renumbering whenever someone leaves, and a failed renumber leaves two learners at #1. Deriving the place from `createdAt` keeps every read consistent and makes removal a single delete. The trade-off is a small count per read, which is cheap at classroom scale.
+
+A Playwright text locator can match both the title and the metadata of the same card. When asserting that a removed row is gone, count the row itself (`li` filtered by text) instead of the text; otherwise strict mode fails before the assertion can tell you whether the row survived.
+
+Logging out through a server action is a navigation. Call `signIn` only after the masthead shows its signed-out state, or the next `goto` can race the logout redirect and land back on the old account's dashboard.
