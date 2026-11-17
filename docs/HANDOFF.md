@@ -1,13 +1,14 @@
 # Handoff
 
-Updated: 2026-11-17, after the learner-account slice.
+Updated: 2026-11-17, after the discovery slice.
 
 ## Where we are
 
 The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
-and the learner account slice (item 1: settings, notifications, wishlist, cart, invoices,
-bookmarks, streaks and badges) are live and verified; `docs/features.json` tracks 60 features and
-`node scripts/check-done.mjs` exits 0.
+the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
+streaks and badges) and discovery (item 2: both-script search, price buckets, sorting, best-rated
+shelf, learner recommendations) are live and verified; `docs/features.json` tracks 63 features
+and `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -20,11 +21,12 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- 17/17 Playwright journeys against the deployed web origin, including a fresh registration,
+- 20/20 Playwright journeys against the deployed web origin, including a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
   round-trip (rename, password change, delete account), a completed free course with a
   certificate verified while signed out, a real Stripe Checkout purchase with the 4242 card,
-  instructor publishing and admin publish/unpublish with audit rows.
+  instructor publishing and admin publish/unpublish with audit rows, a Bangla catalogue search,
+  URL-backed filters and both recommendation rails.
 - axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
   notes, wishlist, cart and notifications.
 - Lighthouse mobile: 100/100/100/100 on landing, 99/100/100/100 on the catalogue, FCP/LCP
@@ -44,10 +46,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-Item 2 of the agreed order: discovery. The catalogue needs subject and level filters, price
-buckets, rating and recency sorting, a search that understands both scripts, related-course
-rails on the wishlist and dashboard, and a small curated home shelf built from real ratings—
-all backed by query parameters that survive a page share.
+Item 13 of the agreed order is next. The expansion brief's own wording for that item is the
+scope; record it here before writing code so the slice has a fixed target.
 
 ## Exact next step
 

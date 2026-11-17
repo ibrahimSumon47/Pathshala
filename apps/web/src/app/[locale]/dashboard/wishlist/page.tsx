@@ -1,4 +1,6 @@
+import { recommendedForStudent } from '@pathshala/db';
 import { formatPaisa } from '@pathshala/shared';
+import { CourseShelf } from '@/components/course-shelf';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -43,7 +45,10 @@ export default async function WishlistPage({ params }: WishlistProps) {
   const language = locale === 'en' ? 'en' : 'bn';
   const copy = COPY[language];
   const user = await requireUser();
-  const learning = await getDashboardLearning(user.id);
+  const [learning, recommended] = await Promise.all([
+    getDashboardLearning(user.id),
+    recommendedForStudent(user.id, 3),
+  ]);
 
   return (
     <div className={styles.page}>
@@ -103,6 +108,19 @@ export default async function WishlistPage({ params }: WishlistProps) {
             ))}
           </ul>
         )}
+        {recommended.length > 0 ? (
+          <CourseShelf
+            courses={recommended}
+            language={language}
+            title={language === 'en' ? 'More in these subjects' : 'এই বিষয়গুলোতে আরও'}
+            lede={
+              language === 'en'
+                ? 'Based on the courses you already study, not on a guess.'
+                : 'আপনি যে কোর্সগুলো পড়ছেন তার ভিত্তিতে, আন্দাজে নয়।'
+            }
+            browseLabel={language === 'en' ? 'See all courses' : 'সব কোর্স দেখুন'}
+          />
+        ) : null}
       </div>
     </div>
   );

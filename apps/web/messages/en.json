@@ -70,7 +70,17 @@
     "step3Title": "Finish with a certificate",
     "step3Body": "Complete a course and get a verifiable certificate anyone can check from a link.",
     "subjectsTitle": "Subjects being prepared",
-    "subjects": ["Programming", "Spoken English", "Excel and office", "Mathematics", "Design", "Music"]
+    "subjects": [
+      "Programming",
+      "Spoken English",
+      "Excel and office",
+      "Mathematics",
+      "Design",
+      "Music"
+    ],
+    "topRatedTitle": "Best rated right now",
+    "topRatedLede": "Courses learners have actually reviewed and rated.",
+    "browseAll": "See every course"
   },
   "Courses": {
     "title": "Courses",

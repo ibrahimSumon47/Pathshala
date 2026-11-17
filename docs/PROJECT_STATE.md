@@ -1,9 +1,9 @@
 # Project state
 
-Snapshot: 2026-11-17. The first ten phases are complete and two expansion slices are live:
-course depth (P9) and the learner account slice (P10, expansion item 1). 60/60 features carry
-production evidence, the three apps run on Atlas and Vercel, and `node scripts/check-done.mjs`
-exits 0.
+Snapshot: 2026-11-17. The first ten phases are complete and three expansion slices are live:
+course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 63/63
+features carry production evidence, the three apps run on Atlas and Vercel, and
+`node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
 
@@ -34,6 +34,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P8 | Portfolio README, demo script, deploy guide | done — 2026-11-17 |
 | P9 | Course detail depth, preview lessons, refund policy, studio fields | done — 2026-11-17, 14/14 production journeys |
 | P10 | Cart and multi-course orders, invoices, settings, notifications, wishlist, notes, streaks and badges | done — 2026-11-17, 17/17 production journeys |
+| P11 | Both-script search, price buckets, sorting, best-rated shelf, learner recommendations | done — 2026-11-17, 20/20 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 

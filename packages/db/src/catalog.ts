@@ -1,7 +1,8 @@
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import type { Locale } from '@pathshala/shared';
 import { Category, type CategoryDoc } from './models/category';
 import { Course, type CourseDoc, type CourseLevel } from './models/course';
+import { Enrolment } from './models/enrolment';
 import { Lesson, type LessonDoc } from './models/lesson';
 import { Review } from './models/review';
 import { Section, type SectionDoc } from './models/section';
@@ -9,12 +10,17 @@ import { User } from './models/user';
 import { connectToDatabase } from './connection';
 import { toLocalizedList, type CourseFaq, type LocalizedText } from './common';
 
+export type PriceBucket = 'free' | 'under-500' | '500-1500' | 'over-1500';
+export type CatalogSort = 'newest' | 'rating' | 'enrolled' | 'price-asc' | 'price-desc';
+
 export type CatalogFilters = {
   q?: string;
   category?: string;
   level?: CourseLevel;
   language?: Locale;
-  price?: 'all' | 'free' | 'paid';
+  /** `paid` stays for the public API; the site offers the narrower buckets. */
+  price?: PriceBucket | 'paid' | 'all';
+  sort?: CatalogSort;
   page?: number;
   pageSize?: number;
 };
@@ -93,6 +99,43 @@ export function ratingBreakdownFor(ratings: number[]): RatingBreakdown {
   return counts;
 }
 
+/** BDT amounts are stored in paisa; a bucket is a half-open range so nothing overlaps. */
+export const PRICE_BUCKETS: Record<PriceBucket, { min: number; max?: number }> = {
+  free: { min: 0, max: 0 },
+  'under-500': { min: 1, max: 49999 },
+  '500-1500': { min: 50000, max: 150000 },
+  'over-1500': { min: 150001 },
+};
+
+/** Escape a reader's query so punctuation never becomes a regular expression. */
+export function escapedSearch(query: string): string {
+  return query.trim().slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, (character) => `\\${character}`);
+}
+
+/** A reader's query matches either script, in the title and subtitle. */
+export function searchFilter(query: string): Record<string, unknown> | null {
+  const escaped = escapedSearch(query);
+  if (!escaped) return null;
+  const pattern = new RegExp(escaped, 'i');
+  return { $or: [{ 'title.bn': pattern }, { 'title.en': pattern }, { 'subtitle.bn': pattern }, { 'subtitle.en': pattern }] };
+}
+
+/** Sorting names stay stable in URLs; the database spec is built from them. */
+export function sortSpec(sort: CatalogSort | undefined): Record<string, 1 | -1> {
+  switch (sort) {
+    case 'rating':
+      return { ratingAverage: -1, ratingCount: -1, publishedAt: -1 };
+    case 'enrolled':
+      return { enrolmentCount: -1, publishedAt: -1 };
+    case 'price-asc':
+      return { pricePaisa: 1, publishedAt: -1 };
+    case 'price-desc':
+      return { pricePaisa: -1, publishedAt: -1 };
+    default:
+      return { publishedAt: -1, _id: -1 };
+  }
+}
+
 /** Sum published study time; lessons without a duration add nothing. */
 export function totalDurationMinutes(lessons: Array<Pick<LessonDoc, 'durationMinutes'>>): number {
   return lessons.reduce((total, lesson) => total + (lesson.durationMinutes ?? 0), 0);
@@ -121,13 +164,16 @@ export async function listCatalog(filters: CatalogFilters): Promise<CatalogPage>
   const pageSize = Math.max(1, Math.min(24, Math.floor(filters.pageSize ?? 9)));
   const query: Record<string, unknown> = { status: 'published' };
 
-  if (filters.q?.trim()) {
-    query.$text = { $search: filters.q.trim().slice(0, 80) };
-  }
+  const search = filters.q ? searchFilter(filters.q) : null;
+  if (search) Object.assign(query, search);
   if (filters.level) query.level = filters.level;
   if (filters.language) query.language = filters.language;
-  if (filters.price === 'free') query.pricePaisa = 0;
-  if (filters.price === 'paid') query.pricePaisa = { $gt: 0 };
+  if (filters.price === 'paid') {
+    query.pricePaisa = { $gt: 0 };
+  } else if (filters.price && filters.price !== 'all') {
+    const bucket = PRICE_BUCKETS[filters.price];
+    query.pricePaisa = bucket.max === undefined ? { $gte: bucket.min } : { $gte: bucket.min, $lte: bucket.max };
+  }
   if (filters.category) {
     const category = await Category.findOne({ slug: filters.category, isActive: true }).select('_id').lean();
     query.category = category?._id ?? null;
@@ -136,7 +182,7 @@ export async function listCatalog(filters: CatalogFilters): Promise<CatalogPage>
   const [total, documents, categories] = await Promise.all([
     Course.countDocuments(query),
     Course.find(query)
-      .sort({ publishedAt: -1, _id: -1 })
+      .sort(sortSpec(filters.sort))
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean() as unknown as Promise<CourseRow[]>,
@@ -156,6 +202,61 @@ export async function listCatalog(filters: CatalogFilters): Promise<CatalogPage>
     page,
     pageCount: Math.max(1, Math.ceil(total / pageSize)),
   };
+}
+
+/** Build catalogue cards for a small hand-picked list outside the paged query. */
+async function decorateCourses(documents: CourseRow[]): Promise<CatalogCourse[]> {
+  if (documents.length === 0) return [];
+  const categoryIds = [...new Set(documents.map((document) => String(document.category)))];
+  const instructorIds = [...new Set(documents.map((document) => String(document.instructor)))];
+  const [categories, instructors] = await Promise.all([
+    Category.find({ _id: { $in: categoryIds } }).select('name').lean(),
+    User.find({ _id: { $in: instructorIds } }).select('name').lean(),
+  ]);
+  const categoryNames = new Map(categories.map((category) => [String(category._id), category.name]));
+  const instructorNames = new Map(instructors.map((user) => [String(user._id), user.name]));
+  return documents.map((document) => toCatalogCourse(document, categoryNames, instructorNames));
+}
+
+/**
+ * Best-rated courses with at least one real review. The shelf never pads itself with
+ * zero-review courses under a rating heading; callers get fewer cards instead.
+ */
+export async function topRatedCourses(limit = 3): Promise<CatalogCourse[]> {
+  await connectToDatabase();
+  const documents = (await Course.find({ status: 'published', ratingCount: { $gt: 0 } })
+    .sort({ ratingAverage: -1, ratingCount: -1, enrolmentCount: -1 })
+    .limit(Math.max(1, Math.min(6, limit)))
+    .lean()) as unknown as CourseRow[];
+  return decorateCourses(documents);
+}
+
+/** Courses in the subjects a learner already studies, without repeating a purchase. */
+export async function recommendedForStudent(userId: string, limit = 3): Promise<CatalogCourse[]> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(userId)) return [];
+  const enrolments = await Enrolment.find({ student: userId }).select('course').lean();
+  const enrolledIds = enrolments.map((enrolment) => enrolment.course);
+  if (enrolledIds.length === 0) return [];
+
+  const enrolled = await Course.find({ _id: { $in: enrolledIds } }).select('category').lean();
+  const categoryIds = [...new Set(enrolled.map((course) => String(course.category)))];
+  const documents = (await Course.find({
+    status: 'published',
+    category: { $in: categoryIds },
+    _id: { $nin: enrolledIds },
+  })
+    .sort({ ratingAverage: -1, ratingCount: -1, enrolmentCount: -1 })
+    .limit(Math.max(1, Math.min(6, limit)))
+    .lean()) as unknown as CourseRow[];
+  if (documents.length > 0) return decorateCourses(documents);
+
+  // A young catalogue may hold nothing new in those subjects yet, so widen once.
+  const fallback = (await Course.find({ status: 'published', _id: { $nin: enrolledIds } })
+    .sort({ ratingAverage: -1, enrolmentCount: -1 })
+    .limit(Math.max(1, Math.min(6, limit)))
+    .lean()) as unknown as CourseRow[];
+  return decorateCourses(fallback);
 }
 
 /** Public course page: published course, ordered curriculum and teacher name. */

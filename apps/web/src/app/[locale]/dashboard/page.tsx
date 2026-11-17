@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { signOutAction } from '@/lib/auth/actions';
 import { requireUser } from '@/lib/auth/guard';
-import { Review, dispatchDueReminders, getLearnerHome, getNotifications, getUpcomingForStudent } from '@pathshala/db';
+import { Review, dispatchDueReminders, getLearnerHome, getNotifications, getUpcomingForStudent, recommendedForStudent } from '@pathshala/db';
+import { CourseShelf } from '@/components/course-shelf';
 import { getDashboardLearning } from '@/lib/learning';
 import { markNotificationReadAction } from './notification-actions';
 import styles from './dashboard.module.css';
@@ -42,7 +43,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     getUpcomingForStudent(user.id),
     Review.countDocuments({ student: user.id }),
   ]);
-  const home = await getLearnerHome(user.id, reviewsWritten);
+  const [home, recommended] = await Promise.all([
+    getLearnerHome(user.id, reviewsWritten),
+    recommendedForStudent(user.id, 3),
+  ]);
   const earned = home.badges.filter((badge) => badge.earned);
 
   return (
@@ -151,6 +155,20 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             )}
           </Card>
         </div>
+
+        {recommended.length > 0 ? (
+          <CourseShelf
+            courses={recommended}
+            language={locale === 'en' ? 'en' : 'bn'}
+            title={locale === 'en' ? 'More in your subjects' : 'আপনার বিষয়ে আরও'}
+            lede={
+              locale === 'en'
+                ? 'Picked from the subjects you already study, without repeating what you own.'
+                : 'আপনি যে বিষয়ে পড়ছেন সেখান থেকেই, আগে কেনা কোর্স বাদ দিয়ে।'
+            }
+            browseLabel={locale === 'en' ? 'Browse all' : 'সব দেখুন'}
+          />
+        ) : null}
 
         <section className={styles.saved}>
           <h2 className={styles.panelTitle}>{locale === 'en' ? 'Badges' : 'ব্যাজ'}</h2>

@@ -154,6 +154,7 @@ export async function seedDatabase(): Promise<void> {
   const studentId = userIds.get('student@pathshala.dev');
   const programming = await Course.findOne({ slug: 'javascript-first-steps' });
   const english = await Course.findOne({ slug: 'spoken-english-daily' });
+  const excel = await Course.findOne({ slug: 'excel-for-office' });
   if (!studentId || !programming || !english) throw new Error('Demo learning seed failed');
 
   const quizSection = await Section.findOne({ course: programming._id, order: 2 });
@@ -261,6 +262,23 @@ export async function seedDatabase(): Promise<void> {
       { course: programming._id, body: 'কনস্ট দিয়ে শুরু করা যায়, পরে দরকার হলে লেট।' },
       { upsert: true },
     );
+  }
+  // Two more honest demo opinions keep the best-rated shelf from showing a single card.
+  const extraReviews = [
+    { course: english._id, rating: 5, body: 'প্রতিদিন পাঁচ মিনিট বলার অভ্যাসটা এখান থেকেই শুরু।' },
+    ...(excel ? [{ course: excel._id, rating: 4, body: 'অফিসের শিটগুলো এখন অনেক দ্রুত শেষ হয়।' }] : []),
+  ];
+  for (const review of extraReviews) {
+    await Review.findOneAndUpdate(
+      { student: studentId, course: review.course },
+      { rating: review.rating, body: review.body },
+      { upsert: true },
+    );
+    const ratings = await Review.find({ course: review.course }).select('rating').lean();
+    await Course.findByIdAndUpdate(review.course, {
+      ratingAverage: ratings.reduce((total, item) => total + item.rating, 0) / Math.max(1, ratings.length),
+      ratingCount: ratings.length,
+    });
   }
   const ratings = await Review.find({ course: programming._id }).select('rating').lean();
   await Course.findByIdAndUpdate(programming._id, {

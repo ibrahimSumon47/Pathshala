@@ -466,3 +466,22 @@ sign-out, a deleted learner bounced between the dashboard and sign-in forever be
 trusted a different half of the state.
 
 Revisit: nothing; a deleted account never gets a session again.
+
+## 2026-11-17 — Search by escaped regular expression, not a text index
+
+Atlas text indexes tokenise words and handle neither Bangla partials nor a reader typing
+`c++`. The catalogue now builds an escaped, case-insensitive pattern over the Bangla and
+English title and subtitle, which matches either script and a mid-word fragment. The query is
+trimmed to 80 characters and escaped, so a reader's punctuation cannot become a regular
+expression. The trade-off is that a very large catalogue will want a dedicated search service;
+Atlas Search is billed, so this stays free until the catalogue outgrows it.
+
+Revisit: past a few thousand courses, measure the query before changing anything.
+
+## 2026-11-17 — Price buckets are ranges in paisa, with the old API contract kept
+
+Four buckets — free, under ৳500, ৳500–1500, above ৳1500 — each map to an explicit paisa range
+with no gaps or overlaps. The public API still accepts `price=paid` because it is documented;
+the site never offers a bucket that hides a course by rounding.
+
+Revisit: when regional currencies arrive, buckets become per-currency.

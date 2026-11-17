@@ -1,0 +1,72 @@
+.shelf {
+  margin-top: var(--space-8);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.lede {
+  max-width: 62ch;
+  margin-top: var(--space-2);
+  color: var(--color-ink-muted);
+}
+
+.browse {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  height: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.subject {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.courseTitle {
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+}
+
+.courseTitle a {
+  text-decoration: none;
+}
+
+.meta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.price {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}

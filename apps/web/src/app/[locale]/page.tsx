@@ -1,4 +1,7 @@
-import { getTranslations } from 'next-intl/server';
+import { topRatedCourses } from '@pathshala/db';
+import { type Locale } from '@pathshala/shared';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { CourseShelf } from '@/components/course-shelf';
 import { Badge } from '@/components/ui/badge';
 import { buttonStyles } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
@@ -9,6 +12,8 @@ const stepKeys = ['1', '2', '3'] as const;
 /** Landing page: what Pathshala is, how a course runs, and the subjects being prepared. */
 export default async function HomePage() {
   const t = await getTranslations('Home');
+  const language = (await getLocale()) === 'en' ? 'en' : 'bn';
+  const topRated = await topRatedCourses(3);
   const rawSubjects: unknown = t.raw('subjects');
   const subjects = Array.isArray(rawSubjects) ? rawSubjects.filter((subject): subject is string => typeof subject === 'string') : [];
 
@@ -46,6 +51,18 @@ export default async function HomePage() {
           </ol>
         </div>
       </section>
+
+      {topRated.length > 0 ? (
+        <div className="container">
+          <CourseShelf
+            courses={topRated}
+            language={language as Locale}
+            title={t('topRatedTitle')}
+            lede={t('topRatedLede')}
+            browseLabel={t('browseAll')}
+          />
+        </div>
+      ) : null}
 
       <section className={styles.section}>
         <div className="container">

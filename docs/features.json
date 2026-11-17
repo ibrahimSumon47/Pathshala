@@ -677,6 +677,39 @@
         "attachment names, URLs and sizes come from the lesson documents the studio already edits, so no second source of truth exists",
         "production 2026-11-17: the five-lesson learning test still reaches 100% progress and the certificate with the resources section present"
       ]
+    },
+    {
+      "id": "p11.catalogue-discovery",
+      "phase": "P11",
+      "title": "Catalogue filters, price buckets and sorting that live in the URL",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/catalog.ts adds escaped both-script search (title and subtitle in Bangla or English), four price buckets, five sort orders and a stable sort spec; the public API keeps its free/paid contract",
+        "apps/web/src/app/[locale]/courses/page.tsx adds the price-bucket and sort selects, keeps every parameter in the pagination links and on a shared URL, and shows the live result count",
+        "packages/db/src/catalog.test.ts covers escaping, blank queries, bilingual fields, every sort and the bucket ranges; production 2026-11-17: a Bangla query and the filter URL parameters are asserted in e2e/discovery.spec.ts (20 Playwright flows pass)"
+      ]
+    },
+    {
+      "id": "p11.best-rated-shelf",
+      "phase": "P11",
+      "title": "Landing shelf of best-rated courses from real reviews",
+      "status": "done",
+      "evidence": [
+        "topRatedCourses only returns published courses with at least one review, so the shelf never pads itself with unreviewed cards under a rating heading",
+        "apps/web/src/components/course-shelf.tsx renders the shared card row with the real average, review count and price; the section hides itself when there is nothing to show",
+        "production 2026-11-17: the landing page shows the shelf with a real 5.0 (1) rating, checked by Playwright"
+      ]
+    },
+    {
+      "id": "p11.learner-recommendations",
+      "phase": "P11",
+      "title": "Recommendations from the subjects a learner already studies",
+      "status": "done",
+      "evidence": [
+        "recommendedForStudent reads the learner enrolments, keeps their subjects, excludes owned courses and falls back once when a subject has nothing new; ordering uses real rating and enrolment counts only",
+        "the dashboard and the wishlist both render the shared shelf with honest copy that says the row comes from the learner's own subjects",
+        "production 2026-11-17: the seeded student dashboard shows the rail without repeating the JavaScript course they own"
+      ]
     }
   ]
 }

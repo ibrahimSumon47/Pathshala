@@ -1,4 +1,4 @@
-import type { CourseLevel } from '@pathshala/db';
+import type { CatalogSort, CourseLevel, PriceBucket } from '@pathshala/db';
 import { listCatalog, listCategories } from '@pathshala/db';
 import { formatPaisa, type Locale } from '@pathshala/shared';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,8 @@ type CoursesPageProps = {
 };
 
 const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+const BUCKETS = ['free', 'under-500', '500-1500', 'over-1500'] as const;
+const SORTS = ['newest', 'rating', 'enrolled', 'price-asc', 'price-desc'] as const;
 
 /** Published catalogue with text search, facets and bounded pagination. */
 export default async function CoursesPage({ params, searchParams }: CoursesPageProps) {
@@ -31,7 +33,9 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
   const level = LEVELS.includes(levelValue as CourseLevel) ? (levelValue as CourseLevel) : undefined;
   const courseLanguage = one('language') === 'bn' || one('language') === 'en' ? (one('language') as Locale) : undefined;
   const priceValue = one('price');
-  const price = priceValue === 'free' || priceValue === 'paid' ? priceValue : 'all';
+  const price = BUCKETS.includes(priceValue as PriceBucket) ? (priceValue as PriceBucket) : 'all';
+  const sortValue = one('sort');
+  const sort = SORTS.includes(sortValue as CatalogSort) ? (sortValue as CatalogSort) : 'newest';
   const page = Math.max(1, Number.parseInt(one('page') ?? '1', 10) || 1);
 
   const [result, categories] = await Promise.all([
@@ -41,6 +45,7 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
       ...(level ? { level } : {}),
       ...(courseLanguage ? { language: courseLanguage } : {}),
       price,
+      sort,
       page,
     }),
     listCategories(),
@@ -53,6 +58,7 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
     if (level) next.set('level', level);
     if (courseLanguage) next.set('language', courseLanguage);
     if (price !== 'all') next.set('price', price);
+    if (sort !== 'newest') next.set('sort', sort);
     if (nextPage > 1) next.set('page', String(nextPage));
     const serialized = next.toString();
     return serialized ? `/courses?${serialized}` : '/courses';
@@ -121,7 +127,22 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
               options={[
                 { value: 'all', label: copy.allPrices },
                 { value: 'free', label: copy.free },
-                { value: 'paid', label: copy.paid },
+                { value: 'under-500', label: copy.under500 },
+                { value: '500-1500', label: copy.mid },
+                { value: 'over-1500', label: copy.over1500 },
+              ]}
+            />
+            <Select
+              id="filter-sort"
+              name="sort"
+              label={copy.sort}
+              defaultValue={sort}
+              options={[
+                { value: 'newest', label: copy.newest },
+                { value: 'rating', label: copy.rating },
+                { value: 'enrolled', label: copy.enrolled },
+                { value: 'price-asc', label: copy.priceAsc },
+                { value: 'price-desc', label: copy.priceDesc },
               ]}
             />
           </div>
