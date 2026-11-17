@@ -110,7 +110,8 @@ landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, 
 wishlist, cart and notifications, and Lighthouse mobile
 on the deployed origin **100/100/100/100** on landing, **99/100/100/100** on the catalogue and
 **97/100/100/100** on a course page (performance/accessibility/best-practices/SEO), with LCP
-between 0.9 and 1.0 s and CLS 0.
+between 0.9 and 1.0 s and CLS 0, with a warm server response of 0.26–0.31 s after the web
+functions were moved beside the database in `sin1`.
 
 ## Security
 

@@ -710,6 +710,18 @@
         "the dashboard and the wishlist both render the shared shelf with honest copy that says the row comes from the learner's own subjects",
         "production 2026-11-17: the seeded student dashboard shows the rail without repeating the JavaScript course they own"
       ]
+    },
+    {
+      "id": "p11.response-time",
+      "phase": "P11",
+      "title": "Web functions run beside the database, with skeletons for cold navigation",
+      "status": "done",
+      "evidence": [
+        "apps/web/vercel.json pins the web functions to sin1, the same region as the Atlas M0 cluster in AP_SOUTHEAST_1; before this the functions ran in iad1 and every page paid a cross-region round trip per query",
+        "measured 2026-11-17 with curl against production: warm TTFB went from 1.10 s (English home), 1.07 s (catalogue) and 2.70 s (course page) to 0.26-0.31 s across three passes; a fresh deployment still spends about 1.7 s on its first request, which is the serverless cold start",
+        "the same production suite completed in 2.2 minutes instead of 4.4 minutes and all 21 journeys still pass",
+        "loading.tsx placeholders for the catalogue, course page, dashboard, learning room and cart reuse the project Skeleton and mirror each page grid; the 163 unit tests and axe checks are unchanged"
+      ]
     }
   ]
 }

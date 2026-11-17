@@ -504,3 +504,18 @@ column, intro, panel, form, error and switch styles; only sign-in's demo list an
 and the register panel's stacking, stay local. The route group changes no URL.
 
 Revisit: if a third auth step arrives, give the shared module a small shell component too.
+
+## 2026-11-17 — Web functions run in Singapore, beside Atlas
+
+The Atlas M0 cluster is in `AP_SOUTHEAST_1` while the Vercel functions defaulted to `iad1`, so
+every page paid a transatlantic round trip for each of its three to six queries. `apps/web/vercel.json`
+now pins the functions to `sin1`. Measured with curl on production: warm TTFB fell from
+1.10 s / 1.07 s / 2.70 s (home, catalogue, course page) to 0.26–0.31 s, and the 21-journey
+production suite dropped from 4.4 to 2.2 minutes. The first request to a fresh deployment still
+costs about 1.7 s because serverless has to start the function; that is a cold start, not a query.
+
+A 60-second data cache for the catalogue was measured against the region-only deployment and
+made no difference (0.15–0.22 s warm on both), so it was removed rather than shipping stale
+course pages for no gain. Revisit both decisions if traffic or the catalogue grows.
+
+Revisit: a paid always-warm instance, or a cache with tag-based invalidation, only if measured.

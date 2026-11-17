@@ -1,7 +1,7 @@
 # Project state
 
 Snapshot: 2026-11-17. The first ten phases are complete and three expansion slices are live:
-course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 63/63
+course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 64/64
 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
@@ -114,12 +114,16 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   SEO); LCP 0.9-1.0 s, CLS 0, TBT 50-110 ms. The measured scores are in
   `docs/screenshots/lighthouse-production.json`.
 - API: `/health` 200, `/courses` 200 with Atlas rows, `limit=99` 400, unknown route 404.
+- Response time after moving the web functions to `sin1` next to Atlas: warm TTFB 0.26–0.31 s
+  on home, catalogue and course pages (was 1.10/1.07/2.70 s); cold start about 1.7 s. Measured
+  with curl on 2026-11-17; the production suite runs in 2.2 minutes.
 - PayBridge: `/login` 200 and a hosted checkout that fulfilled a real order.
 - `pnpm audit --prod --audit-level high` reports no known vulnerabilities.
 
 ## Environment facts
 
 - Node 24.22.1, pnpm 12.15.0, git 2.56.0, gh signed in as `ibrahimSumon47`.
+- Vercel functions run in `sin1` (`apps/web/vercel.json`), matched to the Atlas region.
 - Vercel CLI 65.4.0 on Hobby; Atlas CLI authenticated; Stripe CLI on the owner's sandbox;
   gcloud signed in.
 - gitleaks 8.30.1 under gitignored `tools/gitleaks/`; Docker is not installed.
