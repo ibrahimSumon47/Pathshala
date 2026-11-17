@@ -10,6 +10,9 @@ export type EnrolmentDoc = {
   status: EnrolmentStatus;
   progressPercent: number;
   completedLessonIds: Types.ObjectId[];
+  /** Where the reader stopped, so "continue learning" reopens the right lesson. */
+  lastLessonId: Types.ObjectId | null;
+  lastSeenAt: Date | null;
   enrolledAt: Date;
   completedAt: Date | null;
   createdAt: Date;
@@ -32,6 +35,8 @@ const enrolmentSchema = new Schema<EnrolmentDoc>(
       },
     },
     completedLessonIds: { type: [Schema.Types.ObjectId], default: [] },
+    lastLessonId: { type: Schema.Types.ObjectId, ref: 'Lesson', default: null },
+    lastSeenAt: { type: Date, default: null },
     enrolledAt: { type: Date, default: Date.now },
     completedAt: { type: Date, default: null },
   },

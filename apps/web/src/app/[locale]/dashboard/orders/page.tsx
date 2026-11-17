@@ -41,7 +41,18 @@ export default async function OrdersPage({ params }: OrdersProps) {
               <li key={order.id}>
                 <Card className={styles.order}>
                   <div>
-                    <p className={styles.title}>{order.courseTitle[language] || order.courseTitle.en || order.courseSlug}</p>
+                    <p className={styles.title}>
+                      {order.items.length > 1
+                        ? `${order.items.length} ${language === 'en' ? 'courses' : 'টি কোর্স'}`
+                        : order.courseTitle[language] || order.courseTitle.en || order.courseSlug}
+                    </p>
+                    {order.items.length > 1 ? (
+                      <ul className={styles.items}>
+                        {order.items.map((item) => (
+                          <li key={item.courseId}>{item.title[language] ?? item.title.en ?? item.slug}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                     <p className={styles.meta}>
                       {order.orderNumber} · {new Date(order.createdAt).toLocaleDateString(locale)}
                     </p>
@@ -60,9 +71,16 @@ export default async function OrdersPage({ params }: OrdersProps) {
                         {language === 'en' ? 'Awaiting signed confirmation.' : 'সাইন করা নিশ্চিতকরণের অপেক্ষায়।'}
                       </span>
                     )}
-                    <Link href={`/checkout/${order.orderNumber}`}>
-                      {language === 'en' ? 'Open order' : 'অর্ডার দেখুন'}
-                    </Link>
+                    <span className={styles.links}>
+                      <Link href={`/checkout/${order.orderNumber}`}>
+                        {language === 'en' ? 'Open order' : 'অর্ডার দেখুন'}
+                      </Link>
+                      {order.status === 'paid' || order.status === 'refunded' ? (
+                        <a href={`/api/orders/${order.orderNumber}/invoice`}>
+                          {language === 'en' ? 'Invoice (PDF)' : 'ইনভয়েস (PDF)'}
+                        </a>
+                      ) : null}
+                    </span>
                   </div>
                 </Card>
               </li>

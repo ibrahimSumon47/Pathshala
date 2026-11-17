@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
 import { getCourseReviews, getCourseViewerState } from '@/lib/learning';
+import { addToCartAction } from '../../cart/actions';
 import { startCheckoutAction } from '../../checkout/[orderNumber]/actions';
 import { enrolAction, submitReviewAction, toggleWishlistAction } from '../../learn/[slug]/actions';
 import styles from './course.module.css';
@@ -64,6 +65,7 @@ const COPY = {
     coupon: 'কুপন থাকলে লিখুন',
     couponPlaceholder: 'যেমন EARLYBIRD',
     couponApply: 'কুপনসহ এগিয়ে যান',
+    addCart: 'ঝুড়িতে রাখুন',
     moneyBack: '১৪ দিনের মধ্যে টাকা ফেরতের শর্ত প্রযোজ্য।',
     moneyBackLink: 'ফেরত নীতি দেখুন',
     related: 'একই বিষয়ের অন্য কোর্স',
@@ -121,6 +123,7 @@ const COPY = {
     coupon: 'Have a coupon?',
     couponPlaceholder: 'e.g. EARLYBIRD',
     couponApply: 'Continue with coupon',
+    addCart: 'Add to cart',
     moneyBack: 'The 14-day refund conditions apply.',
     moneyBackLink: 'Read the refund policy',
     related: 'More in this subject',
@@ -430,6 +433,14 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                     </Button>
                   </form>
                   <p className={styles.note}>{copy.testNote}</p>
+                  <form action={addToCartAction}>
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="courseId" value={course.id} />
+                    <input type="hidden" name="slug" value={course.slug} />
+                    <Button type="submit" variant="secondary" className={styles.fullButton}>
+                      {copy.addCart}
+                    </Button>
+                  </form>
                 </>
               ) : (
                 <form action={enrolAction}>

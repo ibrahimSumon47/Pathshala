@@ -1,11 +1,12 @@
 # Handoff
 
-Updated: 2026-11-17, after the course-depth slice.
+Updated: 2026-11-17, after the learner-account slice.
 
 ## Where we are
 
-The ten original phases are complete and the expansion slices have begun. Course depth (item 9
-of the expansion order) is live and verified; `docs/features.json` tracks 52 features and
+The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
+and the learner account slice (item 1: settings, notifications, wishlist, cart, invoices,
+bookmarks, streaks and badges) are live and verified; `docs/features.json` tracks 60 features and
 `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
@@ -19,11 +20,13 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- 14/14 Playwright journeys against the deployed web origin, including a fresh registration,
-  a completed free course with a certificate verified while signed out, a PayBridge purchase
-  with `EARLYBIRD`, a real Stripe Checkout purchase with the 4242 card, instructor publishing
-  and admin publish/unpublish with audit rows.
-- axe: zero violations on landing, catalogue, sign-in and dashboard.
+- 17/17 Playwright journeys against the deployed web origin, including a fresh registration,
+  a two-course cart paid once through PayBridge with an invoice PDF download, a settings
+  round-trip (rename, password change, delete account), a completed free course with a
+  certificate verified while signed out, a real Stripe Checkout purchase with the 4242 card,
+  instructor publishing and admin publish/unpublish with audit rows.
+- axe: zero violations on landing, catalogue, course page, sign-in, dashboard, settings,
+  notes, wishlist, cart and notifications.
 - Lighthouse mobile: 100/100/100/100 on landing, 99/100/100/100 on the catalogue, FCP/LCP
   0.9 s, CLS 0, TBT under 120 ms. JSON reports sit in `docs/screenshots`.
 - API `/health` and `/courses` are 200 from Atlas; `/courses?limit=99` is 400; unknown routes
@@ -41,11 +44,10 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-Item 1 of the agreed order: learner profile and settings (name, photo, language, theme,
-password change, notification preferences, delete account with confirmation), the notification
-centre, wishlist page, cart with multi-course checkout and coupons, order history with PDF
-invoices, continue-learning position, streaks and badges, bookmarks and notes page,
-downloadable resources, and free preview lessons (previews already ship from P9).
+Item 2 of the agreed order: discovery. The catalogue needs subject and level filters, price
+buckets, rating and recency sorting, a search that understands both scripts, related-course
+rails on the wishlist and dashboard, and a small curated home shelf built from real ratings—
+all backed by query parameters that survive a page share.
 
 ## Exact next step
 

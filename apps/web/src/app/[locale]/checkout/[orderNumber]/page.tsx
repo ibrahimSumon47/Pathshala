@@ -97,7 +97,10 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPro
   const order = await getOrderForUser(orderNumber, user.id);
   if (!order) notFound();
 
-  const title = order.courseTitle[language] || order.courseTitle.en || order.courseTitle.bn || order.courseSlug;
+  const title =
+    order.items.length > 1
+      ? `${order.items.length} ${language === 'en' ? 'courses' : 'টি কোর্স'}`
+      : order.courseTitle[language] || order.courseTitle.en || order.courseTitle.bn || order.courseSlug;
   const stripeReady = Boolean(process.env.STRIPE_SECRET_KEY);
   const paybridgeReady = Boolean(process.env.PAYBRIDGE_BASE_URL && process.env.PAYBRIDGE_API_KEY);
 
@@ -131,7 +134,19 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPro
             <dl className={styles.rows}>
               <div>
                 <dt>{copy.course}</dt>
-                <dd>{title}</dd>
+                <dd>
+                  {order.items.length > 1 ? (
+                    <ul className={styles.itemList}>
+                      {order.items.map((item) => (
+                        <li key={item.courseId}>
+                          {item.title[language] ?? item.title.en ?? item.slug} · {formatPaisa(item.pricePaisa, language)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    title
+                  )}
+                </dd>
               </div>
               <div>
                 <dt>{copy.subtotal}</dt>
@@ -170,7 +185,7 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPro
             ) : null}
             {order.status === 'paid' ? (
               <div className={styles.actions}>
-                <Link href={`/learn/${order.courseSlug}`} className={buttonStyles()}>
+                <Link href={`/learn/${order.items[0]?.slug ?? order.courseSlug}`} className={buttonStyles()}>
                   {copy.start}
                 </Link>
                 <Link href="/dashboard/orders" className={buttonStyles({ variant: 'secondary' })}>

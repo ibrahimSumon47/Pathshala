@@ -1,0 +1,127 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.page h1 {
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+}
+
+.lede {
+  max-width: 60ch;
+  margin-top: var(--space-3);
+  color: var(--color-ink-muted);
+  line-height: var(--leading-relaxed);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 820px;
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+}
+
+.panel h2 {
+  font-size: var(--text-xl);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.readonly p {
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin-top: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.file {
+  display: block;
+  width: 100%;
+  font: inherit;
+}
+
+.avatarWrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.avatar,
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.fieldset legend {
+  padding-inline: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.danger {
+  border-color: var(--color-danger, #a33a2a);
+}
+
+@media (max-width: 720px) {
+  .two {
+    grid-template-columns: 1fr;
+  }
+
+  .avatarWrap {
+    justify-content: flex-start;
+  }
+}

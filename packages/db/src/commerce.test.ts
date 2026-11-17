@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { discountFor, orderNumberFor, splitPayment } from './commerce';
+import { allocateNet, discountFor, orderNumberFor, payablePaisa, splitPayment } from './commerce';
 
 describe('discountFor', () => {
   it('takes a whole-paisa percentage discount', () => {
@@ -34,5 +34,33 @@ describe('orderNumberFor', () => {
   it('uses the date and a short random suffix', () => {
     const number = orderNumberFor(new Date('2026-11-16T10:00:00Z'));
     expect(number).toMatch(/^PS-20261116-[A-F0-9]{8}$/);
+  });
+});
+
+describe('payablePaisa', () => {
+  it('prefers a lower sale price and ignores a sale above the list price', () => {
+    expect(payablePaisa({ pricePaisa: 120000, salePricePaisa: 96000 })).toBe(96000);
+    expect(payablePaisa({ pricePaisa: 120000, salePricePaisa: null })).toBe(120000);
+    expect(payablePaisa({ pricePaisa: 120000, salePricePaisa: 150000 })).toBe(120000);
+  });
+});
+
+describe('allocateNet', () => {
+  it('splits a discounted total in proportion and keeps every paisa', () => {
+    const shares = allocateNet([{ pricePaisa: 120000 }, { pricePaisa: 150000 }], 216000);
+    expect(shares.reduce((total, share) => total + share, 0)).toBe(216000);
+    expect(shares[0]).toBe(96000);
+    expect(shares[1]).toBe(120000);
+  });
+
+  it('puts a rounding remainder on the last item', () => {
+    const shares = allocateNet([{ pricePaisa: 100 }, { pricePaisa: 100 }, { pricePaisa: 100 }], 100);
+    expect(shares.reduce((total, share) => total + share, 0)).toBe(100);
+    expect(shares).toEqual([33, 33, 34]);
+  });
+
+  it('returns zeros for an empty or unpriced order', () => {
+    expect(allocateNet([], 500)).toEqual([]);
+    expect(allocateNet([{ pricePaisa: 0 }], 500)).toEqual([0]);
   });
 });

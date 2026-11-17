@@ -305,10 +305,37 @@ export async function getNotifications(userId: string): Promise<NotificationView
   }));
 }
 
+/** Every notification for the notification centre, newest first. */
+export async function listNotifications(userId: string): Promise<NotificationView[]> {
+  await connectToDatabase();
+  const rows = await Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(100).lean();
+  return rows.map((row) => ({
+    id: String(row._id),
+    title: row.title,
+    body: row.body,
+    href: row.href,
+    readAt: row.readAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
+/** Count unread rows for the header badge without loading the whole list. */
+export async function countUnreadNotifications(userId: string): Promise<number> {
+  await connectToDatabase();
+  return Notification.countDocuments({ user: userId, readAt: null });
+}
+
 /** Mark one notification read, scoped to its owner. */
 export async function markNotificationRead(id: string, userId: string): Promise<void> {
   await connectToDatabase();
   await Notification.updateOne({ _id: id, user: userId }, { readAt: new Date() });
+}
+
+/** Mark every unread notification read for its owner. */
+export async function markAllNotificationsRead(userId: string): Promise<number> {
+  await connectToDatabase();
+  const result = await Notification.updateMany({ user: userId, readAt: null }, { readAt: new Date() });
+  return result.modifiedCount ?? 0;
 }
 
 /** Upcoming sessions across every course a student is enrolled in. */

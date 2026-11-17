@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { User, connectToDatabase } from '@pathshala/db';
 import type { UserRole } from '@pathshala/db';
 import { auth, googleEnabled } from '@/auth';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,14 @@ import { DEMO_ACCOUNTS, demoAuthEnabled } from '@/lib/auth/demo-accounts';
 import { signInWithCredentials, signInWithGoogle, signUpAction } from '@/lib/auth/actions';
 import { cn } from '@/lib/cn';
 import styles from './sign-in.module.css';
+
+/** A deleted account keeps a valid cookie until sign-out, so check the record. */
+async function accountExists(userId: string): Promise<boolean> {
+  if (!process.env.MONGODB_URI) return true;
+  if (!/^[a-f0-9]{24}$/i.test(userId)) return true;
+  await connectToDatabase();
+  return Boolean(await User.exists({ _id: userId }));
+}
 
 type SignInPageProps = {
   params: Promise<{ locale: string }>;
@@ -22,7 +31,8 @@ export default async function SignInPage({ params, searchParams }: SignInPagePro
   const isEnglish = locale === 'en';
 
   const session = await auth();
-  if (session?.user) {
+  // A token can outlive its account; only a live record is sent onward to the dashboard.
+  if (session?.user && (await accountExists(session.user.id))) {
     redirect(isEnglish ? '/en/dashboard' : '/dashboard');
   }
 

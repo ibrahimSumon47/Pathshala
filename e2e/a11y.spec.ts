@@ -28,7 +28,12 @@ test('landing, catalogue, course detail, policy and sign-in have zero axe violat
   expect(await violations(page)).toEqual([]);
 });
 
-test('the student dashboard has zero axe violations', async ({ page }) => {
+test('the signed-in learner pages have zero axe violations', async ({ page }) => {
   await signIn(page, accounts.student.email, accounts.student.password);
   expect(await violations(page)).toEqual([]);
+
+  for (const path of ['/en/dashboard/settings', '/en/dashboard/notes', '/en/dashboard/wishlist', '/en/cart', '/en/dashboard/notifications']) {
+    await page.goto(path);
+    expect(await violations(page), path).toEqual([]);
+  }
 });

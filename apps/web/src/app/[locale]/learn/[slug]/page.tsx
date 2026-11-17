@@ -1,3 +1,4 @@
+import { Bookmark, connectToDatabase, rememberLastLesson } from '@pathshala/db';
 import type { Locale } from '@pathshala/shared';
 import { notFound, redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,7 @@ import {
   markLessonAction,
   saveNoteAction,
   submitQuizAction,
+  toggleBookmarkAction,
 } from './actions';
 import styles from './learn.module.css';
 
@@ -32,6 +34,9 @@ const COPY = {
     markComplete: 'পাঠ সম্পন্ন করুন',
     completedLabel: 'এই পাঠটি সম্পন্ন',
     attachments: 'সংযুক্তি',
+    resources: 'কোর্সের ফাইল',
+    bookmark: 'বুকমার্ক করুন',
+    bookmarked: 'বুকমার্ক সরান',
     watchVideo: 'ভিডিও দেখুন',
     notes: 'আপনার নোট',
     notesHint: 'শুধু আপনি এই নোট দেখতে পাবেন।',
@@ -62,6 +67,9 @@ const COPY = {
     markComplete: 'Mark lesson complete',
     completedLabel: 'This lesson is complete',
     attachments: 'Attachments',
+    resources: 'Course files',
+    bookmark: 'Bookmark this lesson',
+    bookmarked: 'Remove bookmark',
     watchVideo: 'Watch the video',
     notes: 'Your notes',
     notesHint: 'Only you can see this note.',
@@ -113,11 +121,20 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
   if (!current) notFound();
   const completed = course.completedLessonIds.includes(current.id);
 
-  const [quiz, note, questions] = await Promise.all([
+  const [quiz, note, questions, bookmark] = await Promise.all([
     current.type === 'quiz' ? getLessonQuiz(current.id, user.id) : Promise.resolve({ questions: [], lastAttempt: null }),
     getLessonNote(current.id, user.id),
     getLessonQuestions(current.id),
+    (async () => {
+      await connectToDatabase();
+      return Bookmark.exists({ student: user.id, lesson: current.id });
+    })(),
   ]);
+  // Remember where the reader stopped; a failure here must never block the lesson.
+  await rememberLastLesson(user.id, course.id, current.id).catch(() => undefined);
+  const resources = course.lessons.flatMap((lesson) =>
+    lesson.attachments.map((attachment) => ({ ...attachment, lessonTitle: lesson.title, lessonId: lesson.id })),
+  );
 
   return (
     <div className={styles.page}>
@@ -238,15 +255,26 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
               </Card>
             ) : null}
 
-            <form action={markLessonAction} className={styles.completeForm}>
-              <input type="hidden" name="locale" value={locale} />
-              <input type="hidden" name="courseId" value={course.id} />
-              <input type="hidden" name="lessonId" value={current.id} />
-              <input type="hidden" name="slug" value={slug} />
-              <Button type="submit" variant={completed ? 'secondary' : 'primary'}>
-                {completed ? copy.completedLabel : copy.markComplete}
-              </Button>
-            </form>
+            <div className={styles.completeForm}>
+              <form action={markLessonAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="lessonId" value={current.id} />
+                <input type="hidden" name="slug" value={slug} />
+                <Button type="submit" variant={completed ? 'secondary' : 'primary'}>
+                  {completed ? copy.completedLabel : copy.markComplete}
+                </Button>
+              </form>
+              <form action={toggleBookmarkAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="courseId" value={course.id} />
+                <input type="hidden" name="lessonId" value={current.id} />
+                <input type="hidden" name="slug" value={slug} />
+                <Button type="submit" variant="ghost">
+                  {bookmark ? copy.bookmarked : copy.bookmark}
+                </Button>
+              </form>
+            </div>
 
             <section className={styles.block}>
               <h3>{copy.notes}</h3>
@@ -269,6 +297,24 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
                 </Button>
               </form>
             </section>
+
+            {resources.length > 0 ? (
+              <section className={styles.block}>
+                <h3>{copy.resources}</h3>
+                <ul className={styles.attachments}>
+                  {resources.map((resource) => (
+                    <li key={`${resource.lessonId}-${resource.url}`}>
+                      <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                        {resource.name}
+                      </a>
+                      <span>
+                        {Math.round(resource.sizeBytes / 1024)} KB · {resource.lessonTitle[language] ?? ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
             <section id="questions" className={styles.block}>
               <h3>{copy.questions}</h3>

@@ -589,6 +589,94 @@
         "updateCourseAction merges the two language columns by position (mergeLocalized/mergeFaqs) and blocks publishing under six outcomes; addLessonAction stores durationMinutes",
         "packages/db/src/models.test.ts covers bilingual lists, FAQ validation and fractional durations; 58 web tests pass"
       ]
+    },
+    {
+      "id": "p10.cart-multi-course",
+      "phase": "P10",
+      "title": "A cart that pays for several courses in one order",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/learner.ts keeps one cart per learner and packages/db/src/commerce.ts stores Order.items[], splitting the net total per instructor so each ledger row stays exact",
+        "apps/web/src/app/[locale]/cart/page.tsx and courses/[slug]/page.tsx show quantity-free multi-course checkout, coupon and a test-mode note; checkout renders every item on one payment screen",
+        "production 2026-11-17: e2e/learner.spec.ts adds two courses, applies EARLYBIRD, pays once through PayBridge and confirms both courses open on the dashboard (17 Playwright tests pass)"
+      ]
+    },
+    {
+      "id": "p10.invoice-pdf",
+      "phase": "P10",
+      "title": "Downloadable PDF invoice for a paid or refunded order",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/lib/invoice.ts builds a single-page PDF by hand (ASCII text because base-14 fonts cannot draw Bangla) with a test-mode line; apps/web/src/lib/invoice.test.ts checks the structure and escaping",
+        "apps/web/src/app/api/orders/[orderNumber]/invoice/route.ts serves it only to the learner who owns the order, with private, no-store caching; the orders page links to it",
+        "production 2026-11-17: the invoice link returned 200 application/pdf beginning %PDF- and the Playwright test read the test-mode sentence from the file"
+      ]
+    },
+    {
+      "id": "p10.bookmarks-continue",
+      "phase": "P10",
+      "title": "Lesson bookmarks, last position and a continue-learning button",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/learner.ts stores LearningEvent rows, rememberLastLesson and listBookmarks; Enrolment gains lastLessonId and lastSeenAt",
+        "the lesson page records the open lesson and offers a bookmark toggle; /dashboard shows a continue button that reopens the saved lesson, and /dashboard/notes lists notes and bookmarks with delete actions",
+        "production 2026-11-17: learner.spec.ts signs in as the seeded student and finds the saved bookmark and note; the a11y test covers /dashboard/notes with zero axe violations"
+      ]
+    },
+    {
+      "id": "p10.wishlist",
+      "phase": "P10",
+      "title": "Saved-for-later list with a direct move into the cart",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/dashboard/wishlist/page.tsx lists saved courses with price and two actions; wishlistToCartAction moves a paid course into the cart and removes it from the list",
+        "packages/db/src/learner.ts addToCart is shared by the wishlist and the course page so a duplicate add never creates two entries",
+        "production 2026-11-17: the seeded learner wishlist shows Everyday Spoken English and passes axe with no violations"
+      ]
+    },
+    {
+      "id": "p10.notifications",
+      "phase": "P10",
+      "title": "Message centre with unread state and mark-as-read",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/notifications.ts adds listNotifications, countUnreadNotifications and markAllNotificationsRead alongside the reminder dispatcher",
+        "apps/web/src/app/[locale]/dashboard/notifications/page.tsx lists every message with a New marker, one-tap read and mark-all-read, with honest empty copy",
+        "production 2026-11-17: the page loads for the seeded learner, both read actions revalidate the route, and axe reports zero violations"
+      ]
+    },
+    {
+      "id": "p10.profile-settings",
+      "phase": "P10",
+      "title": "Profile, avatar, preferences, password change and account deletion",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/dashboard/settings/page.tsx covers display name, a small uploaded avatar (validated type and size), language, email-notification preferences, theme and a password change with the current password checked by bcrypt",
+        "deleteAccountAction removes personal rows and keeps orders for accounting; requireUser and the sign-in page both refuse a token whose user record is gone, and deletion signs the cookie out",
+        "production 2026-11-17: learner.spec.ts renames the profile, changes the password, signs in with the new one, deletes the account, then proves the old password no longer opens it"
+      ]
+    },
+    {
+      "id": "p10.streak-badges",
+      "phase": "P10",
+      "title": "Study streak and badges built from real learning events",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/learner.ts computes a UTC day streak and seven badges (first lesson, five, twenty, first course, three-day and seven-day streak, first review) with progress fractions",
+        "packages/db/src/learner.test.ts covers day keys, duplicates, a gap, a month boundary and partial badge progress; the dashboard shows the streak, the progress bars and a continue card",
+        "production 2026-11-17: the seeded student dashboard renders the streak and badges and keeps zero axe violations"
+      ]
+    },
+    {
+      "id": "p10.lesson-resources",
+      "phase": "P10",
+      "title": "All lesson attachments collected on the lesson page",
+      "status": "done",
+      "evidence": [
+        "the learning room lists every attachment in the course with its size and the lesson it belongs to, alongside the existing per-lesson attachment list",
+        "attachment names, URLs and sizes come from the lesson documents the studio already edits, so no second source of truth exists",
+        "production 2026-11-17: the five-lesson learning test still reaches 100% progress and the certificate with the resources section present"
+      ]
     }
   ]
 }

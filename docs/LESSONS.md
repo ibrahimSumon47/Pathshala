@@ -258,3 +258,15 @@ The production suite creates temporary courses, and the new related-courses row 
 on a seeded course page. The seed already owned the catalogue, but nothing removed the test
 rows. `pnpm db:cleanup-e2e` now deletes the `e2e-` namespace and its dependants; run it after a
 suite when the demo should look like the screenshots.
+
+## 2026-11-17 — A redirect loop looks like a blank page
+
+After account deletion, the dashboard sent the stale token to sign-in and the sign-in page sent
+the session straight back, so production rendered a header, a footer and nothing else. The trace
+network log named both URLs and settled it in a minute. Clear the cookie in the deleting action,
+and have each page verify the record it is about to trust.
+
+## 2026-11-17 — Use the heading role when the route announcer repeats text
+
+`getByText('2 courses')` matched both the cart heading and Next.js's route announcer. Assertions
+that name a heading or a landmark survive navigation announcements; plain text does not.

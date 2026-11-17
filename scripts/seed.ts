@@ -1,9 +1,12 @@
 import mongoose from 'mongoose';
 import {
+  Bookmark,
+  Cart,
   Category,
   Coupon,
   Course,
   Enrolment,
+  LearningEvent,
   Lesson,
   LiveSession,
   Note,
@@ -203,6 +206,8 @@ export async function seedDatabase(): Promise<void> {
         status: 'completed',
         completedLessonIds: completedLessons.map((lesson) => lesson._id),
         progressPercent: 100,
+        lastLessonId: firstLesson?._id ?? null,
+        lastSeenAt: new Date('2026-11-16T09:00:00Z'),
         completedAt: new Date('2026-11-15T09:00:00Z'),
       },
       $setOnInsert: { enrolledAt: new Date('2026-11-12T09:00:00Z') },
@@ -210,6 +215,36 @@ export async function seedDatabase(): Promise<void> {
     { upsert: true, returnDocument: 'after' },
   );
   await issueCertificateIfEligible(studentId, String(programming._id));
+
+  // A short study history gives the demo dashboard a real streak and a first badge.
+  await LearningEvent.deleteMany({ student: studentId });
+  const studyDays = [0, 1, 2];
+  for (const [index, lesson] of completedLessons.entries()) {
+    const day = studyDays[index % studyDays.length] ?? 0;
+    await LearningEvent.create({
+      student: studentId,
+      course: programming._id,
+      lesson: lesson._id,
+      type: 'lesson_completed',
+      occurredAt: new Date(Date.now() - day * 24 * 60 * 60 * 1000),
+    });
+  }
+  if (studentId) {
+    await Bookmark.findOneAndUpdate(
+      { student: studentId, lesson: firstLesson?._id },
+      { $setOnInsert: { course: programming._id } },
+      { upsert: true },
+    );
+    const designCourse = await Course.findOne({ slug: 'design-with-type' }).select('_id').lean();
+    if (designCourse) {
+      await Cart.findOneAndUpdate(
+        { user: studentId },
+        { $setOnInsert: { courses: [designCourse._id] } },
+        { upsert: true },
+      );
+    }
+  }
+
   await Review.findOneAndUpdate(
     { student: studentId, course: programming._id },
     { rating: 5, body: 'প্রথম পাঠটা সহজ করে লেখা, আর কাজটা ছোট ছিল।' },

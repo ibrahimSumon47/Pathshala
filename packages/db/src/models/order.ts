@@ -7,10 +7,21 @@ export const ORDER_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const
 export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export type OrderDoc = {
-  user: Types.ObjectId;
+/** One course inside an order; a cart checkout pays for several in one payment. */
+export type OrderItem = {
   course: Types.ObjectId;
   instructor: Types.ObjectId;
+  slug: string;
+  title: { bn?: string; en?: string };
+  pricePaisa: number;
+};
+
+export type OrderDoc = {
+  user: Types.ObjectId;
+  /** Legacy single-course pointer, kept as the first item so older queries still work. */
+  course: Types.ObjectId;
+  instructor: Types.ObjectId;
+  items: OrderItem[];
   orderNumber: string;
   courseSlug: string;
   courseTitle: { bn?: string; en?: string };
@@ -36,6 +47,21 @@ const orderSchema = new Schema<OrderDoc>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    items: {
+      type: [
+        new Schema<OrderItem>(
+          {
+            course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+            instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+            slug: { type: String, required: true, trim: true },
+            title: { bn: { type: String, trim: true }, en: { type: String, trim: true } },
+            pricePaisa: { type: Number, required: true, min: 0 },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
     orderNumber: { type: String, required: true, unique: true, trim: true },
     courseSlug: { type: String, required: true, trim: true },
     courseTitle: {

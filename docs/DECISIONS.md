@@ -438,3 +438,31 @@ under a heading that promised more. The detail query now takes up to three same-
 courses and fills the remainder with the best-rated courses elsewhere. The heading stays
 honest because the cards name their own subject and teacher.
 Revisit: when every subject has several courses and the fallback never triggers.
+
+## 2026-11-17 — One order for a cart, priced in minor units
+
+A cart can hold several courses, so an order now stores `items[]` with a title, slug and price
+per course instead of a single `courseSlug`. The total is the sum of payable prices minus the
+coupon, and the net is allocated across items by largest remainder so the per-instructor ledger
+always adds back to the payment. A refund reverses the same shares, and the dashboard derives a
+course list from the items, which keeps one payment and one receipt per checkout.
+
+Revisit: if partial refunds per course are ever offered, each item needs its own refund state.
+
+## 2026-11-17 — Invoices are written directly, with ASCII text
+
+A PDF library would add an unaudited dependency for a single page. `apps/web/src/lib/invoice.ts`
+writes the PDF objects itself and escapes text; the base-14 fonts cannot render Bangla, so
+invoice content is ASCII with the Bangla course title falling back to English. The invoice is
+served only to the learner who owns the order, and only after the order is paid.
+
+Revisit: when a Bangla invoice is legally required, embed a subset font and revisit the licence.
+
+## 2026-11-17 — Deleting an account also ends the session
+
+The JWT session can outlive its user row. `requireUser` and the sign-in page both check that the
+record still exists, and account deletion signs the cookie out before redirecting. Without the
+sign-out, a deleted learner bounced between the dashboard and sign-in forever because each page
+trusted a different half of the state.
+
+Revisit: nothing; a deleted account never gets a session again.

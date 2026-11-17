@@ -6,6 +6,14 @@ const order = {
   orderNumber: 'PS-20261116-ABCDEF12',
   courseSlug: 'spoken-english-daily',
   courseTitle: { bn: 'ইংরেজি', en: 'Everyday Spoken English' },
+  items: [
+    {
+      courseId: '672222222222222222222222',
+      slug: 'spoken-english-daily',
+      title: { bn: 'ইংরেজি', en: 'Everyday Spoken English' },
+      pricePaisa: 120000,
+    },
+  ],
   amountPaisa: 120000,
   discountPaisa: 24000,
   totalPaisa: 96000,

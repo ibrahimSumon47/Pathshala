@@ -3,10 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
+  Bookmark,
   Course,
   Enrolment,
   Lesson,
   Note,
+  recordLessonEvent,
   issueCertificateIfEligible,
   ensureRemindersForEnrolment,
   Question,
@@ -108,8 +110,25 @@ export async function markLessonAction(form: FormData): Promise<void> {
   const lesson = await Lesson.findOne({ _id: lessonId, course: courseId }).select('_id').lean();
   if (!lesson) fail(form, `/learn/${slug}`, 'Lesson not found.');
   await syncProgress(user.id, courseId, lessonId, true);
+  await recordLessonEvent(user.id, courseId, lessonId);
   revalidatePath(`/learn/${slug}`);
   revalidatePath('/dashboard');
+  redirect(path(form, `/learn/${slug}?lesson=${lessonId}`));
+}
+
+/** Add or remove a lesson bookmark for an enrolled reader. */
+export async function toggleBookmarkAction(form: FormData): Promise<void> {
+  const user = await requireUser();
+  const courseId = text(form, 'courseId');
+  const lessonId = text(form, 'lessonId');
+  const slug = text(form, 'slug');
+  if (!OBJECT_ID.test(courseId) || !OBJECT_ID.test(lessonId)) fail(form, `/learn/${slug}`, 'Lesson not found.');
+  if (!(await canAccessCourse(courseId, user.id, user.roles))) fail(form, `/courses/${slug}`, 'Enrol to bookmark lessons.');
+  await connectToDatabase();
+  const existing = await Bookmark.findOne({ student: user.id, lesson: lessonId });
+  if (existing) await existing.deleteOne();
+  else await Bookmark.create({ student: user.id, course: courseId, lesson: lessonId });
+  revalidatePath(`/learn/${slug}`);
   redirect(path(form, `/learn/${slug}?lesson=${lessonId}`));
 }
 
@@ -175,6 +194,7 @@ export async function submitQuizAction(form: FormData): Promise<void> {
   if (questions.length === 0) fail(form, `/learn/${slug}?lesson=${lessonId}`, 'This quiz has no questions yet.');
   const answers = questions.map((question) => form.getAll(`q_${String(question._id)}`).map((value) => Number(value)).filter(Number.isInteger));
   const result = scoreQuiz(questions, answers);
+  if (result.passed) await recordLessonEvent(user.id, courseId, lessonId, 'quiz_passed');
   await QuizAttempt.create({
     course: courseId,
     lesson: lessonId,

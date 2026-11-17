@@ -5,7 +5,7 @@ import { Course } from './models/course';
 import { Coupon, type CouponDoc } from './models/coupon';
 import { Enrolment } from './models/enrolment';
 import { LedgerEntry } from './models/ledger-entry';
-import { Order, type OrderDoc, type PaymentProvider } from './models/order';
+import { Order, type OrderDoc, type OrderItem, type PaymentProvider } from './models/order';
 import { Payment } from './models/payment';
 import { WebhookEvent } from './models/webhook-event';
 import { ensureRemindersForEnrolment } from './live';
@@ -86,35 +86,90 @@ export async function quoteCoupon(
 
 export type CreateOrderInput = {
   userId: string;
-  courseId: string;
+  courseId?: string;
+  courseIds?: string[];
   couponCode?: string;
   idempotencyKey?: string;
 };
 
-/** Create a pending order for a paid course; free courses enrol directly instead. */
-export async function createOrder({
+/** The price a learner actually pays for one course, honouring a sale price. */
+export function payablePaisa(course: { pricePaisa: number; salePricePaisa?: number | null }): number {
+  const sale = course.salePricePaisa ?? 0;
+  return sale > 0 && sale < course.pricePaisa ? sale : course.pricePaisa;
+}
+
+/**
+ * Split a paid total across items in proportion to their list price, keeping every paisa:
+ * rounding leftovers land on the last item so the sum always equals the payment.
+ */
+export function allocateNet(items: Array<{ pricePaisa: number }>, totalPaisa: number): number[] {
+  const subtotal = items.reduce((total, item) => total + item.pricePaisa, 0);
+  if (subtotal <= 0 || items.length === 0) return items.map(() => 0);
+  const shares = items.map((item) => Math.floor((totalPaisa * item.pricePaisa) / subtotal));
+  const assigned = shares.reduce((total, share) => total + share, 0);
+  const last = shares.length - 1;
+  if (last >= 0) shares[last] = (shares[last] ?? 0) + (totalPaisa - assigned);
+  return shares;
+}
+
+/** Create a pending order for one paid course; free courses enrol directly instead. */
+export async function createOrder(input: CreateOrderInput): Promise<OrderDoc> {
+  const ids = input.courseIds ?? (input.courseId ? [input.courseId] : []);
+  return createOrderForCourses({ ...input, courseIds: ids });
+}
+
+/** Create one pending order for a cart of paid courses, priced as a single payment. */
+export async function createOrderForCourses({
   userId,
-  courseId,
+  courseIds,
   couponCode = '',
   idempotencyKey = randomUUID(),
-}: CreateOrderInput): Promise<OrderDoc> {
+}: CreateOrderInput & { courseIds: string[] }): Promise<OrderDoc> {
   await connectToDatabase();
-  const course = await Course.findOne({ _id: courseId, status: 'published' }).lean();
-  if (!course) throw new CommerceError('course_not_found', 'Course not found.');
-  if (course.pricePaisa <= 0) throw new CommerceError('not_for_sale', 'This course is free; enrol directly.');
+  const unique = [...new Set(courseIds)].slice(0, 10);
+  if (unique.length === 0) throw new CommerceError('course_not_found', 'Choose a course first.');
 
-  const enrolled = await Enrolment.exists({ student: userId, course: course._id, status: { $ne: 'refunded' } });
-  if (enrolled) throw new CommerceError('already_enrolled', 'You are already enrolled in this course.');
+  const found = await Course.find({ _id: { $in: unique }, status: 'published' }).lean();
+  const courses = unique.flatMap((id) => {
+    const match = found.find((course) => String(course._id) === id);
+    return match ? [match] : [];
+  });
+  if (courses.length !== unique.length) throw new CommerceError('course_not_found', 'One of these courses is no longer available.');
+  if (courses.some((course) => payablePaisa(course) <= 0)) {
+    throw new CommerceError('not_for_sale', 'Free courses are enrolled directly, not bought.');
+  }
 
-  const quote = await quoteCoupon(couponCode, course.pricePaisa, String(course._id));
-  const order = await Order.create({
-    user: userId,
+  const enrolled = await Enrolment.exists({
+    student: userId,
+    course: { $in: courses.map((course) => course._id) },
+    status: { $ne: 'refunded' },
+  });
+  if (enrolled) throw new CommerceError('already_enrolled', 'You are already enrolled in one of these courses.');
+
+  const items: OrderItem[] = courses.map((course) => ({
     course: course._id,
     instructor: course.instructor,
+    slug: course.slug,
+    title: course.title,
+    pricePaisa: payablePaisa(course),
+  }));
+  const subtotal = items.reduce((total, item) => total + item.pricePaisa, 0);
+  const quote = await quoteCoupon(couponCode, subtotal, String(items[0]?.course ?? ''));
+  if (quote.coupon?.course && items.length > 1) {
+    throw new CommerceError('coupon_course', 'That coupon covers a single course; remove it from the cart.');
+  }
+  const first = items[0];
+  if (!first) throw new CommerceError('course_not_found', 'Choose a course first.');
+
+  const order = await Order.create({
+    user: userId,
+    course: first.course,
+    instructor: first.instructor,
+    items,
     orderNumber: orderNumberFor(),
-    courseSlug: course.slug,
-    courseTitle: course.title,
-    amountPaisa: course.pricePaisa,
+    courseSlug: first.slug,
+    courseTitle: first.title,
+    amountPaisa: subtotal,
     discountPaisa: quote.discountPaisa,
     totalPaisa: quote.totalPaisa,
     currency: 'BDT',
@@ -126,6 +181,20 @@ export async function createOrder({
     refundedAt: null,
   });
   return order.toObject();
+}
+
+/** Every course an order covers, including orders written before carts existed. */
+export function orderItems(order: OrderDoc): OrderItem[] {
+  if (order.items && order.items.length > 0) return order.items;
+  return [
+    {
+      course: order.course,
+      instructor: order.instructor,
+      slug: order.courseSlug,
+      title: order.courseTitle,
+      pricePaisa: order.totalPaisa,
+    },
+  ];
 }
 
 /** Re-price a pending order with a new coupon, or clear it when the code is empty. */
@@ -207,25 +276,39 @@ export async function markOrderPaid({
     { upsert: true },
   );
 
-  const { instructorPaisa, platformPaisa } = splitPayment(updated.totalPaisa);
+  const items = orderItems(updated);
+  const netShares = allocateNet(items, updated.totalPaisa);
+  // Group each instructor's share so a cart paying two teachers writes two honest ledger rows.
+  const byInstructor = new Map<string, { instructor: Types.ObjectId; paisa: number; titles: string[] }>();
+  items.forEach((item, index) => {
+    const key = String(item.instructor);
+    const entry = byInstructor.get(key) ?? { instructor: item.instructor, paisa: 0, titles: [] };
+    entry.paisa += netShares[index] ?? 0;
+    entry.titles.push(item.title.en ?? item.title.bn ?? item.slug);
+    byInstructor.set(key, entry);
+  });
+
   await Promise.all([
-    LedgerEntry.updateOne(
-      { order: order._id, account: 'instructor', type: 'sale' },
-      {
-        $setOnInsert: {
-          instructor: updated.instructor,
-          amountPaisa: instructorPaisa,
-          description: `Course sale — ${updated.courseTitle.en ?? updated.courseTitle.bn ?? updated.courseSlug}`,
+    ...[...byInstructor.values()].map((entry) => {
+      const { instructorPaisa } = splitPayment(entry.paisa);
+      return LedgerEntry.updateOne(
+        { order: order._id, account: 'instructor', type: 'sale', instructor: entry.instructor },
+        {
+          $setOnInsert: {
+            instructor: entry.instructor,
+            amountPaisa: instructorPaisa,
+            description: `Course sale — ${entry.titles.join(', ')}`,
+          },
         },
-      },
-      { upsert: true },
-    ),
+        { upsert: true },
+      );
+    }),
     LedgerEntry.updateOne(
       { order: order._id, account: 'platform', type: 'sale' },
       {
         $setOnInsert: {
           instructor: updated.instructor,
-          amountPaisa: platformPaisa,
+          amountPaisa: updated.totalPaisa - splitPayment(updated.totalPaisa).instructorPaisa,
           description: 'Platform share',
         },
       },
@@ -233,15 +316,17 @@ export async function markOrderPaid({
     ),
   ]);
 
-  await Enrolment.updateOne(
-    { student: updated.user, course: updated.course },
-    {
-      $setOnInsert: { enrolledAt: paidAt, progressPercent: 0, completedLessonIds: [] },
-      $set: { status: 'active', completedAt: null },
-    },
-    { upsert: true },
-  );
-  await ensureRemindersForEnrolment(String(updated.user), String(updated.course));
+  for (const item of items) {
+    await Enrolment.updateOne(
+      { student: updated.user, course: item.course },
+      {
+        $setOnInsert: { enrolledAt: paidAt, progressPercent: 0, completedLessonIds: [] },
+        $set: { status: 'active', completedAt: null },
+      },
+      { upsert: true },
+    );
+    await ensureRemindersForEnrolment(String(updated.user), String(item.course));
+  }
 
   if (updated.couponCode) {
     await Coupon.updateOne({ code: updated.couponCode }, { $inc: { redeemedCount: 1 } });
@@ -281,31 +366,44 @@ export async function markOrderRefunded({
   if (!updated) return { order: order.toObject(), duplicate: true };
 
   await Payment.updateOne({ provider, providerRef }, { status: 'refunded', refundedAt });
-  const { instructorPaisa, platformPaisa } = splitPayment(updated.totalPaisa);
+  const items = orderItems(updated);
+  const netShares = allocateNet(items, updated.totalPaisa);
+  const byInstructor = new Map<string, { instructor: Types.ObjectId; paisa: number; titles: string[] }>();
+  items.forEach((item, index) => {
+    const key = String(item.instructor);
+    const entry = byInstructor.get(key) ?? { instructor: item.instructor, paisa: 0, titles: [] };
+    entry.paisa += netShares[index] ?? 0;
+    entry.titles.push(item.title.en ?? item.title.bn ?? item.slug);
+    byInstructor.set(key, entry);
+  });
+
   await Promise.all([
-    LedgerEntry.updateOne(
-      { order: order._id, account: 'instructor', type: 'refund' },
-      {
-        $setOnInsert: {
-          instructor: updated.instructor,
-          amountPaisa: -instructorPaisa,
-          description: `Refund — ${updated.courseTitle.en ?? updated.courseTitle.bn ?? updated.courseSlug}`,
+    ...[...byInstructor.values()].map((entry) => {
+      const { instructorPaisa } = splitPayment(entry.paisa);
+      return LedgerEntry.updateOne(
+        { order: order._id, account: 'instructor', type: 'refund', instructor: entry.instructor },
+        {
+          $setOnInsert: {
+            instructor: entry.instructor,
+            amountPaisa: -instructorPaisa,
+            description: `Refund — ${entry.titles.join(', ')}`,
+          },
         },
-      },
-      { upsert: true },
-    ),
+        { upsert: true },
+      );
+    }),
     LedgerEntry.updateOne(
       { order: order._id, account: 'platform', type: 'refund' },
       {
         $setOnInsert: {
           instructor: updated.instructor,
-          amountPaisa: -platformPaisa,
+          amountPaisa: -(updated.totalPaisa - splitPayment(updated.totalPaisa).instructorPaisa),
           description: 'Refunded platform share',
         },
       },
       { upsert: true },
     ),
-    Enrolment.updateOne({ student: updated.user, course: updated.course }, { status: 'refunded' }),
+    ...items.map((item) => Enrolment.updateOne({ student: updated.user, course: item.course }, { status: 'refunded' })),
   ]);
   if (updated.couponCode) {
     await Coupon.updateOne({ code: updated.couponCode, redeemedCount: { $gt: 0 } }, { $inc: { redeemedCount: -1 } });
@@ -319,6 +417,7 @@ export type OrderView = {
   orderNumber: string;
   courseSlug: string;
   courseTitle: { bn?: string; en?: string };
+  items: Array<{ courseId: string; slug: string; title: { bn?: string; en?: string }; pricePaisa: number }>;
   amountPaisa: number;
   discountPaisa: number;
   totalPaisa: number;
@@ -339,6 +438,12 @@ export function toOrderView(order: OrderDoc & { _id: Types.ObjectId }): OrderVie
     orderNumber: order.orderNumber,
     courseSlug: order.courseSlug,
     courseTitle: order.courseTitle,
+    items: orderItems(order).map((item) => ({
+      courseId: String(item.course),
+      slug: item.slug,
+      title: item.title,
+      pricePaisa: item.pricePaisa,
+    })),
     amountPaisa: order.amountPaisa,
     discountPaisa: order.discountPaisa,
     totalPaisa: order.totalPaisa,
