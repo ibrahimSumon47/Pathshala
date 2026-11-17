@@ -35,8 +35,14 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
   await signIn(page, accounts.student.email, accounts.student.password);
   expect(await violations(page)).toEqual([]);
 
-  for (const path of ['/en/dashboard/settings', '/en/dashboard/notes', '/en/dashboard/wishlist', '/en/cart', '/en/dashboard/notifications']) {
+  for (const path of ['/en/dashboard/profile', '/en/dashboard/settings', '/en/dashboard/notes', '/en/dashboard/wishlist', '/en/cart', '/en/dashboard/notifications']) {
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
   }
+
+  // The public teacher page reached from a course card.
+  await page.goto('/en/courses/javascript-first-steps');
+  await page.getByRole('link', { name: 'Rafiqul Islam', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Rafiqul Islam' })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
 });

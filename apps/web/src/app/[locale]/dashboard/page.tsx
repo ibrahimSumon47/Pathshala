@@ -72,6 +72,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </div>
             <nav className={styles.accountNav} aria-label={locale === 'en' ? 'Account' : 'অ্যাকাউন্ট'}>
               <Link href="/dashboard/orders">{t('orders')}</Link>
+              <Link href="/dashboard/profile">{locale === 'en' ? 'Profile' : 'প্রোফাইল'}</Link>
               <Link href="/dashboard/notifications">{locale === 'en' ? 'Messages' : 'বার্তা'}</Link>
               <Link href="/dashboard/wishlist">{locale === 'en' ? 'Saved' : 'পরে দেখার তালিকা'}</Link>
               <Link href="/dashboard/notes">{locale === 'en' ? 'Notes' : 'নোট'}</Link>

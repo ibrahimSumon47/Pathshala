@@ -63,7 +63,7 @@ export async function seedDatabase(): Promise<void> {
     if (!existing) continue;
     await User.updateOne(
       { _id: existing },
-      { bio: instructor.bio, bioEn: instructor.bioEn, image: instructor.image, isDemo: true },
+      { bio: instructor.bio, bioEn: instructor.bioEn, headline: instructor.headline, headlineEn: instructor.headlineEn, image: instructor.image, isDemo: true },
     );
   }
 

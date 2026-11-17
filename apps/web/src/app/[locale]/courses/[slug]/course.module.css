@@ -197,6 +197,15 @@
   font-weight: 650;
 }
 
+.instructorName a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.instructorName a:hover {
+  color: var(--color-accent);
+}
+
 .histogram {
   display: grid;
   grid-template-columns: 160px minmax(0, 1fr);

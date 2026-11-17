@@ -722,6 +722,29 @@
         "the same production suite completed in 2.2 minutes instead of 4.4 minutes and all 21 journeys still pass",
         "loading.tsx placeholders for the catalogue, course page, dashboard, learning room and cart reuse the project Skeleton and mirror each page grid; the 163 unit tests and axe checks are unchanged"
       ]
+    },
+    {
+      "id": "p12.profile",
+      "phase": "P12",
+      "title": "Profile page with bilingual intro and a public teacher profile",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/profile.ts returns the signed-in profile (email, roles, headline, bio, joined date, learning counts, taught courses) and a public instructor profile that never includes the email; only instructor/admin accounts have one",
+        "apps/web/src/app/[locale]/dashboard/profile/page.tsx shows the identity card, four learning counts and an edit form for the name plus Bangla and English headline and bio; apps/web/src/lib/profile.ts validates the fields and its tests cover trimming, limits and Bangla initials",
+        "apps/web/src/app/[locale]/instructors/[id]/page.tsx is public, lists every published course, students and the weighted rating, and the teacher card on a course page links to it",
+        "production 2026-11-17: e2e/profile.spec.ts edits the seeded instructor headline, saves it, opens the public page and finds the course list; axe reports zero violations on both profile pages"
+      ]
+    },
+    {
+      "id": "p12.header-logout",
+      "phase": "P12",
+      "title": "Profile link and log out in the site header",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/components/site-header.tsx adds a Profile link and a log out form for signed-in readers, leaving the public header unchanged for visitors",
+        "the log out button submits the existing signOutAction, so it works from any page and clears the session cookie before returning home",
+        "production 2026-11-17: e2e/profile.spec.ts logs the seeded learner out from the catalogue, sees Sign in return to the header and confirms /dashboard redirects to sign-in"
+      ]
     }
   ]
 }

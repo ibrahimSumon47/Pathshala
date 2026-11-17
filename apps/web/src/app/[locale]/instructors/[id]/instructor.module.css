@@ -1,0 +1,89 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.avatar,
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.name {
+  margin-top: var(--space-1);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+}
+
+.headline {
+  margin-top: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+}
+
+.meta {
+  margin-top: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.bio {
+  max-width: 72ch;
+  margin-top: var(--space-6);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-4) 0;
+  border-block: 1px solid var(--color-line);
+}
+
+.facts div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.facts dt {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

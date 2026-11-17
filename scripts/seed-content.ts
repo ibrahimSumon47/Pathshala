@@ -44,13 +44,24 @@ export type SeedCourse = {
   sections: SeedSection[];
 };
 
-export type SeedInstructor = { key: string; name: string; email: string; bio: string; bioEn: string; image: string };
+export type SeedInstructor = {
+  key: string;
+  name: string;
+  email: string;
+  headline: string;
+  headlineEn: string;
+  bio: string;
+  bioEn: string;
+  image: string;
+};
 
 export const SEED_INSTRUCTORS: SeedInstructor[] = [
   {
     key: 'rafiq',
     name: 'Rafiqul Islam',
     email: 'instructor@pathshala.dev',
+    headline: 'ওয়েব ডেভেলপার ও প্রশিক্ষক',
+    headlineEn: 'Web developer and teacher',
     bio: 'ঢাকায় থাকেন, দশ বছর ধরে ওয়েব অ্যাপ্লিকেশন বানান। শিক্ষার্থীদের কাছে জটিল জিনিস ছোট করে দেখানোই তাঁর প্রিয় কাজ।',
     bioEn: 'Lives in Dhaka and has built web applications for ten years. He likes taking a complicated thing and showing it in small pieces.',
     image: '/avatars/rafiqul-islam.svg',

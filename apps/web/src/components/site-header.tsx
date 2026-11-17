@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { auth } from '@/auth';
 import { Link } from '@/i18n/navigation';
+import { signOutAction } from '@/lib/auth/actions';
 import { cn } from '@/lib/cn';
 import type { Theme } from '@/lib/theme';
 import { LocaleSwitcher } from './locale-switcher';
@@ -40,9 +41,21 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
               {t('studio')}
             </Link>
           ) : null}
+          {signedIn ? (
+            <Link href="/dashboard/profile" className={styles.account}>
+              {t('profile')}
+            </Link>
+          ) : null}
           <Link href={signedIn ? '/dashboard' : '/sign-in'} className={styles.account}>
             {signedIn ? t('dashboard') : t('signIn')}
           </Link>
+          {signedIn ? (
+            <form action={signOutAction}>
+              <button type="submit" className={styles.logout}>
+                {t('logOut')}
+              </button>
+            </form>
+          ) : null}
           <LocaleSwitcher />
           <ThemeToggle initialTheme={theme} />
         </div>

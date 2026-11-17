@@ -259,6 +259,17 @@ export async function recommendedForStudent(userId: string, limit = 3): Promise<
   return decorateCourses(fallback);
 }
 
+/** Published courses by one teacher, newest first; used by the public profile page. */
+export async function listInstructorCourses(instructorId: string, limit = 6): Promise<CatalogCourse[]> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(instructorId)) return [];
+  const documents = (await Course.find({ status: 'published', instructor: instructorId })
+    .sort({ publishedAt: -1, _id: -1 })
+    .limit(Math.max(1, Math.min(12, limit)))
+    .lean()) as unknown as CourseRow[];
+  return decorateCourses(documents);
+}
+
 /** Public course page: published course, ordered curriculum and teacher name. */
 export async function getCourseBySlug(slug: string): Promise<CourseDetail | null> {
   await connectToDatabase();

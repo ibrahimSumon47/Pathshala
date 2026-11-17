@@ -86,3 +86,20 @@
     display: none;
   }
 }
+
+/* Logout is an action, not navigation, so it is a button that reads like the account links. */
+.logout {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.logout:hover {
+  color: var(--color-accent);
+}

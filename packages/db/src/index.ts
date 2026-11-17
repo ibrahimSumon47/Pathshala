@@ -1,6 +1,7 @@
 export * from './admin';
 export * from './analytics';
 export * from './catalog';
+export * from './profile';
 export * from './certificates';
 export * from './commerce';
 export * from './learner';

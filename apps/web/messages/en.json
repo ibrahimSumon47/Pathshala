@@ -13,7 +13,9 @@
     "switchTo": "Change language",
     "signIn": "Sign in",
     "dashboard": "Dashboard",
-    "studio": "Studio"
+    "studio": "Studio",
+    "profile": "Profile",
+    "logOut": "Log out"
   },
   "Theme": {
     "toggle": "Toggle colour theme",

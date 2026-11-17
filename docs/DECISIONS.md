@@ -519,3 +519,15 @@ made no difference (0.15–0.22 s warm on both), so it was removed rather than s
 course pages for no gain. Revisit both decisions if traffic or the catalogue grows.
 
 Revisit: a paid always-warm instance, or a cache with tag-based invalidation, only if measured.
+
+## 2026-11-17 — Profiles are bilingual fields on the user, public only for teachers
+
+A profile is not a separate document: the name, photo, one-line headline and introduction live
+on the user record as Bangla and English fields, with empty sides stored as absent so a page can
+fall back. `/dashboard/profile` is private and shows the email and learning counts;
+`/instructors/[id]` is public for instructor and admin accounts only and never selects the email.
+Learner profiles stay private, because a learner never agreed to a public page.
+The header carries Profile and a log out button for signed-in readers; logging out is a form
+post to the existing Auth.js action, not a link, so it cannot be triggered by prefetching.
+
+Revisit: a slug or handle instead of the ObjectId once people share profile links widely.

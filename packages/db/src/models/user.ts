@@ -13,11 +13,14 @@ export type UserDoc = {
   roles: UserRole[];
   locale: Locale;
   bio?: string;
+  /** One-line introduction shown on the profile and instructor pages. */
+  headline?: string;
   /** Appearance preference saved with the profile; the cookie still wins for first paint. */
   theme: 'light' | 'dark' | 'system';
   notificationPrefs: { reminders: boolean; announcements: boolean; replies: boolean };
   /** English profile text; `bio` holds the Bangla version. */
   bioEn?: string;
+  headlineEn?: string;
   /** True for seeded demo people so an operator can tell them from real accounts. */
   isDemo: boolean;
   emailVerified: Date | null;
@@ -46,6 +49,7 @@ const userSchema = new Schema<UserDoc>(
     },
     locale: { type: String, enum: ['bn', 'en'], default: 'bn' },
     bio: { type: String, maxlength: 600 },
+    headline: { type: String, maxlength: 120 },
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
     notificationPrefs: {
       reminders: { type: Boolean, default: true },
@@ -53,6 +57,7 @@ const userSchema = new Schema<UserDoc>(
       replies: { type: Boolean, default: true },
     },
     bioEn: { type: String, maxlength: 600 },
+    headlineEn: { type: String, maxlength: 120 },
     isDemo: { type: Boolean, default: false },
     emailVerified: { type: Date, default: null },
   },

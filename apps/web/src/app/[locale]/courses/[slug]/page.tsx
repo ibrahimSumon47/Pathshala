@@ -291,8 +291,13 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                   {initials}
                 </span>
                 <div>
-                  <p className={styles.instructorName}>{course.instructor.name}</p>
+                  <p className={styles.instructorName}>
+                    <Link href={`/instructors/${course.instructor.id}`}>{course.instructor.name}</Link>
+                  </p>
                   <p className={styles.meta}>{pick(course.instructor.bio, language) || copy.by}</p>
+                  <Link href={`/instructors/${course.instructor.id}`} className={styles.meta}>
+                    {language === 'en' ? 'See the profile' : 'প্রোফাইল দেখুন'}
+                  </Link>
                 </div>
               </Card>
             </section>
