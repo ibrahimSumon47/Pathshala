@@ -283,6 +283,23 @@
   margin-bottom: var(--space-2);
 }
 
+.reviewReply {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-accent-soft);
+}
+
+.reviewReplyLabel {
+  margin-bottom: var(--space-1);
+  color: var(--color-accent-strong);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .reviewForm {
   display: grid;
   gap: var(--space-2);

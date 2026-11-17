@@ -18,6 +18,9 @@ const COPY = {
     sold: 'বিক্রি',
     refunds: 'রিফান্ড',
     net: 'নিট',
+    status: 'অবস্থা',
+    paid: 'পরিশোধিত',
+    open: 'বাকি',
     empty: 'এখনো কোনো বিক্রি নেই। প্রথম বিক্রি হলে এখানে মাসভিত্তিক হিসাব দেখা যাবে।',
     note: 'আপনি প্রতি বিক্রির ৮০% পান; ২০% পাঠশালার।',
   },
@@ -32,6 +35,9 @@ const COPY = {
     sold: 'Sales',
     refunds: 'Refunds',
     net: 'Net',
+    status: 'Status',
+    paid: 'Paid',
+    open: 'Open',
     empty: 'No sales yet. The first one will start the monthly record here.',
     note: 'You keep 80% of every sale; Pathshala keeps 20%.',
   },
@@ -80,6 +86,7 @@ export default async function EarningsPage({ params }: EarningsPageProps) {
                 <th scope="col">{copy.sales}</th>
                 <th scope="col">{copy.refunds}</th>
                 <th scope="col">{copy.net}</th>
+                <th scope="col">{copy.status}</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +97,7 @@ export default async function EarningsPage({ params }: EarningsPageProps) {
                   <td className={styles.num}>{formatPaisa(row.salesPaisa, language)}</td>
                   <td className={styles.num}>{formatPaisa(row.refundsPaisa, language)}</td>
                   <td className={styles.num}>{formatPaisa(row.netPaisa, language)}</td>
+                  <td>{row.paidAt ? `${copy.paid} · ${new Date(row.paidAt).toLocaleDateString(locale)}` : copy.open}</td>
                 </tr>
               ))}
             </tbody>

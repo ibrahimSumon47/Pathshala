@@ -119,6 +119,7 @@
   "Search": {
     "open": "Search Pathshala",
     "label": "Search",
+    "close": "Close search",
     "placeholder": "Search courses or jump to a page…",
     "searching": "Searching…",
     "courses": "Courses",

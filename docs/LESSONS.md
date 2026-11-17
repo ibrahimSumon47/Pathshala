@@ -290,3 +290,9 @@ the brand link no longer overrides its visible bilingual wordmark.
 Parallelising three reads on the course page looked obviously faster, but production TTFB did not move outside noise. Keep the code, drop the claim. A performance change without a measured delta is a readability change.
 
 A summary element is announced as a disclosure, not a button, so tests should target the element rather than a role Chromium may not expose.
+
+## A public reply needs the same visibility as its review
+
+The reply lives on the review row so hiding a review cannot leave an orphan answer on the course page. That is also why the public query returns the reply fields directly instead of joining a second collection.
+
+A payout marker is not a payment. Naming the action "Mark paid" and showing the date keeps the record honest while the actual transfer stays outside the product.

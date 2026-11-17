@@ -49,6 +49,7 @@ const COPY = {
     rating: 'রেটিং',
     reviewBody: 'কী ভালো লাগল, কী আরও ভালো হতে পারত',
     submitReview: 'মতামত সংরক্ষণ করুন',
+    instructorReply: 'প্রশিক্ষকের উত্তর',
     buy: 'কোর্সটি কিনুন',
     testNote: 'চেকআউট পরীক্ষা মোডে; আসল টাকা কাটা হবে না।',
     live: 'লাইভ ক্লাস',
@@ -107,6 +108,7 @@ const COPY = {
     rating: 'Rating',
     reviewBody: 'What worked, and what could be better',
     submitReview: 'Save review',
+    instructorReply: 'Instructor reply',
     buy: 'Buy this course',
     testNote: 'Checkout runs in test mode; no real money is charged.',
     live: 'Live classes',
@@ -378,6 +380,12 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                       <span className={styles.meta}>{formatDate(review.createdAt, locale)}</span>
                     </p>
                     {review.body ? <p>{review.body}</p> : null}
+                    {review.replyBody ? (
+                      <div className={styles.reviewReply}>
+                        <p className={styles.reviewReplyLabel}>{copy.instructorReply}</p>
+                        <p>{review.replyBody}</p>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>

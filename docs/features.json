@@ -884,6 +884,73 @@
         "measurement on 2026-11-17: warm production TTFB was 0.273–0.299 s before and 0.274–0.329 s after five samples each — no material gain, so no speedup is claimed",
         "the change is kept for the smaller request waterfall and noted honestly in docs/DECISIONS.md"
       ]
+    },
+    {
+      "id": "p14.review-replies",
+      "phase": "P14",
+      "title": "Instructor replies on course reviews",
+      "status": "done",
+      "evidence": [
+        "reviews gain replyBody and repliedAt; getCourseReviews returns both and the course page renders the answer under the learner text",
+        "/studio/community lists visible reviews for the teacher-owned courses and saves a reply only after checking course ownership",
+        "packages/db/src/commerce.integration.test.ts rejects another teacher and asserts the saved reply; production 2026-11-17: e2e/polish.spec.ts posts a reply and sees the instructor block"
+      ]
+    },
+    {
+      "id": "p14.payouts",
+      "phase": "P14",
+      "title": "Manual payout settlement across teacher statements",
+      "status": "done",
+      "evidence": [
+        "a PayoutBatch records one instructor/month amount, marker and paidAt; a unique index keeps it single",
+        "setStatementPaid marks or reopens a month, getInstructorStatements merges paidAt, and listPayoutStatements gives the operator every teacher month",
+        "/admin/payouts marks and reopens with an audit row; /studio/earnings and its CSV show the paid state",
+        "packages/db/src/commerce.integration.test.ts covers mark, list, reopen and malformed input; production 2026-11-17: e2e/polish.spec.ts toggles a payout row"
+      ]
+    },
+    {
+      "id": "p14.bulk-moderation",
+      "phase": "P14",
+      "title": "Bulk review and question moderation",
+      "status": "done",
+      "evidence": [
+        "setReviewsHidden updates a bounded id list and refreshes each affected course rating once; setQuestionsHidden does the same without a rating pass",
+        "the admin tables use checkboxes and one Hide selected / Restore selected form, with one audit event per changed row",
+        "packages/db/src/commerce.integration.test.ts hides and restores two reviews and hides two questions; production 2026-11-17: the bulk buttons render on /admin and axe is clean"
+      ]
+    },
+    {
+      "id": "p14.announcements",
+      "phase": "P14",
+      "title": "Course announcements to enrolled learners",
+      "status": "done",
+      "evidence": [
+        "announceToCourse verifies ownership and writes one inbox notification per non-refunded enrolment, capped at 5000",
+        "/studio/community sends the message and reports the inbox count; the existing notifications page renders it",
+        "packages/db/src/commerce.integration.test.ts checks delivery and rejects another teacher; production 2026-11-17: e2e/polish.spec.ts sends an announcement"
+      ]
+    },
+    {
+      "id": "p14.search-limit",
+      "phase": "P14",
+      "title": "Rate limit on the public course search",
+      "status": "done",
+      "evidence": [
+        "a fixed-window limiter allows 30 type-aheads per minute per client address, then returns 429 with Retry-After and no-store",
+        "the limiter keeps a bounded key map and names the per-instance limitation honestly; /api/search only charges requests that reach the database",
+        "apps/web/src/lib/rate-limit.test.ts covers the limit, the reset, separate addresses and eviction"
+      ]
+    },
+    {
+      "id": "p14.palette-close",
+      "phase": "P14",
+      "title": "Palette close button and focus trap",
+      "status": "done",
+      "evidence": [
+        "the search dialog has a labelled close control, keeps Tab and Shift+Tab inside the dialog, and still closes on Escape or the backdrop",
+        "the trigger keeps its word in the accessibility tree on mobile while drawing only the icon",
+        "production 2026-11-17: e2e/polish.spec.ts opens the palette, closes it with the button, and axe stays clean"
+      ]
     }
   ]
 }

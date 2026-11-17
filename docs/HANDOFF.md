@@ -7,7 +7,7 @@ Updated: 2026-11-17, after the profile slice.
 The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
 streaks and badges) and discovery (item 2: both-script search, price buckets, sorting, best-rated
-shelf, learner recommendations) are live and verified; `docs/features.json` tracks 78 features
+shelf, learner recommendations) are live and verified; `docs/features.json` tracks 84 features
 and `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
@@ -21,11 +21,11 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 31/31
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 32/32
   Playwright journeys now finish in about 3 minutes, and the five loading placeholders mirror the
   catalogue, course, dashboard, lesson and cart grids.
-- 31/31 Playwright journeys against the deployed web origin, including the private profile edit,
-  the public teacher page, statements and notes CSV downloads, the command palette, order search, moderation, separate sign-in and
+- 32/32 Playwright journeys against the deployed web origin, including the private profile edit,
+  the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
   round-trip (rename, password change, delete account), a completed free course with a
@@ -51,7 +51,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-Item 13 of the agreed order is next. Its wording is not in the repository yet, so
+P14 is live: review replies, manual payout settlement, bulk moderation, course announcements,
+the search rate limit and the palette close control. Item 13 of the agreed order is next. Its wording is not in the repository yet, so
 `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
 every remaining item. Replace the placeholder with the brief's sentence before writing code.
 

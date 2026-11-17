@@ -1,0 +1,117 @@
+import { Types } from 'mongoose';
+import { connectToDatabase } from './connection';
+import { Course } from './models/course';
+import { Enrolment } from './models/enrolment';
+import { Notification } from './models/notification';
+import { Review } from './models/review';
+import { User } from './models/user';
+
+type Localized = { bn?: string; en?: string };
+
+export type InstructorReviewRow = {
+  id: string;
+  courseTitle: Localized;
+  author: string;
+  rating: number;
+  body: string;
+  replyBody: string;
+  repliedAt: string | null;
+  createdAt: string;
+};
+
+export type InstructorCommunity = {
+  courses: Array<{ id: string; title: Localized; slug: string }>;
+  reviews: InstructorReviewRow[];
+};
+
+/** The teacher's own course list plus visible reviews they can answer. */
+export async function getInstructorCommunity(instructorId: string, isAdmin = false): Promise<InstructorCommunity> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(instructorId)) return { courses: [], reviews: [] };
+  const filter = isAdmin ? {} : { instructor: instructorId };
+  const courses = await Course.find(filter)
+    .select('title slug instructor')
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+  const owned = isAdmin ? courses : courses.filter((course) => String(course.instructor) === instructorId);
+  if (owned.length === 0) return { courses: [], reviews: [] };
+
+  const reviews = await Review.find({ course: { $in: owned.map((course) => course._id) }, hidden: { $ne: true } })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
+  const authors = await User.find({ _id: { $in: reviews.map((review) => review.student) } })
+    .select('name')
+    .lean();
+  const names = new Map(authors.map((author) => [String(author._id), author.name]));
+  const titles = new Map(owned.map((course) => [String(course._id), course.title]));
+
+  return {
+    courses: owned.map((course) => ({ id: String(course._id), title: course.title, slug: course.slug })),
+    reviews: reviews.map((review) => ({
+      id: String(review._id),
+      courseTitle: titles.get(String(review.course)) ?? {},
+      author: names.get(String(review.student)) ?? 'Learner',
+      rating: review.rating,
+      body: review.body,
+      replyBody: review.replyBody ?? '',
+      repliedAt: review.repliedAt?.toISOString() ?? null,
+      createdAt: review.createdAt.toISOString(),
+    })),
+  };
+}
+
+/** Save or replace the instructor's public answer to one review. */
+export async function replyToCourseReview(input: {
+  reviewId: string;
+  instructorId: string;
+  isAdmin: boolean;
+  body: string;
+}): Promise<boolean> {
+  await connectToDatabase();
+  const body = input.body.trim().slice(0, 1200);
+  if (!Types.ObjectId.isValid(input.reviewId) || !body) return false;
+  const review = await Review.findById(input.reviewId).select('course').lean();
+  if (!review) return false;
+  const course = await Course.findById(review.course).select('instructor').lean();
+  if (!course) return false;
+  if (!input.isAdmin && String(course.instructor) !== input.instructorId) return false;
+  const result = await Review.updateOne({ _id: input.reviewId }, { replyBody: body, repliedAt: new Date() });
+  return result.matchedCount > 0;
+}
+
+/** Put one announcement in every non-refunded learner's inbox for a course. */
+export async function announceToCourse(input: {
+  courseId: string;
+  instructorId: string;
+  isAdmin: boolean;
+  message: string;
+}): Promise<number | null> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(input.courseId)) return null;
+  const message = input.message.trim().slice(0, 1000);
+  if (!message) return null;
+  const course = await Course.findById(input.courseId).select('title slug instructor status').lean();
+  if (!course) return null;
+  if (!input.isAdmin && String(course.instructor) !== input.instructorId) return null;
+  if (!course.slug) return null;
+
+  const learners = await Enrolment.find({ course: course._id, status: { $ne: 'refunded' } })
+    .select('student')
+    .limit(5000)
+    .lean();
+  if (learners.length === 0) return 0;
+
+  await Notification.insertMany(
+    learners.map((enrolment) => ({
+      user: enrolment.student,
+      kind: 'system',
+      title: { bn: 'কোর্সের ঘোষণা', en: 'Course announcement' },
+      body: { bn: message, en: message },
+      href: `/learn/${course.slug}`,
+      readAt: null,
+    })),
+  );
+  return learners.length;
+}

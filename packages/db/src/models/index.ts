@@ -26,6 +26,8 @@ export type { LiveSessionDoc, LiveSessionStatus } from './live-session';
 export type { LedgerAccount, LedgerEntryDoc, LedgerType } from './ledger-entry';
 export { ORDER_STATUSES, Order, PAYMENT_PROVIDERS } from './order';
 export type { OrderDoc, OrderItem, OrderStatus, PaymentProvider } from './order';
+export { PayoutBatch } from './payout-batch';
+export type { PayoutBatchDoc } from './payout-batch';
 export { PAYMENT_STATUSES, Payment } from './payment';
 export type { PaymentDoc, PaymentStatus } from './payment';
 export { WebhookEvent } from './webhook-event';

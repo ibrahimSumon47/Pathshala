@@ -357,3 +357,26 @@ export async function setQuestionHidden(questionId: string, hidden: boolean): Pr
   const result = await Question.updateOne({ _id: questionId }, { hidden });
   return result.matchedCount > 0;
 }
+
+/** Bulk review moderation: one update, then one rating refresh per affected course. */
+export async function setReviewsHidden(reviewIds: string[], hidden: boolean): Promise<number> {
+  await connectToDatabase();
+  const { Review } = await import('./models/review');
+  const ids = reviewIds.filter((id) => Types.ObjectId.isValid(id)).slice(0, 200);
+  if (ids.length === 0) return 0;
+  const reviews = await Review.find({ _id: { $in: ids } }).select('course').lean();
+  const result = await Review.updateMany({ _id: { $in: ids } }, { hidden });
+  const courses = [...new Set(reviews.map((review) => String(review.course)))].filter((id) => Types.ObjectId.isValid(id));
+  await Promise.all(courses.map((id) => refreshCourseRating(new Types.ObjectId(id))));
+  return result.matchedCount;
+}
+
+/** Bulk question moderation; questions do not feed any course average. */
+export async function setQuestionsHidden(questionIds: string[], hidden: boolean): Promise<number> {
+  await connectToDatabase();
+  const { Question } = await import('./models/question');
+  const ids = questionIds.filter((id) => Types.ObjectId.isValid(id)).slice(0, 200);
+  if (ids.length === 0) return 0;
+  const result = await Question.updateMany({ _id: { $in: ids } }, { hidden });
+  return result.matchedCount;
+}

@@ -111,7 +111,15 @@ function toLearningLesson(row: LessonRow): LearningLesson {
   };
 }
 
-export type ReviewView = { id: string; author: string; rating: number; body: string; createdAt: string };
+export type ReviewView = {
+  id: string;
+  author: string;
+  rating: number;
+  body: string;
+  replyBody: string;
+  repliedAt: string | null;
+  createdAt: string;
+};
 
 /** Reviews for the public page, newest first, with the author's display name. */
 export async function getCourseReviews(courseId: string): Promise<ReviewView[]> {
@@ -126,6 +134,8 @@ export async function getCourseReviews(courseId: string): Promise<ReviewView[]> 
     author: names.get(String(review.student)) ?? 'Learner',
     rating: review.rating,
     body: review.body,
+    replyBody: review.replyBody ?? '',
+    repliedAt: review.repliedAt?.toISOString() ?? null,
     createdAt: review.createdAt.toISOString(),
   }));
 }

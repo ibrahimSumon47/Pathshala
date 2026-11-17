@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(): Promise<Response> {
   const user = await requireRole('instructor', 'admin');
   const statements = await getInstructorStatements(user.id);
-  const csv = buildCsv(['month', 'sales', 'salesPaisa', 'refunds', 'refundsPaisa', 'netPaisa'], statements);
+  const csv = buildCsv(['month', 'sales', 'salesPaisa', 'refunds', 'refundsPaisa', 'netPaisa', 'paidAt'], statements);
   return new Response('\uFEFF' + csv, {
     headers: {
       'content-type': 'text/csv; charset=utf-8',

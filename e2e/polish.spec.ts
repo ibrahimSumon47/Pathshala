@@ -11,6 +11,11 @@ test('the command palette finds a course and opens it', async ({ page }) => {
   await expect(dialog.getByText('First Steps in JavaScript')).toBeVisible();
   await dialog.getByText('First Steps in JavaScript').click();
   await expect(page).toHaveURL(/\/en\/courses\/javascript-first-steps$/);
+
+  await page.keyboard.press('Control+k');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Close search' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
 });
 
 test('a reader moves between lessons with the keyboard', async ({ page }) => {
@@ -38,6 +43,26 @@ test('notes and earnings download as CSV', async ({ page }) => {
   expect(earnings.suggestedFilename()).toBe('pathshala-earnings.csv');
 });
 
+test('a teacher replies to a review and announces to learners', async ({ page }) => {
+  await signIn(page, accounts.instructor.email, accounts.instructor.password);
+  await page.goto('/en/studio/community');
+  await expect(page.getByRole('heading', { level: 1, name: 'Reviews and announcements' })).toBeVisible();
+
+  const review = page.locator('li').filter({ hasText: 'First Steps in JavaScript' }).first();
+  await review.getByLabel('Your reply').fill('Thank you — I added a worked example for this lesson.');
+  await review.getByRole('button', { name: /Post reply|Replace reply/ }).click();
+  await expect(page.getByText('Reply saved.')).toBeVisible();
+  await expect(page.getByText('Instructor reply')).toBeVisible();
+
+  await page.getByLabel('Course').selectOption({ label: 'First Steps in JavaScript' });
+  await page.getByLabel('Message').fill('A new practice set is now in the last lesson.');
+  await page.getByRole('button', { name: 'Send announcement' }).click();
+  await expect(page.getByText(/Announcement added to [0-9]+ inbox/)).toBeVisible();
+
+  await page.goto('/en/courses/javascript-first-steps');
+  await expect(page.getByText('Instructor reply').first()).toBeVisible();
+});
+
 test('an operator gets order search, coupon performance and moderation', async ({ page }) => {
   await signIn(page, accounts.admin.email, accounts.admin.password);
   await page.goto('/en/admin/orders');
@@ -53,4 +78,16 @@ test('an operator gets order search, coupon performance and moderation', async (
   await page.goto('/en/admin');
   await expect(page.getByRole('heading', { name: 'Reviews and questions' })).toBeVisible();
   await expect(page.getByText('Recent lesson questions')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Hide selected' }).first()).toBeVisible();
+
+  await page.goto('/en/admin/payouts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Teacher payouts' })).toBeVisible();
+  const row = page.locator('tbody tr').first();
+  const firstAction = row.getByRole('button').first();
+  const wasOpen = (await firstAction.textContent())?.includes('Mark paid');
+  await firstAction.click();
+  await expect(page.getByText('Payout state saved.')).toBeVisible();
+  await expect(row.getByRole('button').first()).toHaveText(wasOpen ? 'Reopen' : 'Mark paid');
+  await row.getByRole('button').first().click();
+  await expect(page.getByText('Payout state saved.')).toBeVisible();
 });

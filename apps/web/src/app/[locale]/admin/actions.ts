@@ -9,7 +9,10 @@ import {
   setCourseStatus,
   setInstructorAccess,
   setQuestionHidden,
+  setQuestionsHidden,
   setReviewHidden,
+  setReviewsHidden,
+  setStatementPaid,
 } from '@pathshala/db';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/guard';
@@ -99,6 +102,59 @@ export async function setReviewVisibilityAction(form: FormData): Promise<void> {
   revalidatePath('/admin');
   revalidatePath('/courses');
   redirect(`${localePath(form, '/admin')}?saved=1`);
+}
+
+/** Hide or restore several reviews or questions in one request. */
+export async function bulkModerationAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const kind = String(form.get('kind') ?? '');
+  const hidden = form.get('hidden') === 'true';
+  const ids = form.getAll('ids').map(String).filter(Boolean).slice(0, 200);
+  if (ids.length === 0) {
+    redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Select at least one row.')}`);
+  }
+  if (kind !== 'review' && kind !== 'question') {
+    redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Unknown moderation type.')}`);
+  }
+  const count = kind === 'review' ? await setReviewsHidden(ids, hidden) : await setQuestionsHidden(ids, hidden);
+  if (count === 0) {
+    redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Nothing matched those rows.')}`);
+  }
+  await Promise.all(
+    ids.map((id) =>
+      recordAuditEvent({
+        actor: user.id,
+        action: `${kind}.${hidden ? 'hide' : 'restore'}`,
+        entityType: kind,
+        entityId: id,
+      }),
+    ),
+  );
+  revalidatePath('/admin');
+  revalidatePath('/courses');
+  revalidatePath('/learn');
+  redirect(`${localePath(form, '/admin')}?saved=1`);
+}
+
+/** Mark a teacher's month settled, or reopen it if the transfer did not happen. */
+export async function setStatementPaidAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const instructorId = String(form.get('instructorId') ?? '');
+  const month = String(form.get('month') ?? '');
+  const amountPaisa = Number(form.get('amountPaisa') ?? 0);
+  const paid = form.get('paid') === 'true';
+  const ok = await setStatementPaid({ instructorId, month, amountPaisa, adminId: user.id, paid });
+  if (!ok) redirect(`${localePath(form, '/admin/payouts')}?error=${encodeURIComponent('Statement not found.')}`);
+  await recordAuditEvent({
+    actor: user.id,
+    action: paid ? 'payout.mark' : 'payout.reopen',
+    entityType: 'payout',
+    entityId: instructorId,
+    metadata: { month, amountPaisa },
+  });
+  revalidatePath('/admin/payouts');
+  revalidatePath('/studio/earnings');
+  redirect(`${localePath(form, '/admin/payouts')}?saved=1`);
 }
 
 /** Hide or restore a lesson question without deleting the conversation. */

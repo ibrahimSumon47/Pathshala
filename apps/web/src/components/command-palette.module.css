@@ -87,6 +87,25 @@
   outline: none;
 }
 
+.close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus-visible {
+  border-color: var(--color-line);
+  color: var(--color-ink);
+}
+
 .body {
   max-height: min(52vh, 420px);
   overflow-y: auto;

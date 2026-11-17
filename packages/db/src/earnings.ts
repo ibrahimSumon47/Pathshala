@@ -3,6 +3,7 @@ import { connectToDatabase } from './connection';
 import { LedgerEntry } from './models/ledger-entry';
 import { Coupon } from './models/coupon';
 import { Order, type OrderDoc } from './models/order';
+import { PayoutBatch } from './models/payout-batch';
 import { PLATFORM_SHARE_PERCENT } from './commerce';
 import { User } from './models/user';
 
@@ -13,6 +14,8 @@ export type PayoutStatement = {
   netPaisa: number;
   sales: number;
   refunds: number;
+  /** Set when an operator records the month as settled; null while it is open. */
+  paidAt: string | null;
 };
 
 /** Turn signed ledger rows into one statement per calendar month, newest first. */
@@ -22,7 +25,7 @@ export function statementsFromEntries(
   const months = new Map<string, PayoutStatement>();
   for (const entry of entries) {
     const month = entry.createdAt.toISOString().slice(0, 7);
-    const statement = months.get(month) ?? { month, salesPaisa: 0, refundsPaisa: 0, netPaisa: 0, sales: 0, refunds: 0 };
+    const statement = months.get(month) ?? { month, salesPaisa: 0, refundsPaisa: 0, netPaisa: 0, sales: 0, refunds: 0, paidAt: null };
     if (entry.type === 'refund') {
       statement.refundsPaisa += Math.abs(entry.amountPaisa);
       statement.refunds += 1;
@@ -45,7 +48,92 @@ export async function getInstructorStatements(instructorId: string): Promise<Pay
     .sort({ createdAt: -1 })
     .limit(2000)
     .lean();
-  return statementsFromEntries(entries.map((entry) => ({ amountPaisa: entry.amountPaisa, type: entry.type, createdAt: entry.createdAt })));
+  const statements = statementsFromEntries(
+    entries.map((entry) => ({ amountPaisa: entry.amountPaisa, type: entry.type, createdAt: entry.createdAt })),
+  );
+  return withPaidState(instructorId, statements);
+}
+
+/** Attach the operator's payout records to computed statements. */
+async function withPaidState(instructorId: string, statements: PayoutStatement[]): Promise<PayoutStatement[]> {
+  if (statements.length === 0) return statements;
+  const payouts = await PayoutBatch.find({ instructor: instructorId, month: { $in: statements.map((row) => row.month) } })
+    .select('month paidAt')
+    .lean();
+  const paid = new Map(payouts.map((payout) => [payout.month, payout.paidAt.toISOString()]));
+  return statements.map((statement) => ({ ...statement, paidAt: paid.get(statement.month) ?? null }));
+}
+
+export type AdminPayoutRow = PayoutStatement & { instructorId: string; instructorName: string };
+
+/** Every teacher's statements, so an operator can settle a month from one table. */
+export async function listPayoutStatements(): Promise<AdminPayoutRow[]> {
+  await connectToDatabase();
+  const entries = await LedgerEntry.find({ account: 'instructor', instructor: { $ne: null } })
+    .select('instructor amountPaisa type createdAt')
+    .sort({ createdAt: -1 })
+    .limit(5000)
+    .lean();
+  const byInstructor = new Map<string, Array<{ amountPaisa: number; type: 'sale' | 'refund'; createdAt: Date }>>();
+  for (const entry of entries) {
+    const key = String(entry.instructor);
+    const rows = byInstructor.get(key) ?? [];
+    rows.push({ amountPaisa: entry.amountPaisa, type: entry.type, createdAt: entry.createdAt });
+    byInstructor.set(key, rows);
+  }
+  if (byInstructor.size === 0) return [];
+
+  const [users, payouts] = await Promise.all([
+    User.find({ _id: { $in: [...byInstructor.keys()] } }).select('name').lean(),
+    PayoutBatch.find({ instructor: { $in: [...byInstructor.keys()] } }).select('instructor month paidAt').lean(),
+  ]);
+  const names = new Map(users.map((user) => [String(user._id), user.name]));
+  const paid = new Map(payouts.map((payout) => [`${String(payout.instructor)}|${payout.month}`, payout.paidAt.toISOString()]));
+
+  return [...byInstructor.entries()]
+    .flatMap(([instructorId, rows]) =>
+      statementsFromEntries(rows).map((statement) => ({
+        ...statement,
+        instructorId,
+        instructorName: names.get(instructorId) ?? 'Teacher',
+        paidAt: paid.get(`${instructorId}|${statement.month}`) ?? null,
+      })),
+    )
+    .sort((a, b) => b.month.localeCompare(a.month) || a.instructorName.localeCompare(b.instructorName));
+}
+
+/** Mark a month settled, or reopen it by removing the record. */
+export async function setStatementPaid(input: {
+  instructorId: string;
+  month: string;
+  amountPaisa: number;
+  adminId: string;
+  paid: boolean;
+  note?: string;
+}): Promise<boolean> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(input.instructorId) || !Types.ObjectId.isValid(input.adminId)) return false;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.month)) return false;
+  if (!Number.isInteger(input.amountPaisa) || input.amountPaisa < 0) return false;
+
+  if (!input.paid) {
+    const result = await PayoutBatch.deleteOne({ instructor: input.instructorId, month: input.month });
+    return result.deletedCount > 0;
+  }
+
+  await PayoutBatch.findOneAndUpdate(
+    { instructor: input.instructorId, month: input.month },
+    {
+      $set: {
+        amountPaisa: input.amountPaisa,
+        note: input.note?.trim().slice(0, 400) ?? '',
+        markedBy: input.adminId,
+        paidAt: new Date(),
+      },
+    },
+    { upsert: true, returnDocument: 'after' },
+  );
+  return true;
 }
 
 export type AdminOrderRow = {

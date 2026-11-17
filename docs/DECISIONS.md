@@ -560,3 +560,13 @@ Email notifications are deliberately not wired. In-app sale alerts are created w
 A performance sample was taken before and after parallelising the course page: warm TTFB was 0.273–0.299 s before and 0.274–0.329 s after. The difference is noise, so the page is simpler but the project makes no speedup claim.
 
 Moderation hides rather than deletes: reviews and questions keep their rows for the audit trail, public queries exclude them, and hiding a review recomputes the course rating from the visible set. The course rating therefore cannot drift from what readers can see.
+
+## 2026-11-17 — Community tools stay inside the existing records
+
+A review reply is two fields on the review, not a new thread: it keeps the public course query one read and makes hiding the review hide its reply with it. Announcements reuse the notification inbox instead of introducing email; the action verifies course ownership and writes at most 5,000 notifications so one request cannot fan out without bound.
+
+Payout settlement is a separate `PayoutBatch` keyed by instructor and `YYYY-MM`, marked by an operator after the transfer. It deliberately does not move money or mutate the ledger. Reopening deletes that marker, so the statement returns to its computed state. The unique index makes a repeated mark an update, not a second payout.
+
+Bulk moderation updates a bounded list (200 ids) in one write, then refreshes each affected course rating once. Hiding remains reversible; no review or question row is deleted.
+
+The search limiter is a fixed window in process memory. Vercel may run several instances, so it raises the cost of a burst rather than promising a global quota; the same honest limitation already applies to the auth limiter.

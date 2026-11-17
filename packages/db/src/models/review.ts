@@ -9,6 +9,9 @@ export type ReviewDoc = {
   body: string;
   /** Hidden by an operator: kept for the record, out of averages and the public list. */
   hidden: boolean;
+  /** The instructor's public answer; empty until they write one. */
+  replyBody: string;
+  repliedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -20,6 +23,8 @@ const reviewSchema = new Schema<ReviewDoc>(
     rating: { type: Number, required: true, min: 1, max: 5 },
     body: { type: String, trim: true, maxlength: 1200, default: '' },
     hidden: { type: Boolean, default: false },
+    replyBody: { type: String, trim: true, maxlength: 1200, default: '' },
+    repliedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

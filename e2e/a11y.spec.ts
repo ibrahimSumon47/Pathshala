@@ -51,7 +51,7 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
 
 test('the operator money and moderation pages have zero axe violations', async ({ page }) => {
   await signIn(page, accounts.admin.email, accounts.admin.password);
-  for (const path of ['/en/admin/orders', '/en/admin/coupons', '/en/studio/earnings']) {
+  for (const path of ['/en/admin/orders', '/en/admin/coupons', '/en/admin/payouts', '/en/studio/earnings', '/en/studio/community']) {
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
   }

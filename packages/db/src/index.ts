@@ -4,6 +4,7 @@ export * from './catalog';
 export * from './profile';
 export * from './certificates';
 export * from './commerce';
+export * from './community';
 export * from './earnings';
 export * from './learner';
 export * from './live';

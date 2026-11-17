@@ -39,6 +39,9 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
         <p className={styles.lede}>{copy.lede}</p>
         <nav className={styles.subnav} aria-label={copy.eyebrow}>
           <Link href="/studio/earnings">{locale === 'en' ? 'Payout statements' : 'আয়ের বিবরণ'}</Link>
+          <Link href="/studio/community">
+            {locale === 'en' ? 'Reviews and announcements' : 'মতামত ও ঘোষণা'}
+          </Link>
         </nav>
         <section className={styles.statGrid} aria-label={locale === 'en' ? 'Teaching analytics' : 'শিক্ষাদানের হিসাব'}>
           <div className={styles.stat}>

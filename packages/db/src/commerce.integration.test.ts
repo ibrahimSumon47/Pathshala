@@ -1,7 +1,15 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Types } from 'mongoose';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getAdminReport, getPlatformRevenue, setQuestionHidden, setReviewHidden } from './admin';
+import {
+  getAdminReport,
+  getPlatformRevenue,
+  setQuestionHidden,
+  setQuestionsHidden,
+  setReviewHidden,
+  setReviewsHidden,
+} from './admin';
+import { announceToCourse, getInstructorCommunity, replyToCourseReview } from './community';
 import {
   PLATFORM_SHARE_PERCENT,
   createOrderForCourses,
@@ -10,9 +18,10 @@ import {
   markOrderRefunded,
 } from './commerce';
 import { connectToDatabase, disconnectFromDatabase } from './connection';
-import { getInstructorStatements, listAdminOrders } from './earnings';
+import { getInstructorStatements, listAdminOrders, listPayoutStatements, setStatementPaid } from './earnings';
 import { Notification } from './models/notification';
 import { Category } from './models/category';
+import { Enrolment } from './models/enrolment';
 import { Course } from './models/course';
 import { LedgerEntry } from './models/ledger-entry';
 import { Question } from './models/question';
@@ -150,5 +159,134 @@ describe('moderation', () => {
     expect(await setQuestionHidden(String(question._id), true)).toBe(true);
     expect((await Question.findById(question._id).lean())?.hidden).toBe(true);
     expect(await setQuestionHidden('not-an-id', true)).toBe(false);
+  });
+});
+
+describe('payout settlement', () => {
+  it('marks a month paid for the teacher and the operator, then reopens it', async () => {
+    const order = await createOrderForCourses({ userId: studentId, courseIds: [courseId], idempotencyKey: 'payout-order' });
+    await markOrderPaid({
+      orderId: order.orderNumber,
+      provider: 'paybridge',
+      providerRef: 'paybridge-payout-ref',
+      eventId: 'event-payout-paid',
+      eventType: 'payment.succeeded',
+    });
+    const statement = (await getInstructorStatements(instructorId))[0];
+    expect(statement).toBeDefined();
+    if (!statement) throw new Error('Expected a statement');
+
+    expect(
+      await setStatementPaid({
+        instructorId,
+        month: statement.month,
+        amountPaisa: Math.max(0, statement.netPaisa),
+        adminId: instructorId,
+        paid: true,
+      }),
+    ).toBe(true);
+
+    const paid = (await getInstructorStatements(instructorId)).find((row) => row.month === statement.month);
+    expect(paid?.paidAt).toBeTruthy();
+    const adminRows = await listPayoutStatements();
+    expect(adminRows.find((row) => row.instructorId === instructorId && row.month === statement.month)?.paidAt).toBeTruthy();
+
+    expect(
+      await setStatementPaid({ instructorId, month: statement.month, amountPaisa: 0, adminId: instructorId, paid: false }),
+    ).toBe(true);
+    const reopened = (await getInstructorStatements(instructorId)).find((row) => row.month === statement.month);
+    expect(reopened?.paidAt).toBeNull();
+  });
+
+  it('rejects a malformed month or instructor id', async () => {
+    expect(
+      await setStatementPaid({ instructorId, month: '2026-13', amountPaisa: 1, adminId: instructorId, paid: true }),
+    ).toBe(false);
+    expect(
+      await setStatementPaid({ instructorId: 'bad', month: '2026-11', amountPaisa: 1, adminId: instructorId, paid: true }),
+    ).toBe(false);
+  });
+});
+
+describe('instructor community', () => {
+  it('lists owned reviews and saves a reply only for the owning instructor', async () => {
+    const community = await getInstructorCommunity(instructorId);
+    expect(community.courses.some((course) => course.id === courseId)).toBe(true);
+    const review = community.reviews[0];
+    expect(review).toBeDefined();
+    if (!review) throw new Error('Expected a review');
+
+    expect(
+      await replyToCourseReview({
+        reviewId: review.id,
+        instructorId: new Types.ObjectId().toString(),
+        isAdmin: false,
+        body: 'Not my course',
+      }),
+    ).toBe(false);
+    expect(
+      await replyToCourseReview({ reviewId: review.id, instructorId, isAdmin: false, body: 'Thank you for the notes.' }),
+    ).toBe(true);
+    const saved = await Review.findById(review.id).lean();
+    expect(saved?.replyBody).toBe('Thank you for the notes.');
+    expect(saved?.repliedAt).toBeTruthy();
+  });
+
+  it('sends one inbox notification per enrolled learner and refuses another teacher', async () => {
+    await Enrolment.updateOne(
+      { student: studentId, course: courseId },
+      { $setOnInsert: { student: studentId, course: courseId, status: 'active' } },
+      { upsert: true },
+    );
+    const before = await Notification.countDocuments({ user: studentId, href: '/learn/javascript' });
+    const sent = await announceToCourse({ courseId, instructorId, isAdmin: false, message: 'Live class moved to Friday.' });
+    expect(sent).toBeGreaterThanOrEqual(1);
+    const after = await Notification.countDocuments({ user: studentId, href: '/learn/javascript' });
+    expect(after - before).toBe(sent);
+    const notification = await Notification.findOne({ user: studentId, href: '/learn/javascript' }).sort({ createdAt: -1 }).lean();
+    expect(notification?.body.en).toBe('Live class moved to Friday.');
+
+    expect(
+      await announceToCourse({
+        courseId,
+        instructorId: new Types.ObjectId().toString(),
+        isAdmin: false,
+        message: 'Should not send',
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('bulk moderation', () => {
+  it('hides and restores several reviews, refreshing the course rating once', async () => {
+    const [first, second] = await User.create([
+      { name: 'Bulk One', email: 'bulk-one@example.com' },
+      { name: 'Bulk Two', email: 'bulk-two@example.com' },
+    ]);
+    if (!first || !second) throw new Error('Bulk users were not created');
+    const reviews = await Review.create([
+      { course: courseId, student: first._id, rating: 2, body: 'Could be clearer.' },
+      { course: courseId, student: second._id, rating: 5, body: 'Loved it.' },
+    ]);
+    const ids = reviews.map((review) => String(review._id));
+    expect(await setReviewsHidden(ids, true)).toBe(2);
+    expect(await Review.countDocuments({ _id: { $in: ids }, hidden: true })).toBe(2);
+    const hiddenCourse = await Course.findById(courseId).lean();
+    expect(hiddenCourse?.ratingCount).toBe(1);
+
+    expect(await setReviewsHidden(ids, false)).toBe(2);
+    expect(await Review.countDocuments({ _id: { $in: ids }, hidden: false })).toBe(2);
+    const restored = await Course.findById(courseId).lean();
+    expect(restored?.ratingCount).toBe(3);
+  });
+
+  it('hides several questions in one update', async () => {
+    const questions = await Question.create([
+      { course: courseId, lesson: new Types.ObjectId(), author: studentId, body: 'First bulk question?' },
+      { course: courseId, lesson: new Types.ObjectId(), author: studentId, body: 'Second bulk question?' },
+    ]);
+    const ids = questions.map((question) => String(question._id));
+    expect(await setQuestionsHidden(ids, true)).toBe(2);
+    expect(await Question.countDocuments({ _id: { $in: ids }, hidden: true })).toBe(2);
   });
 });

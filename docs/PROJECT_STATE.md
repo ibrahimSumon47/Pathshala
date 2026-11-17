@@ -1,7 +1,7 @@
 # Project state
 
 Snapshot: 2026-11-17. The first ten phases are complete and three expansion slices are live:
-course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 78/78
+course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 84/84
 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
@@ -37,6 +37,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P11 | Both-script search, price buckets, sorting, best-rated shelf, learner recommendations | done — 2026-11-17, 20/20 production journeys |
 | P12 | Private and public profiles, role desks, platform revenue share, sticky masthead, motion | done — 2026-11-17, 26/26 production journeys |
 | P13 | Statements, order/coupon ops, palette, lesson keys, moderation, measured perf pass | done — 2026-11-17, 31/31 production journeys |
+| P14 | Review replies, payout settlement, bulk moderation, announcements, search limit, palette close | done — 2026-11-17, 32/32 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -79,6 +80,11 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   API key, hosted checkout, HMAC webhooks, retries, refunds and a ledger. Every paid sale
   splits 80/20: the order records the platform's 20% and the admin overview shows it beside
   gross sales, refunds and average order.
+- Community and payouts: a teacher answers reviews and sends one inbox announcement from
+  `/studio/community`; an operator settles each teacher/month from `/admin/payouts`, and the
+  teacher’s statement shows the paid state. Bulk moderation hides or restores selected rows.
+- Search is limited to 30 requests a minute per client address, and the palette has a close
+  control with a Tab trap.
 - Theme: a server-read cookie renders `data-theme` on `<html>` before paint; the toggle writes
   the cookie. There is no boot script, so soft navigation cannot drop the theme.
 - Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
@@ -100,18 +106,18 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 ## Verification recorded 2026-11-17 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (142 tests: 12 tokens, 13 shared, 42 database,
-  58 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **31/31 pass** on
-  2026-11-17 after the auth split. The
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (185 tests: 12 tokens, 13 shared, 71 database,
+  72 web, 17 API) and `pnpm build` all exit 0 locally.
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **32/32 pass** on
+  2026-11-17 after the community slice. The
   depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
   card, related courses and refund link, then reads a free preview lesson. The
   journeys register a learner, enrol in the free course, finish all three lessons, pass the
   quiz, earn a certificate and verify it in a signed-out context; buy one course through
   PayBridge with `EARLYBIRD`; buy another through a real Stripe Checkout with the 4242 card;
   publish a course in the studio; and unpublish/republish it as the admin with audit rows.
-  Other tests cover catalogue search, the student/admin boundary, the live room, the audit
-  CSV and axe passes on landing, catalogue, course detail, refund policy, sign-in and the
+  Other tests cover catalogue search, review replies, course announcements, payout marking,
+  bulk moderation controls, the student/admin boundary, the live room, the audit CSV and axe passes on landing, catalogue, course detail, refund policy, sign-in and the
   student dashboard.
 - axe: zero violations on landing, catalogue, sign-in and the student dashboard.
 - Lighthouse mobile on the deployed origin: landing **100/100/100/100**, catalogue

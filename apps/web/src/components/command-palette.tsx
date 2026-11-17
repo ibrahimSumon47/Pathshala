@@ -83,6 +83,24 @@ export function CommandPalette({ items }: CommandPaletteProps) {
     trigger.current?.focus();
   }
 
+  /** Keep Tab inside the dialog while it is modal. */
+  function trapFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Tab') return;
+    const focusable = [
+      ...(dialog.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled])') ?? []),
+    ];
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
+
   function moveFocus(event: React.KeyboardEvent, direction: 1 | -1) {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
@@ -123,7 +141,14 @@ export function CommandPalette({ items }: CommandPaletteProps) {
             if (event.target === event.currentTarget) close();
           }}
         >
-          <div ref={dialog} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="palette-title">
+          <div
+            ref={dialog}
+            className={styles.dialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="palette-title"
+            onKeyDown={trapFocus}
+          >
             <h2 id="palette-title" className={styles.srOnly}>
               {t('open')}
             </h2>
@@ -149,6 +174,11 @@ export function CommandPalette({ items }: CommandPaletteProps) {
                 autoComplete="off"
               />
               <kbd className={styles.key}>Esc</kbd>
+              <button type="button" className={styles.close} onClick={close} aria-label={t('close')}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
             </div>
 
             <div className={styles.body} onKeyDown={(event) => moveFocus(event, event.key === 'ArrowUp' ? -1 : 1)}>
