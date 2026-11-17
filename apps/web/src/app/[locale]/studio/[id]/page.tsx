@@ -7,6 +7,7 @@ import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { requireRole } from '@/lib/auth/guard';
+import { faqsToLines, listToLines } from '@/lib/course-content';
 import { getStudioCourse } from '@/lib/studio';
 import { addLessonAction, addSectionAction, scheduleSessionAction, updateCourseAction } from '../actions';
 import { studioCopy } from '../copy';
@@ -64,8 +65,90 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
             <Field id="subtitleEn" name="subtitleEn" label={copy.subtitleEn} defaultValue={course.subtitle.en ?? ''} maxLength={200} />
           </div>
           <div className={styles.two}>
-            <Textarea id="descriptionBn" name="descriptionBn" label={copy.descriptionBn} defaultValue={course.description.bn ?? ''} />
-            <Textarea id="descriptionEn" name="descriptionEn" label={copy.descriptionEn} defaultValue={course.description.en ?? ''} />
+            <Field
+              id="shortDescriptionBn"
+              name="shortDescriptionBn"
+              label={copy.shortDescriptionBn}
+              hint={copy.shortDescriptionHint}
+              defaultValue={course.shortDescription.bn ?? ''}
+              maxLength={300}
+            />
+            <Field
+              id="shortDescriptionEn"
+              name="shortDescriptionEn"
+              label={copy.shortDescriptionEn}
+              hint={copy.shortDescriptionHint}
+              defaultValue={course.shortDescription.en ?? ''}
+              maxLength={300}
+            />
+          </div>
+          <div className={styles.two}>
+            <Textarea id="descriptionBn" name="descriptionBn" label={copy.descriptionBn} hint={copy.longDescriptionHint} defaultValue={course.description.bn ?? ''} />
+            <Textarea id="descriptionEn" name="descriptionEn" label={copy.descriptionEn} hint={copy.longDescriptionHint} defaultValue={course.description.en ?? ''} />
+          </div>
+          <div className={styles.two}>
+            <Textarea
+              id="outcomesBn"
+              name="outcomesBn"
+              label={copy.outcomesBn}
+              hint={copy.outcomesHint}
+              defaultValue={listToLines(course.outcomes, 'bn')}
+            />
+            <Textarea
+              id="outcomesEn"
+              name="outcomesEn"
+              label={copy.outcomesEn}
+              hint={copy.outcomesHint}
+              defaultValue={listToLines(course.outcomes, 'en')}
+            />
+          </div>
+          <div className={styles.two}>
+            <Textarea
+              id="requirementsBn"
+              name="requirementsBn"
+              label={copy.requirementsBn}
+              hint={copy.requirementsHint}
+              defaultValue={listToLines(course.requirements, 'bn')}
+            />
+            <Textarea
+              id="requirementsEn"
+              name="requirementsEn"
+              label={copy.requirementsEn}
+              hint={copy.requirementsHint}
+              defaultValue={listToLines(course.requirements, 'en')}
+            />
+          </div>
+          <div className={styles.two}>
+            <Textarea
+              id="audienceBn"
+              name="audienceBn"
+              label={copy.audienceBn}
+              hint={copy.audienceHint}
+              defaultValue={listToLines(course.audience, 'bn')}
+            />
+            <Textarea
+              id="audienceEn"
+              name="audienceEn"
+              label={copy.audienceEn}
+              hint={copy.audienceHint}
+              defaultValue={listToLines(course.audience, 'en')}
+            />
+          </div>
+          <div className={styles.two}>
+            <Textarea
+              id="faqBn"
+              name="faqBn"
+              label={copy.faqBn}
+              hint={copy.faqHint}
+              defaultValue={faqsToLines(course.faqs, 'bn')}
+            />
+            <Textarea
+              id="faqEn"
+              name="faqEn"
+              label={copy.faqEn}
+              hint={copy.faqHint}
+              defaultValue={faqsToLines(course.faqs, 'en')}
+            />
           </div>
           <Field id="slug" name="slug" label={copy.slug} defaultValue={course.slug} maxLength={90} />
           <div className={styles.three}>
@@ -140,7 +223,8 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                       <span>{lesson.title[language] || lesson.title.en || lesson.title.bn}</span>
                     )}
                     <span className={styles.meta}>
-                      {copy[lesson.type]} · {lesson.bodyHtml ? 'HTML' : '—'}
+                      {copy[lesson.type]} · {lesson.durationMinutes} {copy.duration}
+                      {lesson.isPreview ? ' · preview' : ''}
                       {lesson.attachmentCount > 0 ? ` · ${lesson.attachmentCount}` : ''}
                     </span>
                   </li>
@@ -164,7 +248,18 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                     options={TYPES.map((type) => ({ value: type, label: copy[type] }))}
                   />
                   <Textarea id={`body-${section.id}`} name="bodyHtml" label={copy.body} defaultValue="" />
-                  <Field id={`video-${section.id}`} name="videoUrl" label={copy.videoUrl} placeholder="https://" />
+                  <div className={styles.two}>
+                    <Field id={`video-${section.id}`} name="videoUrl" label={copy.videoUrl} placeholder="https://" />
+                    <Field
+                      id={`duration-${section.id}`}
+                      name="durationMinutes"
+                      type="number"
+                      min={0}
+                      max={600}
+                      defaultValue={10}
+                      label={copy.duration}
+                    />
+                  </div>
                   <fieldset className={styles.fieldset}>
                     <legend>{copy.attachmentName}</legend>
                     <Field id={`attachmentName-${section.id}`} name="attachmentName" label={copy.attachmentName} />
@@ -247,17 +342,32 @@ type TextareaProps = {
   id: string;
   name: string;
   label: string;
+  hint?: string;
   defaultValue: string;
+  rows?: number;
 };
 
 /** Long-form field used by descriptions and lesson bodies. */
-function Textarea({ id, name, label, defaultValue }: TextareaProps) {
+function Textarea({ id, name, label, hint, defaultValue, rows = 4 }: TextareaProps) {
   return (
     <div className={styles.textareaField}>
       <label htmlFor={id} className={styles.textareaLabel}>
         {label}
       </label>
-      <textarea id={id} name={name} defaultValue={defaultValue} rows={6} className={styles.textarea} maxLength={20000} />
+      {hint ? (
+        <p className={styles.meta} id={`${id}-hint`}>
+          {hint}
+        </p>
+      ) : null}
+      <textarea
+        id={id}
+        name={name}
+        defaultValue={defaultValue}
+        rows={rows}
+        className={styles.textarea}
+        maxLength={20000}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+      />
     </div>
   );
 }

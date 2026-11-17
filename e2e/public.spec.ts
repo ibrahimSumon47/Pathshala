@@ -12,7 +12,31 @@ test('the public catalogue, search and course detail work in production', async 
 
   await page.getByRole('link', { name: 'View course →' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('First Steps in JavaScript');
-  await expect(page.getByText('Build small programs that run in the browser')).toBeVisible();
+  await expect(page.getByText('Start with variables, conditions and functions')).toBeVisible();
+});
+
+test('a course page carries the full buying information and a free preview lesson', async ({ page }) => {
+  const response = await page.goto('/en/courses/spoken-english-daily');
+  expect(response?.status()).toBe(200);
+
+  const outcomesSection = page.locator('section').filter({ hasText: 'What you will learn' });
+  await expect(outcomesSection).toBeVisible();
+  expect(await outcomesSection.getByRole('listitem').count()).toBeGreaterThanOrEqual(6);
+  await expect(page.getByRole('heading', { name: 'Who it is for' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Common questions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your teacher' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'More in this subject' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Read the refund policy' })).toBeVisible();
+
+  await page.goto('/en/courses/javascript-first-steps');
+  await page.getByRole('link', { name: 'Preview' }).first().click();
+  await expect(page.getByText('Free preview')).toBeVisible();
+  await expect(page.getByText('This is one preview lesson. Enrol to open the rest of the course.')).toBeVisible();
+
+  const refund = await page.goto('/en/refund-policy');
+  expect(refund?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1, name: 'Refund policy' })).toBeVisible();
+  await expect(page.getByText(/Ask within 14 days/)).toBeVisible();
 });
 
 test('a new learner can register, then sign in', async ({ page }) => {
@@ -40,7 +64,7 @@ test('a signed-out visitor can verify a seeded certificate by its public code', 
   await expect(page).toHaveURL(/^https:\/\/[^/]+\/$/);
   const response = await page.goto(certificatePath!);
   expect(response?.status()).toBe(200);
-  await expect(page.getByText('Certificate of completion')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Certificate of completion' })).toBeVisible();
   await expect(page.getByText('Nusrat Jahan')).toBeVisible();
   await expect(page.getByRole('img', { name: /QR code/ })).toBeVisible();
 });

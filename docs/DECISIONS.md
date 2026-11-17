@@ -421,3 +421,20 @@ server action creates a student-only account with a bcrypt hash and folds duplic
 into one message. `DEMO_AUTH` stays `false` in production, so the seeded role list is a local
 demo tool only.
 Revisit: when email verification is added, gate the account until the address is confirmed.
+
+## 2026-11-17 — Course depth is stored per language, not as one shared list
+
+Outcomes, requirements, audience and FAQ pairs are bilingual documents, because a Bangla
+course that lists English bullet points reads like a half-translated page. The studio keeps
+two textareas (one line per item) and merges them by position, so an instructor can write
+only the language they know and the page falls back to the side that exists. Older rows that
+stored plain strings are normalised on read by `toLocalizedList`.
+Revisit: if the editor moves to a block editor, the storage shape stays the same.
+
+## 2026-11-17 — Related courses fall back beyond the same subject
+
+`programming` holds one seeded course, so a same-category-only query returned an empty row
+under a heading that promised more. The detail query now takes up to three same-subject
+courses and fills the remainder with the best-rated courses elsewhere. The heading stays
+honest because the cards name their own subject and teacher.
+Revisit: when every subject has several courses and the fallback never triggers.

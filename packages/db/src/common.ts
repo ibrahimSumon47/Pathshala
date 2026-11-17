@@ -29,6 +29,45 @@ export const localizedTextValidator = {
   message: 'Provide the text in Bangla or English',
 };
 
+/** Longer prose (answers, long descriptions) needs more room than a title. */
+export const localizedProseSchema = new Schema<LocalizedText>(
+  {
+    bn: { type: String, trim: true, maxlength: 4000 },
+    en: { type: String, trim: true, maxlength: 4000 },
+  },
+  { _id: false },
+);
+
+/**
+ * Outcome and requirement lists are stored per language so a Bangla course does not show
+ * English bullet points. Older rows stored plain strings; reads normalise both shapes.
+ */
+export const localizedListField = { type: [localizedTextSchema], default: [] };
+
+/** One question and answer pair on a course page. */
+export type CourseFaq = { question: LocalizedText; answer: LocalizedText };
+
+export const courseFaqSchema = new Schema<CourseFaq>(
+  {
+    question: { type: localizedTextSchema, required: true, validate: localizedTextValidator },
+    answer: { type: localizedProseSchema, required: true, validate: localizedTextValidator },
+  },
+  { _id: false },
+);
+
+/** Accept a stored string list or a localized list and return the localized shape. */
+export function toLocalizedList(values: unknown): LocalizedText[] {
+  if (!Array.isArray(values)) return [];
+  return values.flatMap((value) => {
+    if (typeof value === 'string') return value.trim() ? [{ en: value.trim() }] : [];
+    if (value && typeof value === 'object') {
+      const item = value as LocalizedText;
+      return hasAnyLanguage(item) ? [item] : [];
+    }
+    return [];
+  });
+}
+
 /** Mime types accepted for lesson attachments; enforced again at upload time. */
 export const ATTACHMENT_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'application/zip'] as const;
 

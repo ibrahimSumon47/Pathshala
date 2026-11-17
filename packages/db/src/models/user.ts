@@ -13,6 +13,10 @@ export type UserDoc = {
   roles: UserRole[];
   locale: Locale;
   bio?: string;
+  /** English profile text; `bio` holds the Bangla version. */
+  bioEn?: string;
+  /** True for seeded demo people so an operator can tell them from real accounts. */
+  isDemo: boolean;
   emailVerified: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +43,8 @@ const userSchema = new Schema<UserDoc>(
     },
     locale: { type: String, enum: ['bn', 'en'], default: 'bn' },
     bio: { type: String, maxlength: 600 },
+    bioEn: { type: String, maxlength: 600 },
+    isDemo: { type: Boolean, default: false },
     emailVerified: { type: Date, default: null },
   },
   { timestamps: true },

@@ -24,6 +24,8 @@ export type LessonDoc = {
   content: LessonContent;
   video: LessonVideo | null;
   isPreview: boolean;
+  /** Published study time shown in the syllabus; 0 means it has not been set. */
+  durationMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -52,6 +54,10 @@ const lessonSchema = new Schema<LessonDoc>(
       default: null,
     },
     isPreview: { type: Boolean, default: false },
+    durationMinutes: { type: Number, default: 0, min: 0, max: 600, validate: {
+      validator: (value: number) => Number.isInteger(value),
+      message: 'Duration must be whole minutes',
+    } },
   },
   { timestamps: true },
 );

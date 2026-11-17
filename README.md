@@ -9,7 +9,7 @@ anyone can verify.
 **Gateway:** [pathshala-paybridge.vercel.app](https://pathshala-paybridge.vercel.app) ·
 **Repository:** [github.com/ibrahimSumon47/Pathshala](https://github.com/ibrahimSumon47/Pathshala)
 
-The live app runs on Atlas with the seeded catalogue, and its 13 Playwright journeys pass
+The live app runs on Atlas with the seeded catalogue, and its 14 Playwright journeys pass
 against that deployed origin. Anyone can create a learner account on the sign-in page; the
 test-mode checkout accepts `4242 4242 4242 4242`.
 
@@ -61,11 +61,13 @@ Browser ──► Next.js (session, server actions) ──► MongoDB
 
 ## Screenshots
 
+![Course page with syllabus, FAQ and sticky buy panel](docs/screenshots/course-detail-production.png)
+
 | Certificate verification | Bangla landing |
 | --- | --- |
 | ![Certificate with QR code](docs/screenshots/certificate-production.png) | ![Bangla landing page](docs/screenshots/home-bn-production.png) |
 
-All four images are captures of the production deployment on 2026-11-17.
+All five images are captures of the production deployment on 2026-11-17.
 
 ## Stack
 
@@ -102,11 +104,12 @@ pnpm audit           # production advisories
 node scripts/check-done.mjs
 ```
 
-Current results: **129 unit and integration tests** (12 tokens, 13 shared, 35 database,
-52 web, 17 API), **13 Playwright flows against production**, **zero axe violations** on
-landing, catalogue, sign-in and dashboard, and Lighthouse mobile on the deployed origin
-**100/100/100/100** on landing and **99/100/100/100** on the catalogue
-(performance/accessibility/best-practices/SEO), each with FCP and LCP at 0.9 s and CLS 0.
+Current results: **142 unit and integration tests** (12 tokens, 13 shared, 42 database,
+58 web, 17 API), **14 Playwright flows against production**, **zero axe violations** on
+landing, catalogue, course detail, refund policy, sign-in and dashboard, and Lighthouse mobile
+on the deployed origin **100/100/100/100** on landing, **99/100/100/100** on the catalogue and
+**97/100/100/100** on a course page (performance/accessibility/best-practices/SEO), with LCP
+between 0.9 and 1.0 s and CLS 0.
 
 ## Security
 

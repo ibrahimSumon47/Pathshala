@@ -11,11 +11,17 @@ async function violations(page: Parameters<typeof signIn>[0]) {
   }));
 }
 
-test('landing, catalogue and sign-in have zero axe violations', async ({ page }) => {
+test('landing, catalogue, course detail, policy and sign-in have zero axe violations', async ({ page }) => {
   await page.goto('/en');
   expect(await violations(page)).toEqual([]);
 
   await page.goto('/en/courses');
+  expect(await violations(page)).toEqual([]);
+
+  await page.goto('/en/courses/spoken-english-daily');
+  expect(await violations(page)).toEqual([]);
+
+  await page.goto('/en/refund-policy');
   expect(await violations(page)).toEqual([]);
 
   await page.goto('/en/sign-in');

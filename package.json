@@ -19,7 +19,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "reminders:dispatch": "tsx scripts/reminders.ts",
     "check:commits": "node scripts/check-commits.mjs --all",
-    "check:done": "node scripts/check-done.mjs"
+    "check:done": "node scripts/check-done.mjs",
+    "db:cleanup-e2e": "tsx scripts/cleanup-e2e.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

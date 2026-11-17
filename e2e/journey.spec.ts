@@ -40,11 +40,19 @@ test('a new learner enrols, finishes every lesson and earns a publicly verifiabl
 
   await page.getByRole('link', { name: /How to work through this course/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
-  await expect(page.getByText(/Progress · 33%/)).toBeVisible();
+  await expect(page.getByText(/Progress · 20%/)).toBeVisible();
 
   await page.getByRole('link', { name: /Your first exercise/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
-  await expect(page.getByText(/Progress · 67%/)).toBeVisible();
+  await expect(page.getByText(/Progress · 40%/)).toBeVisible();
+
+  await page.getByRole('link', { name: /Working with numbers/ }).click();
+  await page.getByRole('button', { name: 'Mark lesson complete' }).click();
+  await expect(page.getByText(/Progress · 60%/)).toBeVisible();
+
+  await page.getByRole('link', { name: /Shaping a list/ }).click();
+  await page.getByRole('button', { name: 'Mark lesson complete' }).click();
+  await expect(page.getByText(/Progress · 80%/)).toBeVisible();
 
   await page.getByRole('link', { name: /A short quiz/ }).click();
   await page.getByLabel('const', { exact: true }).check();
@@ -64,7 +72,7 @@ test('a new learner enrols, finishes every lesson and earns a publicly verifiabl
   const visitor = await publicContext.newPage();
   const response = await visitor.goto(certificatePath!);
   expect(response?.status()).toBe(200);
-  await expect(visitor.getByText('Certificate of completion')).toBeVisible();
+  await expect(visitor.getByRole('heading', { name: 'Certificate of completion' })).toBeVisible();
   await expect(visitor.getByText('Production Learner')).toBeVisible();
   await expect(visitor.getByRole('img', { name: /QR code/ })).toBeVisible();
   await publicContext.close();
@@ -81,11 +89,11 @@ test('a learner buys a course with PayBridge test mode and with Stripe test mode
   const email = await registerLearner(page);
 
   await page.goto('/en/courses/excel-for-office');
+  await page.getByLabel('Have a coupon?').fill('EARLYBIRD');
   await page.getByRole('button', { name: 'Buy this course' }).click();
   await expect(page).toHaveURL(/\/en\/checkout\//);
-  await page.getByLabel('Coupon').fill('EARLYBIRD');
-  await page.getByRole('button', { name: 'Apply coupon' }).click();
-  await expect(page.getByText('Coupon applied.')).toBeVisible();
+  await expect(page.getByText('−')).toBeVisible();
+  await expect(page.getByText('EARLYBIRD').first()).toBeVisible();
   await page.getByRole('button', { name: 'Pay with PayBridge (test)' }).click();
   await expect(page).toHaveURL(/\/checkout\//);
   await page.getByRole('button', { name: /Pay .* in test mode/ }).click();
@@ -141,6 +149,10 @@ test('an instructor publishes a course and an admin controls its status', async 
   await lessonForm.getByRole('button', { name: 'Add lesson' }).click();
   await expect(page.getByRole('listitem').filter({ hasText: 'Your first step' })).toBeVisible();
 
+  // Publishing now needs the depth a public course page promises.
+  await page.locator('#outcomesEn').fill(
+    'Write a first JavaScript line\nRead a value from the page\nHandle a click\nStore a list of items\nDebug with the console\nFinish a small tool',
+  );
   await page.getByRole('checkbox', { name: 'Publish this course' }).check();
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('Published', { exact: true }).first()).toBeVisible();

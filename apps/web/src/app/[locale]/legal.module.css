@@ -1,0 +1,45 @@
+.page {
+  padding-block: var(--space-8) var(--space-9);
+}
+
+.sheet {
+  max-width: 72ch;
+}
+
+.eyebrow {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.sheet h1 {
+  margin-top: var(--space-2);
+  font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+}
+
+.lede {
+  margin-top: var(--space-4);
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+}
+
+.section {
+  margin-top: var(--space-6);
+}
+
+.section h2 {
+  font-size: var(--text-xl);
+}
+
+.section p {
+  margin-top: var(--space-3);
+  line-height: var(--leading-relaxed);
+}
+
+.contact {
+  margin-top: var(--space-7);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+}

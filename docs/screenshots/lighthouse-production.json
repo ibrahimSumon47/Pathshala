@@ -16,7 +16,7 @@
         "firstContentfulPaint": "0.9 s",
         "largestContentfulPaint": "0.9 s",
         "cumulativeLayoutShift": "0",
-        "totalBlockingTime": "90 ms"
+        "totalBlockingTime": "50 ms"
       }
     },
     "catalogue": {
@@ -32,6 +32,21 @@
         "largestContentfulPaint": "0.9 s",
         "cumulativeLayoutShift": "0",
         "totalBlockingTime": "110 ms"
+      }
+    },
+    "course": {
+      "url": "https://pathshala-web-eight.vercel.app/en/courses/spoken-english-daily",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 1,
+        "bestPractices": 1,
+        "seo": 1
+      },
+      "metrics": {
+        "firstContentfulPaint": "1.0 s",
+        "largestContentfulPaint": "1.0 s",
+        "cumulativeLayoutShift": "0",
+        "totalBlockingTime": "70 ms"
       }
     }
   }

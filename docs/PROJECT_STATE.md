@@ -1,7 +1,8 @@
 # Project state
 
-Snapshot: 2026-11-17. All ten phases are complete, the three apps are deployed together on
-Atlas, and `node scripts/check-done.mjs` reports 48/48 with production evidence.
+Snapshot: 2026-11-17. The first ten phases are complete and the expansion slices have started:
+course-depth work (P9) is live with 52/52 features carrying production evidence. The three apps
+run on Atlas and Vercel, and `node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
 
@@ -30,6 +31,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P6 | Certificates, analytics, admin area, audit log | done — 2026-11-17 |
 | P7 | Seed data, production e2e, a11y, performance, security review | done — 2026-11-17 |
 | P8 | Portfolio README, demo script, deploy guide | done — 2026-11-17 |
+| P9 | Course detail depth, preview lessons, refund policy, studio fields | done — 2026-11-17, 14/14 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -72,21 +74,40 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   the cookie. There is no boot script, so soft navigation cannot drop the theme.
 - Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
 
+## Course depth (P9, 2026-11-17)
+
+- A course now stores a short and a long description, six or more bilingual outcomes,
+  requirements, an audience list and up to six FAQ pairs. The page renders an accordion
+  syllabus with per-lesson durations, an instructor card with a localized bio, a rating
+  histogram, related courses (same subject first, then the best of the rest) and a sticky
+  buy panel with a coupon field and the money-back note.
+- Publishing from the studio now requires at least six outcomes; the editor exposes every
+  field the public page shows, plus a duration per lesson.
+- Preview lessons are public through `/courses/[slug]/preview/[lessonId]` and resolve only
+  when the lesson belongs to a published course and carries the preview flag.
+- `/refund-policy` states the 14-day, under-a-quarter rule the buy panel links to.
+- `scripts/cleanup-e2e.ts` (`pnpm db:cleanup-e2e`) removes the `e2e-` users, courses and
+  their dependent rows, so the demo catalogue stays clean after a suite.
+
 ## Verification recorded 2026-11-17 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (129 tests: 12 tokens, 13 shared, 35 database,
-  52 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **13/13 pass**. The
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (142 tests: 12 tokens, 13 shared, 42 database,
+  58 web, 17 API) and `pnpm build` all exit 0 locally.
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **14/14 pass**. The
+  depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
+  card, related courses and refund link, then reads a free preview lesson. The
   journeys register a learner, enrol in the free course, finish all three lessons, pass the
   quiz, earn a certificate and verify it in a signed-out context; buy one course through
   PayBridge with `EARLYBIRD`; buy another through a real Stripe Checkout with the 4242 card;
   publish a course in the studio; and unpublish/republish it as the admin with audit rows.
   Other tests cover catalogue search, the student/admin boundary, the live room, the audit
-  CSV and two axe passes.
+  CSV and axe passes on landing, catalogue, course detail, refund policy, sign-in and the
+  student dashboard.
 - axe: zero violations on landing, catalogue, sign-in and the student dashboard.
 - Lighthouse mobile on the deployed origin: landing **100/100/100/100**, catalogue
-  **99/100/100/100** (performance/accessibility/best-practices/SEO); FCP 0.9 s, LCP 0.9 s,
-  CLS 0, TBT 90-110 ms. JSON reports are in `docs/screenshots/*-production.json`.
+  **99/100/100/100**, course page **97/100/100/100** (performance/accessibility/best-practices/
+  SEO); LCP 0.9-1.0 s, CLS 0, TBT 50-110 ms. The measured scores are in
+  `docs/screenshots/lighthouse-production.json`.
 - API: `/health` 200, `/courses` 200 with Atlas rows, `limit=99` 400, unknown route 404.
 - PayBridge: `/login` 200 and a hosted checkout that fulfilled a real order.
 - `pnpm audit --prod --audit-level high` reports no known vulnerabilities.

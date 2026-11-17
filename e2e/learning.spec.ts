@@ -23,7 +23,7 @@ test('a student reaches the learning room, live room and certificate', async ({ 
 
   await page.goto('/en/dashboard');
   await page.getByRole('link', { name: 'Certificate' }).click();
-  await expect(page.getByText('Certificate of completion')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Certificate of completion' })).toBeVisible();
   await expect(page.getByRole('img', { name: /QR code/ })).toBeVisible();
 });
 

@@ -1,11 +1,12 @@
 # Handoff
 
-Updated: 2026-11-17, after the production deployment.
+Updated: 2026-11-17, after the course-depth slice.
 
 ## Where we are
 
-All ten phases are complete and the product is live with real data. `docs/features.json`
-tracks 48 features and `node scripts/check-done.mjs` exits 0.
+The ten original phases are complete and the expansion slices have begun. Course depth (item 9
+of the expansion order) is live and verified; `docs/features.json` tracks 52 features and
+`node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -18,7 +19,7 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- 13/13 Playwright journeys against the deployed web origin, including a fresh registration,
+- 14/14 Playwright journeys against the deployed web origin, including a fresh registration,
   a completed free course with a certificate verified while signed out, a PayBridge purchase
   with `EARLYBIRD`, a real Stripe Checkout purchase with the 4242 card, instructor publishing
   and admin publish/unpublish with audit rows.
@@ -37,6 +38,14 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 - Live-mode payments: both rails are sandboxes. Stripe test mode is fully exercised, and a
   live account would need a fresh review of BDT support and a live webhook.
 - Shared rate limiting: the limiter is per function instance.
+
+## Next step in the expansion
+
+Item 1 of the agreed order: learner profile and settings (name, photo, language, theme,
+password change, notification preferences, delete account with confirmation), the notification
+centre, wishlist page, cart with multi-course checkout and coupons, order history with PDF
+invoices, continue-learning position, streaks and badges, bookmarks and notes page,
+downloadable resources, and free preview lessons (previews already ship from P9).
 
 ## Exact next step
 

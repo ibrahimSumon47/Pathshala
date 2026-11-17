@@ -544,6 +544,51 @@
         "it lists every environment variable name, the Stripe webhook endpoint, post-deploy checks, E2E_BASE_URL and rollback",
         "no secret value appears in the guide or any tracked file; gitleaks runs on every commit"
       ]
+    },
+    {
+      "id": "p9.course-depth",
+      "phase": "P9",
+      "title": "Course pages carry short and long descriptions, outcomes, audience, requirements, FAQ and certificates",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/models/course.ts stores shortDescription, description, localized outcomes/requirements/audience and faq pairs; apps/web/src/lib/course-content.ts parses the editor textareas with 6 unit tests",
+        "apps/web/src/app/[locale]/courses/[slug]/page.tsx renders the long description, six or more outcomes, requirements, who it is for, an accordion syllabus with lesson durations, instructor card with bio, FAQ accordion, rating histogram, related courses and a sticky panel",
+        "the studio editor at /studio/[id] exposes every one of those fields and refuses to publish with fewer than six outcomes",
+        "production 2026-11-17: https://pathshala-web-eight.vercel.app/en/courses/spoken-english-daily passed the new Playwright depth test and the axe scan; docs/screenshots/course-detail-production.png is that page"
+      ]
+    },
+    {
+      "id": "p9.preview-lessons",
+      "phase": "P9",
+      "title": "Free preview lessons readable without an account",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/catalog.ts getPreviewLesson resolves a lesson only through a published course and its preview flag",
+        "apps/web/src/app/[locale]/courses/[slug]/preview/[lessonId] renders sanitized preview text with an enrol call to action and returns 404 for a lesson that is not a preview",
+        "production 2026-11-17: the preview link in the JavaScript syllabus opened the free lesson and the journey test asserts the page text"
+      ]
+    },
+    {
+      "id": "p9.refund-policy",
+      "phase": "P9",
+      "title": "Refund policy page matching the money-back note on every course page",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/refund-policy/page.tsx states the 14-day window, the less-than-a-quarter condition, how to ask and what test mode means",
+        "the sticky buy panel links to /refund-policy with the same 14-day wording; both languages are written, not translated by machine",
+        "production 2026-11-17: the page returned 200, axe reported zero violations and the Playwright depth test asserts the 14-day sentence"
+      ]
+    },
+    {
+      "id": "p9.studio-depth",
+      "phase": "P9",
+      "title": "Instructor editor for outcomes, requirements, audience, FAQ and lesson durations",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/app/[locale]/studio/[id]/page.tsx adds bilingual textareas for the new fields plus a per-lesson duration field",
+        "updateCourseAction merges the two language columns by position (mergeLocalized/mergeFaqs) and blocks publishing under six outcomes; addLessonAction stores durationMinutes",
+        "packages/db/src/models.test.ts covers bilingual lists, FAQ validation and fractional durations; 58 web tests pass"
+      ]
     }
   ]
 }

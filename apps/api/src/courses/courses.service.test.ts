@@ -31,11 +31,19 @@ const repository: CoursesRepository = {
   getBySlug: async () =>
     ({
       ...page.courses[0],
+      shortDescription: { bn: 'সংক্ষেপ', en: 'Short description' },
       description: { bn: 'বর্ণনা', en: 'Description' },
       outcomes: [],
       requirements: [],
+      audience: [],
+      faqs: [],
+      instructor: { id: '64b7f0f0f0f0f0f0f0f0f0f1', name: 'Teacher', bio: {}, image: null },
       sections: [],
       lessonCount: 0,
+      totalDurationMinutes: 0,
+      ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      related: [],
+      updatedAt: '2026-11-01T00:00:00.000Z',
     }) as CourseDetail,
 };
 

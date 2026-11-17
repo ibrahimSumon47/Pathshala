@@ -3,9 +3,11 @@ import type { Locale } from '@pathshala/shared';
 import { Category, type CategoryDoc } from './models/category';
 import { Course, type CourseDoc, type CourseLevel } from './models/course';
 import { Lesson, type LessonDoc } from './models/lesson';
+import { Review } from './models/review';
 import { Section, type SectionDoc } from './models/section';
 import { User } from './models/user';
 import { connectToDatabase } from './connection';
+import { toLocalizedList, type CourseFaq, type LocalizedText } from './common';
 
 export type CatalogFilters = {
   q?: string;
@@ -50,17 +52,51 @@ export type CourseLesson = {
   attachments: LessonDoc['content']['attachments'];
   isPreview: boolean;
   videoUrl: string | null;
+  durationMinutes: number;
 };
 
-export type CourseSection = { id: string; title: SectionDoc['title']; lessons: CourseLesson[] };
+export type CourseSection = {
+  id: string;
+  title: SectionDoc['title'];
+  lessons: CourseLesson[];
+  durationMinutes: number;
+};
+
+export type CourseInstructor = { id: string; name: string; bio: LocalizedText; image: string | null };
+
+/** Star counts, 5 down to 1, so the page can draw an honest histogram. */
+export type RatingBreakdown = { 5: number; 4: number; 3: number; 2: number; 1: number };
 
 export type CourseDetail = CatalogCourse & {
-  description: CourseDoc['description'];
-  outcomes: string[];
-  requirements: string[];
+  shortDescription: LocalizedText | null;
+  description: LocalizedText | null;
+  outcomes: LocalizedText[];
+  requirements: LocalizedText[];
+  audience: LocalizedText[];
+  faqs: CourseFaq[];
+  instructor: CourseInstructor;
   sections: CourseSection[];
   lessonCount: number;
+  totalDurationMinutes: number;
+  ratingBreakdown: RatingBreakdown;
+  related: CatalogCourse[];
+  updatedAt: string;
 };
+
+/** Count ratings by star, ignoring anything outside the 1-5 scale. */
+export function ratingBreakdownFor(ratings: number[]): RatingBreakdown {
+  const counts: RatingBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  for (const rating of ratings) {
+    const star = Math.round(rating);
+    if (star >= 1 && star <= 5) counts[star as 1 | 2 | 3 | 4 | 5] += 1;
+  }
+  return counts;
+}
+
+/** Sum published study time; lessons without a duration add nothing. */
+export function totalDurationMinutes(lessons: Array<Pick<LessonDoc, 'durationMinutes'>>): number {
+  return lessons.reduce((total, lesson) => total + (lesson.durationMinutes ?? 0), 0);
+}
 
 type CourseRow = CourseDoc & { _id: Types.ObjectId };
 
@@ -129,30 +165,61 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetail | null
   const course = (await Course.findOne({ slug, status: 'published' }).lean()) as unknown as CourseRow | null;
   if (!course) return null;
 
-  const [category, instructor, sections, lessons] = await Promise.all([
+  const [category, instructor, sections, lessons, ratings] = await Promise.all([
     Category.findById(course.category).lean() as unknown as Promise<(CategoryDoc & { _id: Types.ObjectId }) | null>,
-    User.findById(course.instructor).select('name').lean(),
+    User.findById(course.instructor).select('name bio bioEn image').lean(),
     Section.find({ course: course._id }).sort({ order: 1 }).lean() as unknown as Promise<
       Array<SectionDoc & { _id: Types.ObjectId }>
     >,
     Lesson.find({ course: course._id }).sort({ order: 1 }).lean() as unknown as Promise<
       Array<LessonDoc & { _id: Types.ObjectId }>
     >,
+    Review.find({ course: course._id }).select('rating').lean(),
   ]);
+  // Same-subject courses come first; a young catalogue still fills the row with the next
+  // best courses instead of showing an empty section.
+  const sameSubject = (await Course.find({ status: 'published', category: course.category, _id: { $ne: course._id } })
+    .sort({ ratingAverage: -1, enrolmentCount: -1 })
+    .limit(3)
+    .lean()) as unknown as CourseRow[];
+  const relatedDocs =
+    sameSubject.length >= 3
+      ? sameSubject
+      : [
+          ...sameSubject,
+          ...((await Course.find({
+            status: 'published',
+            _id: { $ne: course._id, $nin: sameSubject.map((row) => row._id) },
+          })
+            .sort({ ratingAverage: -1, enrolmentCount: -1 })
+            .limit(3 - sameSubject.length)
+            .lean()) as unknown as CourseRow[]),
+        ];
 
   const categoryNames = new Map([[String(course.category), category?.name ?? { bn: '', en: '' }]]);
-  const instructorNames = new Map([[String(course.instructor), instructor?.name ?? '']]);
+  // Related courses may be taught by someone else, so resolve their names in one query.
+  const relatedInstructorIds = [...new Set(relatedDocs.map((related) => String(related.instructor)))];
+  const relatedInstructors = await User.find({ _id: { $in: relatedInstructorIds } }).select('name').lean();
+  const instructorNames = new Map(relatedInstructors.map((person) => [String(person._id), person.name]));
+  instructorNames.set(String(course.instructor), instructor?.name ?? '');
   const base = toCatalogCourse(course, categoryNames, instructorNames);
 
   return {
     ...base,
-    description: course.description,
-    outcomes: course.outcomes,
-    requirements: course.requirements,
-    sections: sections.map((section) => ({
-      id: String(section._id),
-      title: section.title,
-      lessons: lessons
+    shortDescription: course.shortDescription ?? null,
+    description: course.description ?? null,
+    outcomes: toLocalizedList(course.outcomes),
+    requirements: toLocalizedList(course.requirements),
+    audience: toLocalizedList(course.audience),
+    faqs: course.faqs ?? [],
+    instructor: {
+      id: String(course.instructor),
+      name: instructor?.name ?? '',
+      bio: { ...(instructor?.bio ? { bn: instructor.bio } : {}), ...(instructor?.bioEn ? { en: instructor.bioEn } : {}) },
+      image: instructor?.image ?? null,
+    },
+    sections: sections.map((section) => {
+      const sectionLessons = lessons
         .filter((lesson) => String(lesson.section) === String(section._id))
         .map((lesson) => ({
           id: String(lesson._id),
@@ -162,9 +229,55 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetail | null
           attachments: lesson.content.attachments,
           isPreview: lesson.isPreview,
           videoUrl: lesson.video?.url ?? null,
-        })),
-    })),
+          durationMinutes: lesson.durationMinutes ?? 0,
+        }));
+      return {
+        id: String(section._id),
+        title: section.title,
+        lessons: sectionLessons,
+        durationMinutes: totalDurationMinutes(sectionLessons),
+      };
+    }),
     lessonCount: lessons.length,
+    totalDurationMinutes: totalDurationMinutes(lessons),
+    ratingBreakdown: ratingBreakdownFor(ratings.map((review) => review.rating)),
+    related: relatedDocs.map((document) => toCatalogCourse(document, categoryNames, instructorNames)),
+    updatedAt: course.updatedAt.toISOString(),
+  };
+}
+
+export type PreviewLesson = {
+  id: string;
+  courseTitle: LocalizedText;
+  courseSlug: string;
+  sectionTitle: LocalizedText;
+  title: LocalizedText;
+  bodyHtml: string;
+  attachments: LessonDoc['content']['attachments'];
+  durationMinutes: number;
+};
+
+/**
+ * A preview lesson is public, so it is looked up through the published course and the
+ * lesson's own preview flag; nothing else about the course becomes readable.
+ */
+export async function getPreviewLesson(slug: string, lessonId: string): Promise<PreviewLesson | null> {
+  if (!/^[a-f0-9]{24}$/i.test(lessonId)) return null;
+  await connectToDatabase();
+  const course = await Course.findOne({ slug, status: 'published' }).select('_id title slug').lean();
+  if (!course) return null;
+  const lesson = await Lesson.findOne({ _id: lessonId, course: course._id, isPreview: true }).lean();
+  if (!lesson) return null;
+  const section = await Section.findById(lesson.section).select('title').lean();
+  return {
+    id: String(lesson._id),
+    courseTitle: course.title,
+    courseSlug: course.slug,
+    sectionTitle: section?.title ?? {},
+    title: lesson.title,
+    bodyHtml: lesson.content.bodyHtml ?? '',
+    attachments: lesson.content.attachments,
+    durationMinutes: lesson.durationMinutes ?? 0,
   };
 }
 
@@ -196,8 +309,8 @@ function toCatalogCourse(
     id: String(document._id),
     slug: document.slug,
     title: document.title,
-    subtitle: document.subtitle ?? null,
-    pricePaisa: document.pricePaisa,
+    subtitle: document.shortDescription ?? document.subtitle ?? null,
+    pricePaisa: document.salePricePaisa ?? document.pricePaisa,
     language: document.language,
     level: document.level,
     ratingAverage: document.ratingAverage,

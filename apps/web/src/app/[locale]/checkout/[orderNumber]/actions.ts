@@ -31,8 +31,9 @@ export async function startCheckoutAction(form: FormData): Promise<void> {
   const user = await requireUser();
   const courseId = String(form.get('courseId') ?? '');
   const slug = String(form.get('slug') ?? '');
+  const couponCode = String(form.get('couponCode') ?? '').trim().slice(0, 32);
   try {
-    const order = await createOrder({ userId: user.id, courseId, idempotencyKey: randomUUID() });
+    const order = await createOrder({ userId: user.id, courseId, couponCode, idempotencyKey: randomUUID() });
     redirect(path(form, `/checkout/${order.orderNumber}`));
   } catch (error) {
     if (error instanceof CommerceError) {

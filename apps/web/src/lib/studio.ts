@@ -1,5 +1,14 @@
 import 'server-only';
-import { Course, Lesson, QuizQuestion, Section, connectToDatabase } from '@pathshala/db';
+import {
+  Course,
+  Lesson,
+  QuizQuestion,
+  Section,
+  connectToDatabase,
+  toLocalizedList,
+  type CourseFaq,
+  type LocalizedText,
+} from '@pathshala/db';
 
 type StudioLesson = {
   id: string;
@@ -8,6 +17,8 @@ type StudioLesson = {
   bodyHtml: string;
   attachmentCount: number;
   videoUrl: string;
+  durationMinutes: number;
+  isPreview: boolean;
 };
 
 type StudioSection = {
@@ -30,7 +41,12 @@ export type StudioCourse = {
   slug: string;
   title: { bn?: string; en?: string };
   subtitle: { bn?: string; en?: string };
+  shortDescription: { bn?: string; en?: string };
   description: { bn?: string; en?: string };
+  outcomes: LocalizedText[];
+  requirements: LocalizedText[];
+  audience: LocalizedText[];
+  faqs: CourseFaq[];
   categoryId: string;
   pricePaisa: number;
   level: 'beginner' | 'intermediate' | 'advanced';
@@ -87,7 +103,12 @@ export async function getStudioCourse(courseId: string, userId: string, isAdmin:
     slug: course.slug,
     title: course.title,
     subtitle: course.subtitle ?? {},
+    shortDescription: course.shortDescription ?? {},
     description: course.description ?? {},
+    outcomes: toLocalizedList(course.outcomes),
+    requirements: toLocalizedList(course.requirements),
+    audience: toLocalizedList(course.audience),
+    faqs: course.faqs ?? [],
     categoryId: String(course.category),
     pricePaisa: course.pricePaisa,
     level: course.level,
@@ -106,6 +127,8 @@ export async function getStudioCourse(courseId: string, userId: string, isAdmin:
           bodyHtml: lesson.content.bodyHtml ?? '',
           attachmentCount: lesson.content.attachments.length,
           videoUrl: lesson.video?.url ?? '',
+          durationMinutes: lesson.durationMinutes ?? 0,
+          isPreview: lesson.isPreview,
         })),
     })),
   };

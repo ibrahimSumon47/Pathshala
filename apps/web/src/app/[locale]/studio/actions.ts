@@ -17,6 +17,7 @@ import { toPaisa } from '@pathshala/shared';
 import { z } from 'zod';
 import { validateAttachment } from '@/lib/attachments';
 import { requireRole } from '@/lib/auth/guard';
+import { MAX_OUTCOMES, MIN_OUTCOMES, mergeFaqs, mergeLocalized } from '@/lib/course-content';
 import { sanitizeLessonHtml } from '@/lib/sanitize';
 
 const OBJECT_ID = /^[a-f0-9]{24}$/i;
@@ -27,8 +28,18 @@ const courseSchema = z.object({
   titleEn: z.string().trim().max(200).default(''),
   subtitleBn: z.string().trim().max(200).default(''),
   subtitleEn: z.string().trim().max(200).default(''),
-  descriptionBn: z.string().trim().max(4000).default(''),
-  descriptionEn: z.string().trim().max(4000).default(''),
+  shortDescriptionBn: z.string().trim().max(300).default(''),
+  shortDescriptionEn: z.string().trim().max(300).default(''),
+  descriptionBn: z.string().trim().max(8000).default(''),
+  descriptionEn: z.string().trim().max(8000).default(''),
+  outcomesBn: z.string().max(4000).default(''),
+  outcomesEn: z.string().max(4000).default(''),
+  requirementsBn: z.string().max(4000).default(''),
+  requirementsEn: z.string().max(4000).default(''),
+  audienceBn: z.string().max(4000).default(''),
+  audienceEn: z.string().max(4000).default(''),
+  faqBn: z.string().max(12000).default(''),
+  faqEn: z.string().max(12000).default(''),
   slug: z.string().trim().max(90).default(''),
   categoryId: z.string().trim(),
   priceTaka: z.coerce.number().min(0).max(100000),
@@ -48,10 +59,38 @@ const lessonSchema = z.object({
   attachmentUrl: z.string().trim().max(500).default(''),
   attachmentMime: z.string().trim().default(''),
   attachmentSize: z.coerce.number().int().min(1).max(20 * 1024 * 1024).default(1),
+  durationMinutes: z.coerce.number().int().min(0).max(600).default(0),
 });
 
 function text(form: FormData, key: string): string {
   return String(form.get(key) ?? '');
+}
+
+/** Collect every course detail field so create and update read the same shape. */
+function courseFields(form: FormData) {
+  return {
+    titleBn: text(form, 'titleBn'),
+    titleEn: text(form, 'titleEn'),
+    subtitleBn: text(form, 'subtitleBn'),
+    subtitleEn: text(form, 'subtitleEn'),
+    shortDescriptionBn: text(form, 'shortDescriptionBn'),
+    shortDescriptionEn: text(form, 'shortDescriptionEn'),
+    descriptionBn: text(form, 'descriptionBn'),
+    descriptionEn: text(form, 'descriptionEn'),
+    outcomesBn: text(form, 'outcomesBn'),
+    outcomesEn: text(form, 'outcomesEn'),
+    requirementsBn: text(form, 'requirementsBn'),
+    requirementsEn: text(form, 'requirementsEn'),
+    audienceBn: text(form, 'audienceBn'),
+    audienceEn: text(form, 'audienceEn'),
+    faqBn: text(form, 'faqBn'),
+    faqEn: text(form, 'faqEn'),
+    slug: text(form, 'slug'),
+    categoryId: text(form, 'categoryId'),
+    priceTaka: text(form, 'priceTaka') || '0',
+    level: text(form, 'level'),
+    language: text(form, 'language'),
+  };
 }
 
 function localePath(form: FormData, path: string): string {
@@ -87,19 +126,7 @@ async function ownedCourse(courseId: string, userId: string, isAdmin: boolean) {
 /** Create a draft course owned by the signed-in instructor. */
 export async function createCourseAction(form: FormData): Promise<void> {
   const user = await requireRole('instructor', 'admin');
-  const parsed = courseSchema.safeParse({
-    titleBn: text(form, 'titleBn'),
-    titleEn: text(form, 'titleEn'),
-    subtitleBn: text(form, 'subtitleBn'),
-    subtitleEn: text(form, 'subtitleEn'),
-    descriptionBn: text(form, 'descriptionBn'),
-    descriptionEn: text(form, 'descriptionEn'),
-    slug: text(form, 'slug'),
-    categoryId: text(form, 'categoryId'),
-    priceTaka: text(form, 'priceTaka') || '0',
-    level: text(form, 'level'),
-    language: text(form, 'language'),
-  });
+  const parsed = courseSchema.safeParse(courseFields(form));
   if (!parsed.success) fail(form, '/studio', 'Check the course details and try again.');
   if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, '/studio', 'Add a title in Bangla or English.');
   if (!OBJECT_ID.test(parsed.data.categoryId)) fail(form, '/studio', 'Choose a category.');
@@ -113,6 +140,7 @@ export async function createCourseAction(form: FormData): Promise<void> {
     const course = await Course.create({
       title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
       subtitle: { bn: parsed.data.subtitleBn, en: parsed.data.subtitleEn },
+      shortDescription: { bn: parsed.data.shortDescriptionBn, en: parsed.data.shortDescriptionEn },
       description: { bn: parsed.data.descriptionBn, en: parsed.data.descriptionEn },
       slug: makeSlug(parsed.data.slug, parsed.data.titleEn),
       category: parsed.data.categoryId,
@@ -121,8 +149,10 @@ export async function createCourseAction(form: FormData): Promise<void> {
       level: parsed.data.level,
       pricePaisa: toPaisa(parsed.data.priceTaka),
       status: 'draft',
-      outcomes: [],
-      requirements: [],
+      outcomes: mergeLocalized(parsed.data.outcomesBn, parsed.data.outcomesEn, MAX_OUTCOMES),
+      requirements: mergeLocalized(parsed.data.requirementsBn, parsed.data.requirementsEn),
+      audience: mergeLocalized(parsed.data.audienceBn, parsed.data.audienceEn),
+      faqs: mergeFaqs(parsed.data.faqBn, parsed.data.faqEn),
     });
     revalidatePath('/studio');
     redirect(localePath(form, `/studio/${course._id}`));
@@ -141,37 +171,35 @@ export async function updateCourseAction(form: FormData): Promise<void> {
   const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
   if (!course) fail(form, '/studio', 'Course not found.');
 
-  const parsed = courseSchema.safeParse({
-    titleBn: text(form, 'titleBn'),
-    titleEn: text(form, 'titleEn'),
-    subtitleBn: text(form, 'subtitleBn'),
-    subtitleEn: text(form, 'subtitleEn'),
-    descriptionBn: text(form, 'descriptionBn'),
-    descriptionEn: text(form, 'descriptionEn'),
-    slug: text(form, 'slug'),
-    categoryId: text(form, 'categoryId'),
-    priceTaka: text(form, 'priceTaka') || '0',
-    level: text(form, 'level'),
-    language: text(form, 'language'),
-  });
+  const parsed = courseSchema.safeParse(courseFields(form));
   if (!parsed.success) fail(form, `/studio/${courseId}`, 'Check the course details and try again.');
   if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, `/studio/${courseId}`, 'Add a title.');
 
+  const outcomes = mergeLocalized(parsed.data.outcomesBn, parsed.data.outcomesEn, MAX_OUTCOMES);
   const publish = form.get('publish') === 'on';
   if (publish) {
     const lessons = await Lesson.countDocuments({ course: course._id });
     if (lessons === 0) fail(form, `/studio/${courseId}`, 'Add at least one lesson before publishing.');
+    // A public page promises six to eight outcomes; refuse to publish a thinner one.
+    if (outcomes.length < MIN_OUTCOMES) {
+      fail(form, `/studio/${courseId}`, `Add at least ${MIN_OUTCOMES} learning outcomes before publishing.`);
+    }
   }
 
   course.set({
     title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
     subtitle: { bn: parsed.data.subtitleBn, en: parsed.data.subtitleEn },
+    shortDescription: { bn: parsed.data.shortDescriptionBn, en: parsed.data.shortDescriptionEn },
     description: { bn: parsed.data.descriptionBn, en: parsed.data.descriptionEn },
     slug: makeSlug(parsed.data.slug, parsed.data.titleEn),
     category: parsed.data.categoryId,
     language: parsed.data.language,
     level: parsed.data.level,
     pricePaisa: toPaisa(parsed.data.priceTaka),
+    outcomes,
+    requirements: mergeLocalized(parsed.data.requirementsBn, parsed.data.requirementsEn),
+    audience: mergeLocalized(parsed.data.audienceBn, parsed.data.audienceEn),
+    faqs: mergeFaqs(parsed.data.faqBn, parsed.data.faqEn),
     status: publish ? 'published' : course.status === 'published' ? 'published' : 'draft',
     publishedAt: publish ? (course.publishedAt ?? new Date()) : course.publishedAt,
   });
@@ -295,6 +323,7 @@ export async function addLessonAction(form: FormData): Promise<void> {
     attachmentUrl: text(form, 'attachmentUrl'),
     attachmentMime: text(form, 'attachmentMime'),
     attachmentSize: text(form, 'attachmentSize') || '1',
+    durationMinutes: text(form, 'durationMinutes') || '0',
   });
   if (!parsed.success) fail(form, `/studio/${courseId}`, 'Check the lesson details.');
   if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, `/studio/${courseId}`, 'Add a lesson title.');
@@ -328,6 +357,7 @@ export async function addLessonAction(form: FormData): Promise<void> {
     type: parsed.data.type,
     content: { bodyHtml: sanitizeLessonHtml(parsed.data.bodyHtml), attachments },
     video: parsed.data.type === 'video' && parsed.data.videoUrl ? { url: parsed.data.videoUrl } : null,
+    durationMinutes: parsed.data.durationMinutes,
   });
   revalidatePath(`/studio/${courseId}`);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));

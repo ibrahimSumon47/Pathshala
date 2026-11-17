@@ -157,6 +157,39 @@ describe('Section and Lesson', () => {
     expect(await validationErrors(lesson)).toBeNull();
     expect(lesson.video).toBeNull();
   });
+
+  it('rejects a fractional lesson duration', async () => {
+    const errors = await validationErrors(
+      new Lesson({ course: ids.course, section: ids.section, title: { en: 'Intro' }, order: 2, durationMinutes: 12.5 }),
+    );
+    expect(errors?.durationMinutes).toBeDefined();
+  });
+});
+
+describe('Course depth fields', () => {
+  it('stores bilingual outcomes, audience and FAQs', async () => {
+    const course = buildCourse({
+      outcomes: [{ bn: 'শিখব', en: 'I will learn' }],
+      requirements: [{ bn: 'খাতা', en: 'A notebook' }],
+      audience: [{ bn: 'শিক্ষার্থী', en: 'Students' }],
+      faqs: [{ question: { bn: 'কত দিন?', en: 'How long?' }, answer: { bn: 'দুই সপ্তাহ', en: 'Two weeks' } }],
+    });
+    expect(await validationErrors(course)).toBeNull();
+    expect(course.outcomes[0]).toMatchObject({ bn: 'শিখব', en: 'I will learn' });
+    expect(course.faqs[0]?.answer.en).toBe('Two weeks');
+  });
+
+  it('rejects an FAQ without an answer', async () => {
+    const errors = await validationErrors(
+      buildCourse({ faqs: [{ question: { en: 'How long?' }, answer: {} }] }),
+    );
+    expect(errors?.['faqs.0.answer']).toBeDefined();
+  });
+
+  it('marks seeded courses as demo data by default off', async () => {
+    expect(buildCourse().isDemo).toBe(false);
+    expect(buildCourse({ isDemo: true }).isDemo).toBe(true);
+  });
 });
 
 describe('Enrolment', () => {

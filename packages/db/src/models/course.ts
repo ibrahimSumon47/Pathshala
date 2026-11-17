@@ -1,7 +1,15 @@
 import mongoose, { type Model, type Types } from 'mongoose';
 const { model, models, Schema } = mongoose;
 import type { Locale } from '@pathshala/shared';
-import { localizedTextSchema, localizedTextValidator, SLUG_PATTERN, type LocalizedText } from '../common';
+import {
+  courseFaqSchema,
+  localizedListField,
+  localizedTextSchema,
+  localizedTextValidator,
+  SLUG_PATTERN,
+  type CourseFaq,
+  type LocalizedText,
+} from '../common';
 
 export const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 export const COURSE_STATUSES = ['draft', 'pending', 'published', 'archived'] as const;
@@ -13,6 +21,9 @@ export type CourseDoc = {
   title: LocalizedText;
   slug: string;
   subtitle?: LocalizedText;
+  /** One or two sentences shown under the title and on cards. */
+  shortDescription?: LocalizedText;
+  /** The long description on the course page. */
   description?: LocalizedText;
   category: Types.ObjectId;
   instructor: Types.ObjectId;
@@ -21,10 +32,15 @@ export type CourseDoc = {
   pricePaisa: number;
   salePricePaisa: number | null;
   status: CourseStatus;
-  outcomes: string[];
-  requirements: string[];
+  outcomes: LocalizedText[];
+  requirements: LocalizedText[];
+  /** Who the course is written for. */
+  audience: LocalizedText[];
+  faqs: CourseFaq[];
   thumbnailUrl?: string;
   promoVideoUrl?: string;
+  /** Seeded demo content, so an operator can tell it apart from real courses. */
+  isDemo: boolean;
   ratingAverage: number;
   ratingCount: number;
   enrolmentCount: number;
@@ -56,6 +72,7 @@ const courseSchema = new Schema<CourseDoc>(
       match: [SLUG_PATTERN, 'Use lowercase words separated by hyphens'],
     },
     subtitle: { type: localizedTextSchema },
+    shortDescription: { type: localizedTextSchema },
     description: { type: localizedTextSchema },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -64,10 +81,13 @@ const courseSchema = new Schema<CourseDoc>(
     pricePaisa: paisaField,
     salePricePaisa: { type: Number, default: null, min: 0 },
     status: { type: String, enum: COURSE_STATUSES, default: 'draft' },
-    outcomes: { type: [String], default: [] },
-    requirements: { type: [String], default: [] },
+    outcomes: localizedListField,
+    requirements: localizedListField,
+    audience: localizedListField,
+    faqs: { type: [courseFaqSchema], default: [] },
     thumbnailUrl: { type: String, trim: true },
     promoVideoUrl: { type: String, trim: true },
+    isDemo: { type: Boolean, default: false },
     // Denormalised counters, updated when reviews and enrolments change.
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0, min: 0 },

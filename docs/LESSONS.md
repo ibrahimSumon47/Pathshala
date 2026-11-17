@@ -236,3 +236,25 @@ The journey suite registers a learner and publishes a course on every run, so At
 accumulates `e2e-*` rows. That is the right trade-off for production proof, but the demo needs
 a cleanup step and the seed must stay idempotent. Lesson: end-to-end tests against production
 should own a recognisable namespace that can be deleted safely.
+
+## 2026-11-17 — Muted grey text fails axe on the page it was copied onto
+
+The course page reused `--color-ink-subtle` for meta lines, lesson durations and the FAQ
+eyebrow. That token is around 3.6:1 on the paper background, so axe reported 14 contrast
+failures that the landing page had never exposed, because there the same colour sat on larger
+text. Lesson: run axe on every new page, and reserve `ink-subtle` for decoration rather than
+body-sized text.
+
+## 2026-11-17 — Next.js puts the page title into the route announcer
+
+After adding a heading assertion, `getByText('Certificate of completion')` matched both the
+`h1` and the hidden `#__next-route-announcer__` element, so the test failed in strict mode.
+Assert on the heading role instead. Lesson: locate visible landmarks by role, not by text that
+the framework also mirrors for screen readers.
+
+## 2026-11-17 — Journey rows leak into public "related" sections
+
+The production suite creates temporary courses, and the new related-courses row surfaced them
+on a seeded course page. The seed already owned the catalogue, but nothing removed the test
+rows. `pnpm db:cleanup-e2e` now deletes the `e2e-` namespace and its dependants; run it after a
+suite when the demo should look like the screenshots.
