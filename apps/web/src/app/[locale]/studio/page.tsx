@@ -42,6 +42,8 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
           <Link href="/studio/community">
             {locale === 'en' ? 'Reviews and announcements' : 'মতামত ও ঘোষণা'}
           </Link>
+          <Link href="/studio/questions">{locale === 'en' ? 'Lesson questions' : 'পাঠের প্রশ্ন'}</Link>
+          <Link href="/studio/promotions">{locale === 'en' ? 'Promo codes' : 'প্রোমো কোড'}</Link>
         </nav>
         <section className={styles.statGrid} aria-label={locale === 'en' ? 'Teaching analytics' : 'শিক্ষাদানের হিসাব'}>
           <div className={styles.stat}>

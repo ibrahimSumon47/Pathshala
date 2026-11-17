@@ -104,10 +104,11 @@ pnpm audit           # production advisories
 node scripts/check-done.mjs
 ```
 
-Current results: **185 unit and integration tests** (12 tokens, 13 shared, 71 database,
-72 web, 17 API), **32 Playwright flows against production**, **zero axe violations** on
+Current results: **196 unit and integration tests** (12 tokens, 13 shared, 82 database,
+72 web, 17 API), **33 Playwright flows against production**, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
-wishlist, cart and notifications, and Lighthouse mobile
+wishlist, cart, notifications, saved searches, the operator desks and the teacher studio
+pages, and Lighthouse mobile
 on the deployed origin **100/100/100/100** on landing, **99/100/100/100** on the catalogue and
 **97/100/100/100** on a course page (performance/accessibility/best-practices/SEO), with LCP
 between 0.9 and 1.0 s and CLS 0, with a warm server response of 0.26–0.31 s after the web

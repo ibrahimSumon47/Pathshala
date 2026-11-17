@@ -7,6 +7,8 @@ import { LearningEvent } from './models/learning-event';
 import { Lesson } from './models/lesson';
 import { Note } from './models/note';
 import { Bookmark } from './models/bookmark';
+import { Notification } from './models/notification';
+import { Wishlist } from './models/wishlist';
 import { CommerceError, quoteCoupon } from './commerce';
 import { payablePaisa } from './commerce';
 
@@ -222,6 +224,39 @@ export async function getLearnerHome(userId: string, reviewsWritten: number): Pr
     notesCount,
     bookmarksCount,
   };
+}
+
+/**
+ * A price cut on a saved course is worth a note; raising a price is not. Only a real new
+ * price (not a sale ending) reaches here, so one inbox row per drop per learner is enough.
+ */
+export async function notifyWishlistPriceDrop(input: {
+  courseId: string;
+  oldPricePaisa: number;
+  newPricePaisa: number;
+}): Promise<number> {
+  if (input.newPricePaisa >= input.oldPricePaisa) return 0;
+  await connectToDatabase();
+  const course = await Course.findById(input.courseId).select('slug title').lean();
+  if (!course) return 0;
+  const entries = await Wishlist.find({ course: course._id }).select('student').limit(2000).lean();
+  if (entries.length === 0) return 0;
+  const title = course.title.en ?? course.title.bn ?? course.slug;
+  const amount = (input.newPricePaisa / 100).toFixed(2);
+  await Notification.insertMany(
+    entries.map((entry) => ({
+      user: entry.student,
+      kind: 'system',
+      title: { bn: 'দাম কমেছে', en: 'Price drop' },
+      body: {
+        bn: `${title} — এখন ৳${amount}`,
+        en: `${title} — now BDT ${amount}`,
+      },
+      href: `/courses/${course.slug}`,
+      readAt: null,
+    })),
+  );
+  return entries.length;
 }
 
 /** Record a completed lesson once; the unique index makes a repeat harmless. */

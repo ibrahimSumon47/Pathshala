@@ -62,6 +62,11 @@ const COPY = {
     questionPlaceholder: 'যেখানে আটকে গেছেন, সেটি লিখুন…',
     notePlaceholder: 'মনে রাখার মতো কথা…',
     replyPlaceholder: 'সংক্ষেপে উত্তর লিখুন…',
+    review: 'আপনার শেষ চেষ্টা',
+    yourAnswer: 'আপনার উত্তর',
+    correctAnswer: 'সঠিক উত্তর',
+    notAnswered: 'উত্তর দেওয়া হয়নি',
+    why: 'ব্যাখ্যা',
   },
   en: {
     back: 'Back to course',
@@ -98,6 +103,11 @@ const COPY = {
     questionPlaceholder: 'Describe where you got stuck…',
     notePlaceholder: 'Something worth remembering…',
     replyPlaceholder: 'Write a short reply…',
+    review: 'Your last attempt',
+    yourAnswer: 'Your answer',
+    correctAnswer: 'Correct answer',
+    notAnswered: 'Not answered',
+    why: 'Why',
   },
 } as const;
 
@@ -135,7 +145,9 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
   const lessonLabel = (lesson: (typeof flatLessons)[number]) => lesson.title[language] || lesson.title.en || lesson.title.bn;
 
   const [quiz, note, questions, bookmark] = await Promise.all([
-    current.type === 'quiz' ? getLessonQuiz(current.id, user.id) : Promise.resolve({ questions: [], lastAttempt: null }),
+    current.type === 'quiz'
+      ? getLessonQuiz(current.id, user.id)
+      : Promise.resolve({ questions: [], lastAttempt: null, review: null }),
     getLessonNote(current.id, user.id),
     getLessonQuestions(current.id),
     (async () => {
@@ -265,6 +277,36 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
                     <Button type="submit">{copy.submitQuiz}</Button>
                   </form>
                 )}
+                {quiz.review ? (
+                  <div>
+                    <h4>{copy.review}</h4>
+                    <ul className={styles.questions}>
+                      {quiz.review.map((row, index) => (
+                        <li key={`${row.prompt}-${index}`} className={styles.questionItem}>
+                          <p className={styles.questionBody}>
+                            {row.earned ? '✓ ' : '· '}
+                            {row.prompt}
+                          </p>
+                          <p className={styles.muted}>
+                            {copy.yourAnswer}:{' '}
+                            {row.selected.length > 0
+                              ? row.selected.map((option) => row.options[option] ?? '').join(', ')
+                              : copy.notAnswered}
+                          </p>
+                          <p className={styles.muted}>
+                            {copy.correctAnswer}:{' '}
+                            {row.correctIndexes.map((option) => row.options[option] ?? '').join(', ')}
+                          </p>
+                          {row.explanation ? (
+                            <p>
+                              {copy.why}: {row.explanation}
+                            </p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </Card>
             ) : null}
 

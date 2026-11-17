@@ -1,0 +1,105 @@
+.page {
+  padding-block: var(--space-7) var(--space-9);
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: 65ch;
+  margin-top: var(--space-3);
+  color: var(--color-ink-muted);
+}
+
+.formCard {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+}
+
+.formCard h2,
+.listHead h2 {
+  font-size: var(--text-xl);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.listHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.name {
+  font-weight: 650;
+}
+
+.meta {
+  margin-top: var(--space-1);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.open {
+  font-weight: 600;
+}
+
+.remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink-muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.remove:hover {
+  color: var(--color-danger);
+}
+
+.back {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+}

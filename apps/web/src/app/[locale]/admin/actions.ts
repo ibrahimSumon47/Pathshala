@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import {
   Category,
   connectToDatabase,
+  decideRefundRequest,
   recordAuditEvent,
   setCourseStatus,
   setInstructorAccess,
@@ -155,6 +156,33 @@ export async function setStatementPaidAction(form: FormData): Promise<void> {
   revalidatePath('/admin/payouts');
   revalidatePath('/studio/earnings');
   redirect(`${localePath(form, '/admin/payouts')}?saved=1`);
+}
+
+/** Approve or decline one learner refund request; approval reverses the paid order. */
+export async function decideRefundAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const requestId = String(form.get('requestId') ?? '');
+  const approve = form.get('approve') === 'true';
+  const result = await decideRefundRequest({ requestId, adminId: user.id, approve });
+  if (result !== 'approved' && result !== 'declined') {
+    const message =
+      result === 'already'
+        ? 'That request was already decided.'
+        : result === 'order_not_paid'
+          ? 'Only a paid order can be refunded.'
+          : 'Refund request not found.';
+    redirect(`${localePath(form, '/admin/refunds')}?error=${encodeURIComponent(message)}`);
+  }
+  await recordAuditEvent({
+    actor: user.id,
+    action: approve ? 'refund.approve' : 'refund.decline',
+    entityType: 'refund',
+    entityId: requestId,
+  });
+  revalidatePath('/admin/refunds');
+  revalidatePath('/admin');
+  revalidatePath('/dashboard/orders');
+  redirect(`${localePath(form, '/admin/refunds')}?saved=1`);
 }
 
 /** Hide or restore a lesson question without deleting the conversation. */

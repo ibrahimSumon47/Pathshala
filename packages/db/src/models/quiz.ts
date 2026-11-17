@@ -12,6 +12,8 @@ export type QuizQuestionDoc = {
   type: QuizType;
   options: string[];
   correctIndexes: number[];
+  /** Shown after an attempt so a miss teaches something. */
+  explanation: string;
   points: number;
   order: number;
   createdAt: Date;
@@ -45,6 +47,7 @@ const quizQuestionSchema = new Schema<QuizQuestionDoc>(
       required: true,
       validate: { validator: (value: number[]) => value.length >= 1, message: 'Mark at least one answer' },
     },
+    explanation: { type: String, trim: true, maxlength: 500, default: '' },
     points: { type: Number, default: 1, min: 1, max: 10 },
     order: { type: Number, required: true, min: 0 },
   },
@@ -87,4 +90,25 @@ export function scoreQuiz(questions: Scorable[], answers: number[][]): { score: 
     return total + (exact ? question.points : 0);
   }, 0);
   return { score, maxScore, passed: maxScore > 0 && score / maxScore >= 0.6 };
+}
+
+type Reviewable = Scorable & { explanation?: string };
+
+/** Per-question feedback for an attempt; the correct set is only revealed after submitting. */
+export function reviewQuiz(
+  questions: Reviewable[],
+  answers: number[][],
+): Array<{ selected: number[]; correctIndexes: number[]; earned: boolean; points: number; explanation: string }> {
+  return questions.map((question, index) => {
+    const selected = [...new Set(answers[index] ?? [])].sort((a, b) => a - b);
+    const correct = [...question.correctIndexes].sort((a, b) => a - b);
+    const earned = selected.length === correct.length && selected.every((value, position) => value === correct[position]);
+    return {
+      selected,
+      correctIndexes: correct,
+      earned,
+      points: question.points,
+      explanation: question.explanation ?? '',
+    };
+  });
 }

@@ -570,3 +570,15 @@ Payout settlement is a separate `PayoutBatch` keyed by instructor and `YYYY-MM`,
 Bulk moderation updates a bounded list (200 ids) in one write, then refreshes each affected course rating once. Hiding remains reversible; no review or question row is deleted.
 
 The search limiter is a fixed window in process memory. Vercel may run several instances, so it raises the cost of a burst rather than promising a global quota; the same honest limitation already applies to the auth limiter.
+
+## 2026-11-17 — Refunds are a request queue, not a learner-side switch
+
+A learner can ask once per paid order, and only inside the published policy: 14 days from payment and under a quarter of the lessons. The request row is separate from the order because the decision is an operator act with its own state. Approval calls the same `markOrderRefunded` path a gateway event uses, so the ledger, payment row, enrolment status and coupon count reconcile exactly as they do for a real refund; declining leaves the order paid. The unique per-order request keeps a declined order out of the queue instead of letting duplicates accumulate.
+
+Teacher promo codes reuse `Coupon` with its existing `course` scope rather than a parallel discount model. The code is always attached to a course the teacher owns, so the checkout quote already enforces the course, cap and expiry. A teacher cannot mint a platform-wide code; the admin coupon desk keeps that power. Fixed amounts are stored in integer paisa like every other price.
+
+The instructor question desk reads the same `Question` threads learners write. Answering adds to that thread instead of creating a teacher-only copy, so there is one public history. Hidden threads are excluded from the desk, and ownership is checked against the course, not the question's author.
+
+A saved search stores only the filters the catalogue already understands, and "new" means published after that search's previous check. The check writes at most one inbox note per search per run, then moves the timestamp; there is no background job and no email, so the feature stays free. Wishlist price notes are emitted only on a real price cut in the studio and link to the course page.
+
+Quiz explanations live on the question row and are returned only with an attempt. Before submitting, the quiz payload still has no correct indexes; after submitting, `reviewQuiz` pairs each question with the learner's selection, the correct set and the explanation. The helper is pure so the rules are tested without a database.

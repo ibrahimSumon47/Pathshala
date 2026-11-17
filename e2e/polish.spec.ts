@@ -61,6 +61,39 @@ test('a teacher replies to a review and announces to learners', async ({ page })
 
   await page.goto('/en/courses/javascript-first-steps');
   await expect(page.getByText('Instructor reply').first()).toBeVisible();
+
+  await page.goto('/en/studio/questions');
+  await expect(page.getByRole('heading', { level: 1, name: 'Lesson questions' })).toBeVisible();
+
+  const code = `E2E-${Date.now().toString().slice(-6)}`;
+  await page.goto('/en/studio/promotions');
+  await expect(page.getByRole('heading', { level: 1, name: 'Promo codes' })).toBeVisible();
+  await page.getByLabel('Course').selectOption({ label: 'First Steps in JavaScript' });
+  await page.getByLabel('Code', { exact: true }).fill(code);
+  await page.getByLabel('Value', { exact: true }).fill('15');
+  await page.getByRole('button', { name: 'Create code' }).click();
+  await expect(page.getByText(`${code} is ready at checkout.`)).toBeVisible();
+  await expect(page.getByRole('cell', { name: code, exact: true })).toBeVisible();
+});
+
+test('a learner saves a search and removes it', async ({ page }) => {
+  await signIn(page, accounts.student.email, accounts.student.password);
+  await page.goto('/en/dashboard/saved-searches');
+  await expect(page.getByRole('heading', { level: 1, name: 'Saved searches' })).toBeVisible();
+
+  const label = `E2E search ${Date.now().toString().slice(-6)}`;
+  await page.getByLabel('Name').fill(label);
+  await page.getByLabel('What are you looking for').fill('JavaScript');
+  await page.getByRole('button', { name: 'Save search' }).click();
+  await expect(page.getByText('Saved.', { exact: true })).toBeVisible();
+  await expect(page.getByText(label)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Check for new courses' }).click();
+  await expect(page.getByText(/new courses? found\./)).toBeVisible();
+
+  const row = page.locator('li').filter({ hasText: label });
+  await row.getByRole('button', { name: 'Remove' }).click();
+  await expect(page.getByText(label)).toBeHidden();
 });
 
 test('an operator gets order search, coupon performance and moderation', async ({ page }) => {
@@ -79,6 +112,9 @@ test('an operator gets order search, coupon performance and moderation', async (
   await expect(page.getByRole('heading', { name: 'Reviews and questions' })).toBeVisible();
   await expect(page.getByText('Recent lesson questions')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Hide selected' }).first()).toBeVisible();
+
+  await page.goto('/en/admin/refunds');
+  await expect(page.getByRole('heading', { level: 1, name: 'Refund requests' })).toBeVisible();
 
   await page.goto('/en/admin/payouts');
   await expect(page.getByRole('heading', { level: 1, name: 'Teacher payouts' })).toBeVisible();

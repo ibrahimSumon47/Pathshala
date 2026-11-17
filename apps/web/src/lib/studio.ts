@@ -27,7 +27,15 @@ type StudioSection = {
   lessons: StudioLesson[];
 };
 
-export type QuizQuestionView = { id: string; prompt: string; type: string; options: string[]; correctIndexes: number[]; points: number };
+export type QuizQuestionView = {
+  id: string;
+  prompt: string;
+  type: string;
+  options: string[];
+  correctIndexes: number[];
+  explanation: string;
+  points: number;
+};
 
 export type StudioQuiz = {
   courseTitle: { bn?: string; en?: string };
@@ -80,6 +88,7 @@ export async function getStudioQuiz(
       type: question.type,
       options: question.options,
       correctIndexes: question.correctIndexes,
+      explanation: question.explanation ?? '',
       points: question.points,
     })),
   };

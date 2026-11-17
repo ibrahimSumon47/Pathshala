@@ -76,6 +76,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               <Link href="/dashboard/notifications">{locale === 'en' ? 'Messages' : 'বার্তা'}</Link>
               <Link href="/dashboard/wishlist">{locale === 'en' ? 'Saved' : 'পরে দেখার তালিকা'}</Link>
               <Link href="/dashboard/notes">{locale === 'en' ? 'Notes' : 'নোট'}</Link>
+              <Link href="/dashboard/saved-searches">{locale === 'en' ? 'Saved searches' : 'সংরক্ষিত খোঁজ'}</Link>
               <Link href="/cart">{locale === 'en' ? 'Cart' : 'ঝুড়ি'}</Link>
               <Link href="/dashboard/settings">{locale === 'en' ? 'Settings' : 'সেটিংস'}</Link>
             </nav>

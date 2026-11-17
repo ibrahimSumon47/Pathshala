@@ -37,7 +37,15 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
   await signIn(page, accounts.student.email, accounts.student.password);
   expect(await violations(page)).toEqual([]);
 
-  for (const path of ['/en/dashboard/profile', '/en/dashboard/settings', '/en/dashboard/notes', '/en/dashboard/wishlist', '/en/cart', '/en/dashboard/notifications']) {
+  for (const path of [
+    '/en/dashboard/profile',
+    '/en/dashboard/settings',
+    '/en/dashboard/notes',
+    '/en/dashboard/wishlist',
+    '/en/cart',
+    '/en/dashboard/notifications',
+    '/en/dashboard/saved-searches',
+  ]) {
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
   }
@@ -51,7 +59,16 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
 
 test('the operator money and moderation pages have zero axe violations', async ({ page }) => {
   await signIn(page, accounts.admin.email, accounts.admin.password);
-  for (const path of ['/en/admin/orders', '/en/admin/coupons', '/en/admin/payouts', '/en/studio/earnings', '/en/studio/community']) {
+  for (const path of [
+    '/en/admin/orders',
+    '/en/admin/coupons',
+    '/en/admin/payouts',
+    '/en/admin/refunds',
+    '/en/studio/earnings',
+    '/en/studio/community',
+    '/en/studio/questions',
+    '/en/studio/promotions',
+  ]) {
     await page.goto(path);
     expect(await violations(page), path).toEqual([]);
   }

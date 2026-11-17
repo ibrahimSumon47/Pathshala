@@ -15,6 +15,7 @@ import {
   Wishlist,
   connectToDatabase,
   issueCertificateIfEligible,
+  reviewQuiz,
 } from '@pathshala/db';
 
 type Localized = { bn?: string; en?: string };
@@ -209,9 +210,20 @@ export async function getDashboardLearning(userId: string): Promise<{
   };
 }
 
+export type QuizReviewRow = {
+  prompt: string;
+  options: string[];
+  selected: number[];
+  correctIndexes: number[];
+  earned: boolean;
+  explanation: string;
+};
+
 export type QuizView = {
   questions: Array<{ id: string; prompt: string; type: string; options: string[]; points: number }>;
   lastAttempt: { score: number; maxScore: number; passed: boolean } | null;
+  /** Feedback for the last attempt; answers stay private until the learner submits. */
+  review: QuizReviewRow[] | null;
 };
 
 /** Questions are public inside the lesson; correct indexes are checked only on submit. */
@@ -221,6 +233,13 @@ export async function getLessonQuiz(lessonId: string, userId: string): Promise<Q
     QuizQuestion.find({ lesson: lessonId }).sort({ order: 1 }).lean(),
     QuizAttempt.findOne({ lesson: lessonId, student: userId }).sort({ createdAt: -1 }).lean(),
   ]);
+  const review = attempt
+    ? reviewQuiz(questions, attempt.answers).map((row, index) => ({
+        prompt: questions[index]?.prompt ?? '',
+        options: questions[index]?.options ?? [],
+        ...row,
+      }))
+    : null;
   return {
     questions: questions.map((question) => ({
       id: String(question._id),
@@ -230,6 +249,7 @@ export async function getLessonQuiz(lessonId: string, userId: string): Promise<Q
       points: question.points,
     })),
     lastAttempt: attempt ? { score: attempt.score, maxScore: attempt.maxScore, passed: attempt.passed } : null,
+    review,
   };
 }
 

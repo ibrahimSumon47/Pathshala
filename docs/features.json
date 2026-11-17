@@ -951,6 +951,72 @@
         "the trigger keeps its word in the accessibility tree on mobile while drawing only the icon",
         "production 2026-11-17: e2e/polish.spec.ts opens the palette, closes it with the button, and axe stays clean"
       ]
+    },
+    {
+      "id": "p15.refund-requests",
+      "phase": "P15",
+      "title": "Refund requests with an operator decision",
+      "status": "done",
+      "evidence": [
+        "a paid order inside 14 days and under a quarter of the lessons can be submitted once from /dashboard/orders; duplicate, out-of-window and foreign orders are refused",
+        "approving on /admin/refunds runs the same signed-refund path as a gateway, reverses the ledger and closes each enrolment; declining leaves the order paid",
+        "packages/db/src/expansion.integration.test.ts covers the queue, the ownership check, the progress window, approval and decline"
+      ]
+    },
+    {
+      "id": "p15.quiz-explanations",
+      "phase": "P15",
+      "title": "Quiz explanations and per-question review",
+      "status": "done",
+      "evidence": [
+        "the quiz builder stores a 500-character explanation per question; correct indexes are still checked only on submit",
+        "after an attempt the lesson shows every question with the chosen answer, the correct answer and the explanation",
+        "reviewQuiz is a pure function with a unit test, and the attempt view is built server-side in apps/web/src/lib/learning.ts"
+      ]
+    },
+    {
+      "id": "p15.instructor-promotions",
+      "phase": "P15",
+      "title": "Course-scoped promo codes for teachers",
+      "status": "done",
+      "evidence": [
+        "a teacher creates a percent or fixed code for one of their own courses from /studio/promotions, with a redemption cap and optional expiry",
+        "ownership is checked in packages/db/src/promotions.ts, so a teacher cannot discount another teacher’s course, and codes can be switched off",
+        "checkout already validates the code, its cap, expiry and course scope through the shared quoteCoupon path"
+      ]
+    },
+    {
+      "id": "p15.question-desk",
+      "phase": "P15",
+      "title": "Instructor question desk",
+      "status": "done",
+      "evidence": [
+        "/studio/questions lists lesson questions across the teacher’s courses, unanswered first, with the course and lesson named",
+        "answering writes into the same lesson thread learners read; a question on another teacher’s course is refused and hidden threads never appear",
+        "packages/db/src/expansion.integration.test.ts covers the unanswered-first desk, the answer write, the ownership refusal and hidden threads"
+      ]
+    },
+    {
+      "id": "p15.saved-searches",
+      "phase": "P15",
+      "title": "Saved catalogue searches with in-app new-course notes",
+      "status": "done",
+      "evidence": [
+        "/dashboard/saved-searches stores up to ten filter sets (query, level, language, maximum price) with a required label",
+        "checking re-runs each search for courses published since the previous check and writes one inbox note per search with matches",
+        "the search filter reuses the catalogue’s escaped both-script query and is covered in packages/db/src/expansion.integration.test.ts"
+      ]
+    },
+    {
+      "id": "p15.wishlist-price-alerts",
+      "phase": "P15",
+      "title": "Wishlist price-drop notes",
+      "status": "done",
+      "evidence": [
+        "saving a course price cut in the studio notifies every learner who wishlisted it, once per drop",
+        "raising the price sends nothing, and the note links straight to the course page",
+        "packages/db/src/expansion.integration.test.ts asserts the drop sends one note and a raise sends none"
+      ]
     }
   ]
 }

@@ -296,3 +296,7 @@ A summary element is announced as a disclosure, not a button, so tests should ta
 The reply lives on the review row so hiding a review cannot leave an orphan answer on the course page. That is also why the public query returns the reply fields directly instead of joining a second collection.
 
 A payout marker is not a payment. Naming the action "Mark paid" and showing the date keeps the record honest while the actual transfer stays outside the product.
+
+## 2026-11-17 — Test names that read like UI labels collide with aria-labelledby
+
+A Playwright label lookup is substring-based by default, so `getByLabel('Code')` matched both the code input and the two `<section aria-labelledby>` regions whose names contained "code". Use `{ exact: true }` for a short label when nearby headings share its word. The same run also showed that an in-memory Mongo can accept a duplicate before its unique index is built; application-level existence checks make the first request win deterministically, and the index stays as the race guard.

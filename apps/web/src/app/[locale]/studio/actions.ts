@@ -10,6 +10,7 @@ import {
   Section,
   connectToDatabase,
   createLiveSession,
+  notifyWishlistPriceDrop,
   scheduleSessionReminders,
   type QuizType,
 } from '@pathshala/db';
@@ -186,6 +187,7 @@ export async function updateCourseAction(form: FormData): Promise<void> {
     }
   }
 
+  const previousPricePaisa = course.pricePaisa;
   course.set({
     title: { bn: parsed.data.titleBn, en: parsed.data.titleEn },
     subtitle: { bn: parsed.data.subtitleBn, en: parsed.data.subtitleEn },
@@ -204,6 +206,12 @@ export async function updateCourseAction(form: FormData): Promise<void> {
     publishedAt: publish ? (course.publishedAt ?? new Date()) : course.publishedAt,
   });
   await course.save();
+  // A real price cut is worth telling the learners who saved the course; a raise is not.
+  await notifyWishlistPriceDrop({
+    courseId,
+    oldPricePaisa: previousPricePaisa,
+    newPricePaisa: course.pricePaisa,
+  }).catch(() => undefined);
   revalidatePath('/studio');
   revalidatePath(`/studio/${courseId}`);
   revalidatePath('/courses');
@@ -281,6 +289,7 @@ export async function addQuizQuestionAction(form: FormData): Promise<void> {
     .map((value) => Number.parseInt(value, 10))
     .filter((value) => Number.isInteger(value));
   const points = Number.parseInt(text(form, 'points') || '1', 10);
+  const explanation = text(form, 'explanation').trim().slice(0, 500);
   if (prompt.length < 4) fail(form, `/studio/${courseId}`, 'Write a question.');
   if (options.length < 2) fail(form, `/studio/${courseId}`, 'Add at least two options.');
   if (correct.length < 1 || correct.some((index) => index < 0 || index >= options.length)) {
@@ -297,6 +306,7 @@ export async function addQuizQuestionAction(form: FormData): Promise<void> {
     type,
     options,
     correctIndexes: [...new Set(correct)].sort((a, b) => a - b),
+    explanation,
     points: Number.isInteger(points) ? Math.max(1, Math.min(10, points)) : 1,
     order: (last?.order ?? 0) + 1,
   });

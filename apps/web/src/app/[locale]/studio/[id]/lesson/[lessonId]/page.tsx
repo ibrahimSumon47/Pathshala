@@ -59,6 +59,11 @@ export default async function QuizBuilderPage({ params, searchParams }: QuizBuil
                     </li>
                   ))}
                 </ul>
+                {question.explanation ? (
+                  <p className={styles.muted}>
+                    {language === 'en' ? 'Explanation' : 'ব্যাখ্যা'}: {question.explanation}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ol>
@@ -94,6 +99,18 @@ export default async function QuizBuilderPage({ params, searchParams }: QuizBuil
                 maxLength={300}
               />
             ))}
+          </div>
+          <div>
+            <label htmlFor="explanation" className={styles.prompt}>
+              {language === 'en' ? 'Explanation (shown after the attempt)' : 'ব্যাখ্যা (উত্তর দেওয়ার পরে দেখা যাবে)'}
+            </label>
+            <textarea
+              id="explanation"
+              name="explanation"
+              className={styles.textarea}
+              rows={2}
+              maxLength={500}
+            />
           </div>
           <Button type="submit">{language === 'en' ? 'Add question' : 'প্রশ্ন যোগ করুন'}</Button>
         </form>
