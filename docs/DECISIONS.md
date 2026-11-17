@@ -495,3 +495,12 @@ registration form with a link back. Registration still returns to sign-in with a
 note instead of creating a session, so the two pages stay honest about what each does.
 
 Revisit: if registration ever auto-signs-in, the success note and the second form disappear.
+
+## 2026-11-17 — Auth pages share one stylesheet through a route group
+
+Sign-in and registration carried near-identical centred-column CSS, which is exactly how two
+pages drift apart. Both now live under `(auth)/` with one `auth.module.css` holding the page,
+column, intro, panel, form, error and switch styles; only sign-in's demo list and Google block,
+and the register panel's stacking, stay local. The route group changes no URL.
+
+Revisit: if a third auth step arrives, give the shared module a small shell component too.

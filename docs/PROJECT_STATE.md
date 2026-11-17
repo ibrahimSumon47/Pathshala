@@ -55,8 +55,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   attachments, notes, Q&A and quiz attempts. Free enrolment is idempotent; paid courses are
   fulfilled by a signed webhook. Access comes from an enrolment, course ownership or admin.
 - Accounts: credentials sign-in at `/sign-in` and public learner registration at `/register`,
-  each a single centred form (zod validation, bcrypt cost 12, student-only role,
-  duplicate-email handling). Demo account passwords are listed only when `DEMO_AUTH=true`.
+  each a single centred form sharing one layout stylesheet under `(auth)/` (zod validation,
+  bcrypt cost 12, student-only role, duplicate-email handling). Demo account passwords are
+  listed only when `DEMO_AUTH=true`.
 - Certificates: completion issues one certificate per learner/course with a random public
   code and printed number. `/verify/[code]` is public and renders a QR code pointing at the
   same page.

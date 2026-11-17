@@ -1,8 +1,8 @@
+/* One narrow centred column, shared by sign-in and registration. */
 .page {
   padding-block: var(--space-8) var(--space-9);
 }
 
-/* Same narrow centred column as sign-in, so the two auth pages feel like one flow. */
 .shell {
   max-width: 460px;
   margin-inline: auto;
@@ -30,10 +30,14 @@
 }
 
 .panel {
-  display: grid;
-  gap: var(--space-5);
   margin-top: var(--space-6);
   padding: var(--space-6);
+}
+
+/* Registration stacks its error, form and switch inside the panel. */
+.stack {
+  display: grid;
+  gap: var(--space-5);
 }
 
 .form {
@@ -47,11 +51,16 @@
 }
 
 .switch {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-line);
   color: var(--color-ink-muted);
   font-size: var(--text-sm);
   text-align: center;
+}
+
+/* Sign-in has no stack, so its switch carries the separating rule and spacing. */
+.switchDivided {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
 }
 
 .switchLink {

@@ -8,6 +8,7 @@ import { Link } from '@/i18n/navigation';
 import { accountExists } from '@/lib/auth/account-exists';
 import { DEMO_ACCOUNTS, demoAuthEnabled } from '@/lib/auth/demo-accounts';
 import { signInWithCredentials, signInWithGoogle } from '@/lib/auth/actions';
+import ui from '../auth.module.css';
 import styles from './sign-in.module.css';
 
 type SignInPageProps = {
@@ -32,16 +33,16 @@ export default async function SignInPage({ params, searchParams }: SignInPagePro
   const showDemo = demoAuthEnabled();
 
   return (
-    <div className={styles.page}>
-      <div className={`container ${styles.shell}`}>
-        <div className={styles.intro}>
-          <p className={styles.eyebrow}>{t('eyebrow')}</p>
-          <h1 className={styles.title}>{t('title')}</h1>
-          <p className={styles.lede}>{t('lede')}</p>
+    <div className={ui.page}>
+      <div className={`container ${ui.shell}`}>
+        <div className={ui.intro}>
+          <p className={ui.eyebrow}>{t('eyebrow')}</p>
+          <h1 className={ui.title}>{t('title')}</h1>
+          <p className={ui.lede}>{t('lede')}</p>
         </div>
 
-        <Card className={styles.panel}>
-          <form action={signInWithCredentials} className={styles.form}>
+        <Card className={ui.panel}>
+          <form action={signInWithCredentials} className={ui.form}>
             <input type="hidden" name="locale" value={locale} />
             <Field id="email" name="email" type="email" label={t('email')} autoComplete="email" required />
             <Field
@@ -54,7 +55,7 @@ export default async function SignInPage({ params, searchParams }: SignInPagePro
               required
             />
             {error ? (
-              <p className={styles.error} role="alert">
+              <p className={ui.error} role="alert">
                 {t('invalid')}
               </p>
             ) : null}
@@ -78,9 +79,9 @@ export default async function SignInPage({ params, searchParams }: SignInPagePro
             </>
           ) : null}
 
-          <p className={styles.switch}>
+          <p className={`${ui.switch} ${ui.switchDivided}`}>
             {t('signupPrompt')}{' '}
-            <Link href="/register" className={styles.switchLink}>
+            <Link href="/register" className={ui.switchLink}>
               {t('signupLink')}
             </Link>
           </p>

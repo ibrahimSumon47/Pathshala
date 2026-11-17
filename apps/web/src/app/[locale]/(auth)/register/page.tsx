@@ -7,7 +7,8 @@ import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
 import { accountExists } from '@/lib/auth/account-exists';
 import { signUpAction } from '@/lib/auth/actions';
-import styles from './register.module.css';
+import { cn } from '@/lib/cn';
+import ui from '../auth.module.css';
 
 type RegisterPageProps = {
   params: Promise<{ locale: string }>;
@@ -28,22 +29,22 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
   const t = await getTranslations('Auth');
 
   return (
-    <div className={styles.page}>
-      <div className={`container ${styles.shell}`}>
-        <div className={styles.intro}>
-          <p className={styles.eyebrow}>{t('registerEyebrow')}</p>
-          <h1 className={styles.title}>{t('registerTitle')}</h1>
-          <p className={styles.lede}>{t('registerLede')}</p>
+    <div className={ui.page}>
+      <div className={`container ${ui.shell}`}>
+        <div className={ui.intro}>
+          <p className={ui.eyebrow}>{t('registerEyebrow')}</p>
+          <h1 className={ui.title}>{t('registerTitle')}</h1>
+          <p className={ui.lede}>{t('registerLede')}</p>
         </div>
 
-        <Card className={styles.panel}>
+        <Card className={cn(ui.panel, ui.stack)}>
           {signupError ? (
-            <p className={styles.error} role="alert">
+            <p className={ui.error} role="alert">
               {signupError === 'exists' ? t('registerExists') : t('registerInvalid')}
             </p>
           ) : null}
 
-          <form id="register-form" action={signUpAction} className={styles.form}>
+          <form id="register-form" action={signUpAction} className={ui.form}>
             <input type="hidden" name="locale" value={locale} />
             <Field
               id="signup-name"
@@ -77,9 +78,9 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
             <Button type="submit">{t('registerSubmit')}</Button>
           </form>
 
-          <p className={styles.switch}>
+          <p className={ui.switch}>
             {t('registerHaveAccount')}{' '}
-            <Link href="/sign-in" className={styles.switchLink}>
+            <Link href="/sign-in" className={ui.switchLink}>
               {t('registerSignIn')}
             </Link>
           </p>
