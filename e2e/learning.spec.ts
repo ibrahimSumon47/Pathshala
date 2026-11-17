@@ -8,8 +8,9 @@ test('a student reaches the learning room, live room and certificate', async ({ 
 
   await page.getByRole('link', { name: /First Steps in JavaScript/ }).first().click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('First Steps in JavaScript');
-  await expect(page.getByText('Your first exercise')).toBeVisible();
-  await page.getByRole('link', { name: /A short quiz/ }).click();
+  const curriculum = page.getByRole('complementary');
+  await expect(curriculum.getByText('Your first exercise')).toBeVisible();
+  await curriculum.getByRole('link', { name: /A short quiz/ }).click();
   await page.getByLabel('const', { exact: true }).check();
   await page.getByLabel('"hello"', { exact: true }).check();
   await page.getByLabel("'pathshala'", { exact: true }).check();

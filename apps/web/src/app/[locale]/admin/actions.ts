@@ -2,7 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Category, connectToDatabase, setCourseStatus, setInstructorAccess } from '@pathshala/db';
+import {
+  Category,
+  connectToDatabase,
+  recordAuditEvent,
+  setCourseStatus,
+  setInstructorAccess,
+  setQuestionHidden,
+  setReviewHidden,
+} from '@pathshala/db';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth/guard';
 
@@ -72,5 +80,41 @@ export async function createCategoryAction(form: FormData): Promise<void> {
   }
   revalidatePath('/admin');
   revalidatePath('/courses');
+  redirect(`${localePath(form, '/admin')}?saved=1`);
+}
+
+/** Hide or restore a review; hiding also removes it from the course rating. */
+export async function setReviewVisibilityAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const reviewId = String(form.get('reviewId') ?? '');
+  const hidden = form.get('hidden') === 'true';
+  const ok = await setReviewHidden(reviewId, hidden);
+  if (!ok) redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Review not found.')}`);
+  await recordAuditEvent({
+    actor: user.id,
+    action: hidden ? 'review.hide' : 'review.restore',
+    entityType: 'review',
+    entityId: reviewId,
+  });
+  revalidatePath('/admin');
+  revalidatePath('/courses');
+  redirect(`${localePath(form, '/admin')}?saved=1`);
+}
+
+/** Hide or restore a lesson question without deleting the conversation. */
+export async function setQuestionVisibilityAction(form: FormData): Promise<void> {
+  const user = await requireRole('admin');
+  const questionId = String(form.get('questionId') ?? '');
+  const hidden = form.get('hidden') === 'true';
+  const ok = await setQuestionHidden(questionId, hidden);
+  if (!ok) redirect(`${localePath(form, '/admin')}?error=${encodeURIComponent('Question not found.')}`);
+  await recordAuditEvent({
+    actor: user.id,
+    action: hidden ? 'question.hide' : 'question.restore',
+    entityType: 'question',
+    entityId: questionId,
+  });
+  revalidatePath('/admin');
+  revalidatePath('/learn');
   redirect(`${localePath(form, '/admin')}?saved=1`);
 }

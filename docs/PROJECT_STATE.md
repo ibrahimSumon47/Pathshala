@@ -1,7 +1,7 @@
 # Project state
 
 Snapshot: 2026-11-17. The first ten phases are complete and three expansion slices are live:
-course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 70/70
+course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 78/78
 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
@@ -36,6 +36,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P10 | Cart and multi-course orders, invoices, settings, notifications, wishlist, notes, streaks and badges | done — 2026-11-17, 17/17 production journeys |
 | P11 | Both-script search, price buckets, sorting, best-rated shelf, learner recommendations | done — 2026-11-17, 20/20 production journeys |
 | P12 | Private and public profiles, role desks, platform revenue share, sticky masthead, motion | done — 2026-11-17, 26/26 production journeys |
+| P13 | Statements, order/coupon ops, palette, lesson keys, moderation, measured perf pass | done — 2026-11-17, 31/31 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -101,7 +102,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (142 tests: 12 tokens, 13 shared, 42 database,
   58 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **26/26 pass** on
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **31/31 pass** on
   2026-11-17 after the auth split. The
   depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
   card, related courses and refund link, then reads a free preview lesson. The

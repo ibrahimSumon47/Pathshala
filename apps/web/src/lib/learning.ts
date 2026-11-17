@@ -116,7 +116,7 @@ export type ReviewView = { id: string; author: string; rating: number; body: str
 /** Reviews for the public page, newest first, with the author's display name. */
 export async function getCourseReviews(courseId: string): Promise<ReviewView[]> {
   await connectToDatabase();
-  const reviews = await Review.find({ course: courseId }).sort({ createdAt: -1 }).limit(20).lean();
+  const reviews = await Review.find({ course: courseId, hidden: { $ne: true } }).sort({ createdAt: -1 }).limit(20).lean();
   const authors = await User.find({ _id: { $in: reviews.map((review) => review.student) } })
     .select('name')
     .lean();
@@ -243,7 +243,7 @@ export type QuestionView = {
 /** Lesson Q&A threads with author names resolved in one query. */
 export async function getLessonQuestions(lessonId: string): Promise<QuestionView[]> {
   await connectToDatabase();
-  const questions = await Question.find({ lesson: lessonId }).sort({ createdAt: -1 }).limit(30).lean();
+  const questions = await Question.find({ lesson: lessonId, hidden: { $ne: true } }).sort({ createdAt: -1 }).limit(30).lean();
   const ids = questions.flatMap((question) => [question.author, ...question.answers.map((answer) => answer.author)]);
   const users = await User.find({ _id: { $in: ids } }).select('name').lean();
   const names = new Map(users.map((user) => [String(user._id), user.name]));

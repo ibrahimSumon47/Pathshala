@@ -10,6 +10,8 @@ export type QuestionDoc = {
   author: Types.ObjectId;
   body: string;
   answers: Answer[];
+  /** Hidden by an operator; the thread stays in the database for review. */
+  hidden: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -30,10 +32,12 @@ const questionSchema = new Schema<QuestionDoc>(
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     body: { type: String, required: true, trim: true, maxlength: 2000 },
     answers: { type: [answerSchema], default: [] },
+    hidden: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
 
 questionSchema.index({ lesson: 1, createdAt: -1 });
+questionSchema.index({ hidden: 1, createdAt: -1 });
 
 export const Question = (models.Question as Model<QuestionDoc> | undefined) ?? model<QuestionDoc>('Question', questionSchema);

@@ -48,3 +48,11 @@ test('the signed-in learner pages have zero axe violations', async ({ page }) =>
   await expect(page.getByRole('heading', { level: 1, name: 'Rafiqul Islam' })).toBeVisible();
   expect(await violations(page)).toEqual([]);
 });
+
+test('the operator money and moderation pages have zero axe violations', async ({ page }) => {
+  await signIn(page, accounts.admin.email, accounts.admin.password);
+  for (const path of ['/en/admin/orders', '/en/admin/coupons', '/en/studio/earnings']) {
+    await page.goto(path);
+    expect(await violations(page), path).toEqual([]);
+  }
+});

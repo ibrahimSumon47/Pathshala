@@ -6,6 +6,7 @@ import { Coupon, type CouponDoc } from './models/coupon';
 import { Enrolment } from './models/enrolment';
 import { LedgerEntry } from './models/ledger-entry';
 import { Order, type OrderDoc, type OrderItem, type PaymentProvider } from './models/order';
+import { Notification } from './models/notification';
 import { Payment } from './models/payment';
 import { WebhookEvent } from './models/webhook-event';
 import { ensureRemindersForEnrolment } from './live';
@@ -294,6 +295,19 @@ export async function markOrderPaid({
   });
 
   await Promise.all([
+    // The teacher sees a sale land without waiting for email; the inbox is already there.
+    ...[...byInstructor.values()].map((entry) =>
+      Notification.create({
+        user: entry.instructor,
+        kind: 'system',
+        title: { bn: 'নতুন বিক্রি', en: 'New sale' },
+        body: {
+          bn: `${entry.titles.join(', ')} — ৳${((splitPayment(entry.paisa).instructorPaisa) / 100).toFixed(2)}`,
+          en: `${entry.titles.join(', ')} — BDT ${((splitPayment(entry.paisa).instructorPaisa) / 100).toFixed(2)}`,
+        },
+        href: '/studio',
+      }).catch(() => undefined),
+    ),
     ...[...byInstructor.values()].map((entry) => {
       const { instructorPaisa } = splitPayment(entry.paisa);
       return LedgerEntry.updateOne(

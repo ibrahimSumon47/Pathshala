@@ -794,6 +794,96 @@
         "every animation is decoration only and the existing prefers-reduced-motion block removes it",
         "production 2026-11-17: axe scans after the entrance settles and still reports zero violations on public and signed-in pages"
       ]
+    },
+    {
+      "id": "p13.statements",
+      "phase": "P13",
+      "title": "Teacher payout statements with a CSV download",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/earnings.ts groups signed instructor ledger rows into one statement per month and keeps refunds negative",
+        "apps/web/src/app/[locale]/studio/earnings/page.tsx shows earned, sales, refunds and a month table; /api/studio/earnings exports the same rows through the formula-safe CSV builder",
+        "the teacher desk and the studio both link to the statements page",
+        "packages/db/src/earnings.test.ts covers month grouping and refunds; production 2026-11-17: e2e/polish.spec.ts downloads pathshala-earnings.csv"
+      ]
+    },
+    {
+      "id": "p13.admin-orders",
+      "phase": "P13",
+      "title": "Searchable admin order explorer with the platform cut per order",
+      "status": "done",
+      "evidence": [
+        "listAdminOrders in packages/db/src/earnings.ts searches by order number, buyer name or email and falls back to 20% for orders written before the fee field existed",
+        "/admin/orders shows buyer, course, total, platform fee, status and date; every read is behind requireRole(admin)",
+        "production 2026-11-17: e2e/polish.spec.ts searches PS- and sees the Platform column; the database integration test asserts the exact fee on a paid order"
+      ]
+    },
+    {
+      "id": "p13.coupons",
+      "phase": "P13",
+      "title": "Coupon cost and revenue report",
+      "status": "done",
+      "evidence": [
+        "getCouponReport joins coupons to paid orders by code, so each row shows use against its cap, discount cost and revenue",
+        "/admin/coupons lists active, inactive and expired codes; /admin links to it",
+        "production 2026-11-17: e2e/polish.spec.ts loads the coupon report; axe reports zero violations on the page"
+      ]
+    },
+    {
+      "id": "p13.sale-alerts",
+      "phase": "P13",
+      "title": "In-app sale alerts for teachers",
+      "status": "done",
+      "evidence": [
+        "markOrderPaid writes one inbox notification per teacher with the course names and their 80% amount",
+        "the existing notifications page renders it; no email provider, account or key is involved",
+        "packages/db/src/commerce.integration.test.ts asserts the notification after a paid order"
+      ]
+    },
+    {
+      "id": "p13.palette",
+      "phase": "P13",
+      "title": "Command palette for courses and account pages",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/components/command-palette.tsx opens with Ctrl/⌘K, searches published courses through /api/search after two characters, and lists only the pages the reader can open",
+        "keyboard support covers arrow keys, Enter and Escape; focus returns to the trigger and background scrolling is locked while open",
+        "production 2026-11-17: e2e/polish.spec.ts opens the palette, searches javascript and lands on the course page"
+      ]
+    },
+    {
+      "id": "p13.lesson-polish",
+      "phase": "P13",
+      "title": "Previous/next lesson keys and a notes export",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/components/lesson-pager.tsx adds previous/next links and Alt+←/→ navigation that ignores typing targets",
+        "the lesson room still remembers the last lesson through the existing learner record",
+        "/api/notes/export returns the reader’s own notes as formula-safe CSV and the notes page links to it",
+        "production 2026-11-17: e2e/polish.spec.ts moves lessons with Alt+ArrowRight and downloads pathshala-notes.csv"
+      ]
+    },
+    {
+      "id": "p13.moderation",
+      "phase": "P13",
+      "title": "Review and lesson-question moderation",
+      "status": "done",
+      "evidence": [
+        "reviews and questions gain a hidden flag; public lists filter hidden rows and a hidden review is removed from the course rating immediately",
+        "the admin page lists the latest reviews and lesson questions with hide/restore buttons and writes an audit event for each change",
+        "packages/db/src/commerce.integration.test.ts asserts hide, rating recompute and restore; production 2026-11-17: e2e/polish.spec.ts finds Reviews and questions on /admin and axe is clean"
+      ]
+    },
+    {
+      "id": "p13.performance",
+      "phase": "P13",
+      "title": "Course-page read parallelisation, measured",
+      "status": "done",
+      "evidence": [
+        "the course page now fetches auth and the course together and runs viewer state, reviews and live sessions in one parallel batch instead of serial awaits",
+        "measurement on 2026-11-17: warm production TTFB was 0.273–0.299 s before and 0.274–0.329 s after five samples each — no material gain, so no speedup is claimed",
+        "the change is kept for the smaller request waterfall and noted honestly in docs/DECISIONS.md"
+      ]
     }
   ]
 }

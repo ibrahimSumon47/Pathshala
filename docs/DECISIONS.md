@@ -550,3 +550,13 @@ move to their own scrollable row instead of disappearing.
 
 Motion is CSS only and always optional: translate/fade entrances, a growing progress bar and
 hover lifts, all removed by the existing reduced-motion rule. No animation is load-bearing.
+
+## 2026-11-17 — Money views read orders, statements read the ledger
+
+Admin money is read from paid orders, not from an unfiltered ledger sum: orphaned test rows once pushed the platform share above gross sales, so the report now sums the share recorded on orders (20% fallback for older rows) and excludes refunded orders. A teacher's statements do read the ledger, because those rows carry the signed sale and refund amounts and are scoped to one instructor. The CSV exports reuse the formula-safe builder.
+
+Email notifications are deliberately not wired. In-app sale alerts are created when a payment is signed; sending mail needs an owner-chosen provider, an account and a key, so the rest of the notifications work stays free and self-contained.
+
+A performance sample was taken before and after parallelising the course page: warm TTFB was 0.273–0.299 s before and 0.274–0.329 s after. The difference is noise, so the page is simpler but the project makes no speedup claim.
+
+Moderation hides rather than deletes: reviews and questions keep their rows for the audit trail, public queries exclude them, and hiding a review recomputes the course rating from the visible set. The course rating therefore cannot drift from what readers can see.

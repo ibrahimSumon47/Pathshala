@@ -22,6 +22,7 @@ const COPY = {
     open: 'পাঠ খুলুন',
     remove: 'সরান',
     delete: 'নোট মুছুন',
+    export: 'সিএসভি ডাউনলোড',
   },
   en: {
     back: '← Back to dashboard',
@@ -36,6 +37,7 @@ const COPY = {
     open: 'Open lesson',
     remove: 'Remove',
     delete: 'Delete note',
+    export: 'Download CSV',
   },
 } as const;
 
@@ -57,7 +59,10 @@ export default async function NotesPage({ params }: NotesProps) {
         <p className={styles.lede}>{copy.lede}</p>
 
         <section className={styles.section}>
-          <h2>{copy.notes}</h2>
+          <div className={styles.sectionHead}>
+            <h2>{copy.notes}</h2>
+            {notes.length > 0 ? <a href={`/api/notes/export?locale=${language}`}>{copy.export}</a> : null}
+          </div>
           {notes.length === 0 ? (
             <EmptyState title={copy.noNotes} body={copy.noNotesBody} />
           ) : (

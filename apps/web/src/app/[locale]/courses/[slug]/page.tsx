@@ -159,13 +159,15 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
   const { error } = await searchParams;
   const language = (locale === 'en' ? 'en' : 'bn') as Locale;
   const copy = COPY[language];
-  const course = await getCourseBySlug(slug);
+  // Auth and the course are independent reads; the three follow-ups only need the course id.
+  const [course, session] = await Promise.all([getCourseBySlug(slug), auth()]);
   if (!course) notFound();
 
-  const session = await auth();
-  const viewer = session?.user?.id ? await getCourseViewerState(course.id, session.user.id) : null;
-  const reviews = await getCourseReviews(course.id);
-  const liveSessions = await listCourseSessions(course.id, 'upcoming');
+  const [viewer, reviews, liveSessions] = await Promise.all([
+    session?.user?.id ? getCourseViewerState(course.id, session.user.id) : Promise.resolve(null),
+    getCourseReviews(course.id),
+    listCourseSessions(course.id, 'upcoming'),
+  ]);
   const lessonCount = course.sections.reduce((total, section) => total + section.lessons.length, 0);
   const priceLabel = course.pricePaisa === 0 ? copy.free : formatPaisa(course.pricePaisa, language);
   const initials = course.instructor.name

@@ -7,6 +7,7 @@ import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Link } from '@/i18n/navigation';
+import { LessonPager } from '@/components/lesson-pager';
 import { requireUser } from '@/lib/auth/guard';
 import { getLearningCourse, getLessonNote, getLessonQuestions, getLessonQuiz } from '@/lib/learning';
 import { sanitizeLessonHtml } from '@/lib/sanitize';
@@ -49,6 +50,9 @@ const COPY = {
     submitQuiz: 'উত্তর জমা দিন',
     passed: 'অভিনন্দন, কুইজে উত্তীর্ণ হয়েছেন।',
     failed: 'এবার হয়নি। উত্তরগুলো আবার দেখে আবার চেষ্টা করুন।',
+    previous: 'আগের পাঠ',
+    next: 'পরের পাঠ',
+    pagerHint: 'Alt + ← / → দিয়ে পাঠ বদলান',
     lastScore: 'শেষ ফল',
     noQuestions: 'এই কুইজে এখনো প্রশ্ন নেই।',
     noLessons: 'এই কোর্সে এখনো পাঠ যোগ করা হয়নি।',
@@ -82,6 +86,9 @@ const COPY = {
     submitQuiz: 'Submit answers',
     passed: 'Passed. Nice work.',
     failed: 'Not this time. Review the answers and try again.',
+    previous: 'Previous lesson',
+    next: 'Next lesson',
+    pagerHint: 'Alt + ← / → moves between lessons',
     lastScore: 'Last score',
     noQuestions: 'This quiz has no questions yet.',
     noLessons: 'This course has no lessons yet.',
@@ -120,6 +127,12 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
     course.lessons[0];
   if (!current) notFound();
   const completed = course.completedLessonIds.includes(current.id);
+  const flatLessons = course.sections.flatMap((section) => section.lessons);
+  const currentIndex = flatLessons.findIndex((lesson) => lesson.id === current.id);
+  const previousLesson = currentIndex > 0 ? flatLessons[currentIndex - 1] : undefined;
+  const nextLesson = currentIndex >= 0 && currentIndex < flatLessons.length - 1 ? flatLessons[currentIndex + 1] : undefined;
+  const lessonHref = (id: string) => `/learn/${slug}?lesson=${id}`;
+  const lessonLabel = (lesson: (typeof flatLessons)[number]) => lesson.title[language] || lesson.title.en || lesson.title.bn;
 
   const [quiz, note, questions, bookmark] = await Promise.all([
     current.type === 'quiz' ? getLessonQuiz(current.id, user.id) : Promise.resolve({ questions: [], lastAttempt: null }),
@@ -275,6 +288,12 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
                 </Button>
               </form>
             </div>
+
+            <LessonPager
+              previous={previousLesson ? { href: lessonHref(previousLesson.id), label: `${copy.previous}: ${lessonLabel(previousLesson)}` } : null}
+              next={nextLesson ? { href: lessonHref(nextLesson.id), label: `${copy.next}: ${lessonLabel(nextLesson)}` } : null}
+              hint={copy.pagerHint}
+            />
 
             <section className={styles.block}>
               <h3>{copy.notes}</h3>

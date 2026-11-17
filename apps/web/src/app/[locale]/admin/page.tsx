@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { UserRole } from '@pathshala/db';
-import { getAdminReport, listAdminCourses, listAuditEvents, listCategories } from '@pathshala/db';
+import { getAdminReport, listAdminCourses, listAuditEvents, listCategories, listModerationQueue } from '@pathshala/db';
 import { formatPaisa } from '@pathshala/shared';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonStyles } from '@/components/ui/button';
@@ -8,7 +8,13 @@ import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
 import { listAccounts } from '@/lib/auth/accounts';
 import { requireRole } from '@/lib/auth/guard';
-import { createCategoryAction, setCourseStatusAction, setInstructorAccessAction } from './actions';
+import {
+  createCategoryAction,
+  setCourseStatusAction,
+  setInstructorAccessAction,
+  setQuestionVisibilityAction,
+  setReviewVisibilityAction,
+} from './actions';
 import styles from './admin.module.css';
 
 type AdminPageProps = {
@@ -23,17 +29,20 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
   const user = await requireRole('admin');
   const t = await getTranslations('Admin');
   const roles = await getTranslations('Roles');
-  const [accounts, categories, report, courses, audit] = await Promise.all([
+  const [accounts, categories, report, courses, audit, moderation] = await Promise.all([
     listAccounts(),
     listCategories(),
     getAdminReport(),
     listAdminCourses(),
     listAuditEvents(20),
+    listModerationQueue(),
   ]);
   const roleLabel = (role: UserRole) => roles(role);
   const copy = locale === 'en'
     ? {
         report: 'Operating report',
+        orders: 'Orders',
+        coupons: 'Coupons',
         users: 'Users',
         courses: 'Courses',
         published: 'Published',
@@ -43,6 +52,15 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         revenue: 'Test revenue',
         platform: 'Platform share',
         refunded: 'Refunded',
+        moderation: 'Reviews and questions',
+        reviews: 'Recent reviews',
+        questions: 'Recent lesson questions',
+        hidden: 'Hidden',
+        visible: 'Visible',
+        hide: 'Hide',
+        restore: 'Restore',
+        noReviews: 'No reviews yet.',
+        noQuestions: 'No questions yet.',
         approvals: 'Course approval',
         instructor: 'Instructor',
         status: 'Status',
@@ -63,6 +81,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
       }
     : {
         report: 'পরিচালন প্রতিবেদন',
+        orders: 'অর্ডার',
+        coupons: 'কুপন',
         users: 'ব্যবহারকারী',
         courses: 'কোর্স',
         published: 'প্রকাশিত',
@@ -72,6 +92,15 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         revenue: 'পরীক্ষামূলক আয়',
         platform: 'প্ল্যাটফর্মের অংশ',
         refunded: 'রিফান্ড',
+        moderation: 'মতামত ও প্রশ্ন',
+        reviews: 'সাম্প্রতিক মতামত',
+        questions: 'সাম্প্রতিক পাঠ-প্রশ্ন',
+        hidden: 'লুকানো',
+        visible: 'দৃশ্যমান',
+        hide: 'লুকান',
+        restore: 'ফিরিয়ে আনুন',
+        noReviews: 'এখনো কোনো মতামত নেই।',
+        noQuestions: 'এখনো কোনো প্রশ্ন নেই।',
         approvals: 'কোর্স অনুমোদন',
         instructor: 'প্রশিক্ষক',
         status: 'অবস্থা',
@@ -96,6 +125,10 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
       <div className="container">
         <h1 className={styles.title}>{t('title')}</h1>
         <p className={styles.lede}>{t('lede')}</p>
+        <nav className={styles.subnav} aria-label={copy.report}>
+          <Link href="/admin/orders">{copy.orders}</Link>
+          <Link href="/admin/coupons">{copy.coupons}</Link>
+        </nav>
         {error ? <Alert tone="error">{error}</Alert> : null}
         {saved ? <Alert tone="success">{copy.saved}</Alert> : null}
 
@@ -205,6 +238,80 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
               </tbody>
             </table>
             {courses.length === 0 ? <p className={styles.empty}>{locale === 'en' ? 'No courses yet.' : 'এখনো কোনো কোর্স নেই।'}</p> : null}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>{copy.moderation}</h2>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">{copy.reviews}</th>
+                  <th scope="col">{copy.actor}</th>
+                  <th scope="col">{copy.status}</th>
+                  <th scope="col">{copy.actions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moderation.reviews.map((review) => (
+                  <tr key={review.id}>
+                    <td>
+                      {review.courseTitle[locale === 'en' ? 'en' : 'bn'] ?? review.courseTitle.en ?? ''}
+                      <span className={styles.email}> · ★ {review.rating} · {review.body.slice(0, 90)}</span>
+                    </td>
+                    <td>{review.author}</td>
+                    <td>{review.hidden ? copy.hidden : copy.visible}</td>
+                    <td>
+                      <form action={setReviewVisibilityAction}>
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="reviewId" value={review.id} />
+                        <input type="hidden" name="hidden" value={review.hidden ? 'false' : 'true'} />
+                        <button type="submit" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+                          {review.hidden ? copy.restore : copy.hide}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {moderation.reviews.length === 0 ? <p className={styles.empty}>{copy.noReviews}</p> : null}
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">{copy.questions}</th>
+                  <th scope="col">{copy.actor}</th>
+                  <th scope="col">{copy.status}</th>
+                  <th scope="col">{copy.actions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moderation.questions.map((question) => (
+                  <tr key={question.id}>
+                    <td>
+                      {question.courseTitle[locale === 'en' ? 'en' : 'bn'] ?? question.courseTitle.en ?? ''}
+                      <span className={styles.email}> · {question.lessonTitle[locale === 'en' ? 'en' : 'bn'] ?? ''} · {question.body.slice(0, 90)}</span>
+                    </td>
+                    <td>{question.author}</td>
+                    <td>{question.hidden ? copy.hidden : copy.visible}</td>
+                    <td>
+                      <form action={setQuestionVisibilityAction}>
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="questionId" value={question.id} />
+                        <input type="hidden" name="hidden" value={question.hidden ? 'false' : 'true'} />
+                        <button type="submit" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>
+                          {question.hidden ? copy.restore : copy.hide}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {moderation.questions.length === 0 ? <p className={styles.empty}>{copy.noQuestions}</p> : null}
           </div>
         </section>
 

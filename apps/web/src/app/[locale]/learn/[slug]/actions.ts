@@ -222,12 +222,12 @@ export async function submitReviewAction(form: FormData): Promise<void> {
   if (!enrolment) fail(form, `/courses/${slug}`, 'Finish or start the course before reviewing it.');
   await Review.findOneAndUpdate(
     { student: user.id, course: courseId },
-    { rating, body },
+    { $set: { rating, body }, $setOnInsert: { hidden: false } },
     { upsert: true, returnDocument: 'after' },
   );
   // Aggregation cannot cast a string course id for $match, so average in memory;
   // a course has at most a few thousand reviews.
-  const ratings = await Review.find({ course: courseId }).select('rating').lean();
+  const ratings = await Review.find({ course: courseId, hidden: { $ne: true } }).select('rating').lean();
   const count = ratings.length;
   const average = count > 0 ? ratings.reduce((total, review) => total + review.rating, 0) / count : 0;
   await Course.findByIdAndUpdate(courseId, {

@@ -115,5 +115,16 @@
   "Footer": {
     "tagline": "A place to learn and teach",
     "copyright": "© 2026 Pathshala"
+  },
+  "Search": {
+    "open": "Search Pathshala",
+    "label": "Search",
+    "placeholder": "Search courses or jump to a page…",
+    "searching": "Searching…",
+    "courses": "Courses",
+    "pages": "Pages",
+    "jumpTo": "Jump to",
+    "empty": "No courses matched.",
+    "hint": "↑ ↓ to move · Enter to open · Esc to close"
   }
 }

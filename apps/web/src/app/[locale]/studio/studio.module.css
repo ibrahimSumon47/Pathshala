@@ -279,3 +279,12 @@
     flex-direction: column;
   }
 }
+
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

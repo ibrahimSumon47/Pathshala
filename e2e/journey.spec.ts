@@ -39,23 +39,24 @@ test('a new learner enrols, finishes every lesson and earns a publicly verifiabl
   await page.getByRole('button', { name: 'Enrol in this course' }).click();
   await expect(page).toHaveURL(/\/en\/learn\/javascript-first-steps/);
 
-  await page.getByRole('link', { name: /How to work through this course/ }).click();
+  const curriculum = page.getByRole('complementary');
+  await curriculum.getByRole('link', { name: /How to work through this course/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
   await expect(page.getByText(/Progress · 20%/)).toBeVisible();
 
-  await page.getByRole('link', { name: /Your first exercise/ }).click();
+  await curriculum.getByRole('link', { name: /Your first exercise/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
   await expect(page.getByText(/Progress · 40%/)).toBeVisible();
 
-  await page.getByRole('link', { name: /Working with numbers/ }).click();
+  await curriculum.getByRole('link', { name: /Working with numbers/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
   await expect(page.getByText(/Progress · 60%/)).toBeVisible();
 
-  await page.getByRole('link', { name: /Shaping a list/ }).click();
+  await curriculum.getByRole('link', { name: /Shaping a list/ }).click();
   await page.getByRole('button', { name: 'Mark lesson complete' }).click();
   await expect(page.getByText(/Progress · 80%/)).toBeVisible();
 
-  await page.getByRole('link', { name: /A short quiz/ }).click();
+  await curriculum.getByRole('link', { name: /A short quiz/ }).click();
   await page.getByLabel('const', { exact: true }).check();
   await page.getByLabel('"hello"', { exact: true }).check();
   await page.getByLabel("'pathshala'", { exact: true }).check();

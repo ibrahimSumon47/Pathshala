@@ -79,3 +79,7 @@ ignored files with `gh secret set` and `vercel env add`, so no value appears in 
 
 Owner action: rotate the Stripe keys or the PayBridge merchant key in both places if one is
 ever exposed.
+
+## Email digests (optional, needs an account)
+
+In-app notifications and teacher sale alerts are live. Outward email is not wired because it needs a provider account and API key chosen by the owner. When one is picked, check its current pricing against the free-forever rule before adding it, then set the key through Vercel and document the sender address. No account has been created.

@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { signOutAction } from '@/lib/auth/actions';
 import { initialsFor } from '@/lib/profile';
 import { buttonStyles } from '@/components/ui/button';
+import { CommandPalette } from './command-palette';
 import type { Theme } from '@/lib/theme';
 import { cn } from '@/lib/cn';
 import { LocaleSwitcher } from './locale-switcher';
@@ -40,6 +41,18 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
   if (canTeach) items.push({ href: '/studio', label: t('studio') });
   if (isAdmin) items.push({ href: '/admin', label: t('admin') });
 
+  // The palette searches courses and jumps to the pages this reader can actually open.
+  const paletteItems = [
+    { href: '/courses', label: t('navCourses'), show: true },
+    { href: '/dashboard', label: t('navLearning'), show: signedIn },
+    { href: '/dashboard/profile', label: t('profile'), show: signedIn },
+    { href: '/dashboard/settings', label: t('settings'), show: signedIn },
+    { href: '/studio', label: t('studio'), show: canTeach },
+    { href: '/admin', label: t('admin'), show: isAdmin },
+  ]
+    .filter((item) => item.show)
+    .map(({ href, label }) => ({ href, label }));
+
   return (
     <header className={styles.header}>
       <div className={cn('container', styles.inner)}>
@@ -58,6 +71,7 @@ export async function SiteHeader({ theme }: SiteHeaderProps) {
         <SiteNav items={items} label={t('navLabel')} />
 
         <div className={styles.controls}>
+          <CommandPalette items={paletteItems} />
           <LocaleSwitcher />
           <ThemeToggle initialTheme={theme} />
 

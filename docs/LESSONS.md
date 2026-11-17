@@ -284,3 +284,9 @@ blended colour as a contrast failure. The scan now waits for the settle instead 
 motion. Separately, a `<summary>` with an `aria-label` failed label-content-name-mismatch
 because the visible initials were not in the label; the menu now lets its own text name it, and
 the brand link no longer overrides its visible bilingual wordmark.
+
+## Measure the page, not the intention
+
+Parallelising three reads on the course page looked obviously faster, but production TTFB did not move outside noise. Keep the code, drop the claim. A performance change without a measured delta is a readability change.
+
+A summary element is announced as a disclosure, not a button, so tests should target the element rather than a role Chromium may not expose.

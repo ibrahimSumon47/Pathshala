@@ -263,3 +263,97 @@ export async function setInstructorAccess(
 export async function getAuditRowsForExport(limit = 2000): Promise<AuditRow[]> {
   return listAuditEvents(Math.min(limit, 2000));
 }
+
+export type ModerationReviewRow = {
+  id: string;
+  courseTitle: { bn?: string; en?: string };
+  author: string;
+  rating: number;
+  body: string;
+  hidden: boolean;
+  createdAt: string;
+};
+
+export type ModerationQuestionRow = {
+  id: string;
+  courseTitle: { bn?: string; en?: string };
+  lessonTitle: { bn?: string; en?: string };
+  author: string;
+  body: string;
+  answers: number;
+  hidden: boolean;
+  createdAt: string;
+};
+
+/** Recent reviews and lesson questions, including hidden ones, for the moderation desk. */
+export async function listModerationQueue(): Promise<{ reviews: ModerationReviewRow[]; questions: ModerationQuestionRow[] }> {
+  await connectToDatabase();
+  const { Review } = await import('./models/review');
+  const { Question } = await import('./models/question');
+  const { Lesson } = await import('./models/lesson');
+  const [reviews, questions] = await Promise.all([
+    Review.find().sort({ createdAt: -1 }).limit(20).lean(),
+    Question.find().sort({ createdAt: -1 }).limit(20).lean(),
+  ]);
+  const courseIds = [...new Set([...reviews.map((review) => review.course), ...questions.map((question) => question.course)])];
+  const lessonIds = [...new Set(questions.map((question) => question.lesson))];
+  const authorIds = [...new Set([...reviews.map((review) => review.student), ...questions.map((question) => question.author)])];
+  const [courses, lessons, authors] = await Promise.all([
+    Course.find({ _id: { $in: courseIds } }).select('title').lean(),
+    Lesson.find({ _id: { $in: lessonIds } }).select('title').lean(),
+    User.find({ _id: { $in: authorIds } }).select('name').lean(),
+  ]);
+  const courseTitles = new Map(courses.map((course) => [String(course._id), course.title]));
+  const lessonTitles = new Map(lessons.map((lesson) => [String(lesson._id), lesson.title]));
+  const names = new Map(authors.map((author) => [String(author._id), author.name]));
+  return {
+    reviews: reviews.map((review) => ({
+      id: String(review._id),
+      courseTitle: courseTitles.get(String(review.course)) ?? {},
+      author: names.get(String(review.student)) ?? 'Learner',
+      rating: review.rating,
+      body: review.body,
+      hidden: Boolean(review.hidden),
+      createdAt: review.createdAt.toISOString(),
+    })),
+    questions: questions.map((question) => ({
+      id: String(question._id),
+      courseTitle: courseTitles.get(String(question.course)) ?? {},
+      lessonTitle: lessonTitles.get(String(question.lesson)) ?? {},
+      author: names.get(String(question.author)) ?? 'Learner',
+      body: question.body,
+      answers: question.answers.length,
+      hidden: Boolean(question.hidden),
+      createdAt: question.createdAt.toISOString(),
+    })),
+  };
+}
+
+/** Recompute the public rating from reviews that are still visible. */
+async function refreshCourseRating(courseId: Types.ObjectId): Promise<void> {
+  const { Review } = await import('./models/review');
+  const visible = await Review.find({ course: courseId, hidden: { $ne: true } }).select('rating').lean();
+  const count = visible.length;
+  const average = count > 0 ? visible.reduce((total, review) => total + review.rating, 0) / count : 0;
+  await Course.findByIdAndUpdate(courseId, { ratingAverage: Math.round(average * 10) / 10, ratingCount: count });
+}
+
+/** Hide or restore a review; the course rating follows immediately. */
+export async function setReviewHidden(reviewId: string, hidden: boolean): Promise<boolean> {
+  await connectToDatabase();
+  const { Review } = await import('./models/review');
+  if (!Types.ObjectId.isValid(reviewId)) return false;
+  const review = await Review.findByIdAndUpdate(reviewId, { hidden }, { returnDocument: 'after' }).lean();
+  if (!review) return false;
+  await refreshCourseRating(review.course);
+  return true;
+}
+
+/** Hide or restore a lesson question without deleting the thread. */
+export async function setQuestionHidden(questionId: string, hidden: boolean): Promise<boolean> {
+  await connectToDatabase();
+  const { Question } = await import('./models/question');
+  if (!Types.ObjectId.isValid(questionId)) return false;
+  const result = await Question.updateOne({ _id: questionId }, { hidden });
+  return result.matchedCount > 0;
+}

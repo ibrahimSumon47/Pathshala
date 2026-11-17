@@ -54,6 +54,7 @@ const COPY = {
       rating: 'গড় রেটিং',
       courses: 'প্রকাশিত কোর্স',
       openStudio: 'স্টুডিও খুলুন',
+      statements: 'আয়ের বিবরণ',
       viewPublic: 'পাবলিক প্রোফাইল',
       taught: 'আপনার প্রকাশিত কোর্স',
       taughtEmpty: 'প্রথম কোর্স প্রকাশ করলে সেটি এখানে দেখা যাবে।',
@@ -119,6 +120,7 @@ const COPY = {
       rating: 'Average rating',
       courses: 'Published courses',
       openStudio: 'Open the studio',
+      statements: 'Payout statements',
       viewPublic: 'View public profile',
       taught: 'Your published courses',
       taughtEmpty: 'The first published course will appear here.',
@@ -307,6 +309,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
             </div>
             <div className={styles.deskLinks}>
               <Link href="/studio">{copy.instructor.openStudio}</Link>
+              <Link href="/studio/earnings">{copy.instructor.statements}</Link>
               <Link href={`/instructors/${profile.id}`}>{copy.instructor.viewPublic}</Link>
             </div>
           </section>
