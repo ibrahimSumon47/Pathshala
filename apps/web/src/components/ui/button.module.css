@@ -12,7 +12,9 @@
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard);
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .md {
@@ -34,6 +36,12 @@
 
 .primary:hover {
   background: var(--color-accent-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .secondary {

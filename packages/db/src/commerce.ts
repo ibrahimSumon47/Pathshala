@@ -38,8 +38,12 @@ export function discountFor(coupon: Pick<CouponDoc, 'type' | 'value'>, subtotalP
   return Math.max(0, Math.min(subtotalPaisa, Math.round(raw)));
 }
 
+/** The platform's cut of every paid sale. Keep this as the single source of the split. */
+export const PLATFORM_SHARE_PERCENT = 20;
+export const INSTRUCTOR_SHARE_PERCENT = 100 - PLATFORM_SHARE_PERCENT;
+
 /** Instructor keeps 80 percent; the platform keeps the exact remainder so paisa reconcile. */
-export function splitPayment(totalPaisa: number, instructorPercent = 80): { instructorPaisa: number; platformPaisa: number } {
+export function splitPayment(totalPaisa: number, instructorPercent = INSTRUCTOR_SHARE_PERCENT): { instructorPaisa: number; platformPaisa: number } {
   const safePercent = Math.max(0, Math.min(100, instructorPercent));
   const instructorPaisa = Math.round((totalPaisa * safePercent) / 100);
   return { instructorPaisa, platformPaisa: totalPaisa - instructorPaisa };
@@ -259,9 +263,10 @@ export async function markOrderPaid({
 
   const paidAt = new Date();
   const receiptNumber = `RCPT-${paidAt.toISOString().slice(0, 10).replaceAll('-', '')}-${String(order._id).slice(-6).toUpperCase()}`;
+  const { platformPaisa } = splitPayment(order.totalPaisa);
   const updated = await Order.findOneAndUpdate(
     { _id: order._id, status: { $ne: 'paid' } },
-    { status: 'paid', paidAt, receiptNumber, provider, providerRef },
+    { status: 'paid', paidAt, receiptNumber, provider, providerRef, platformFeePaisa: platformPaisa },
     { returnDocument: 'after' },
   );
   if (!updated) {
@@ -308,8 +313,8 @@ export async function markOrderPaid({
       {
         $setOnInsert: {
           instructor: updated.instructor,
-          amountPaisa: updated.totalPaisa - splitPayment(updated.totalPaisa).instructorPaisa,
-          description: 'Platform share',
+          amountPaisa: platformPaisa,
+          description: `Platform share — ${PLATFORM_SHARE_PERCENT}%`,
         },
       },
       { upsert: true },
@@ -397,7 +402,7 @@ export async function markOrderRefunded({
       {
         $setOnInsert: {
           instructor: updated.instructor,
-          amountPaisa: -(updated.totalPaisa - splitPayment(updated.totalPaisa).instructorPaisa),
+          amountPaisa: -(updated.platformFeePaisa || splitPayment(updated.totalPaisa).platformPaisa),
           description: 'Refunded platform share',
         },
       },

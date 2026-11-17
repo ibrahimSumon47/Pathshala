@@ -7,6 +7,7 @@ import { Enrolment } from './models/enrolment';
 import { LiveSession } from './models/live-session';
 import { Order } from './models/order';
 import { User } from './models/user';
+import { PLATFORM_SHARE_PERCENT } from './commerce';
 
 export type AdminCourseRow = {
   id: string;
@@ -37,7 +38,72 @@ export type AdminReport = {
   liveSessions: number;
   paidOrders: number;
   revenuePaisa: number;
+  refundedPaisa: number;
+  platformPaisa: number;
+  platformSharePercent: number;
+  averageOrderPaisa: number;
 };
+
+export type PlatformRevenue = {
+  grossPaisa: number;
+  refundedPaisa: number;
+  platformPaisa: number;
+  paidOrders: number;
+  refundedOrders: number;
+  averageOrderPaisa: number;
+  sharePercent: number;
+};
+
+/**
+ * Read the platform share from orders that still exist. A ledger alone is not safe here:
+ * removed test orders can leave their rows behind, which would push the share above gross.
+ * Orders written before the field existed fall back to the same 20% integer rule.
+ */
+export async function getPlatformRevenue(): Promise<PlatformRevenue> {
+  await connectToDatabase();
+  const [report] = await Order.aggregate<{
+    paid: Array<{ total: number; count: number; platform: number }>;
+    refunded: Array<{ total: number; count: number }>;
+  }>([
+    {
+      $facet: {
+        paid: [
+          { $match: { status: 'paid' } },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$totalPaisa' },
+              count: { $sum: 1 },
+              platform: {
+                $sum: {
+                  $ifNull: [
+                    '$platformFeePaisa',
+                    { $round: [{ $divide: [{ $multiply: ['$totalPaisa', PLATFORM_SHARE_PERCENT] }, 100] }, 0] },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+        refunded: [
+          { $match: { status: 'refunded' } },
+          { $group: { _id: null, total: { $sum: '$totalPaisa' }, count: { $sum: 1 } } },
+        ],
+      },
+    },
+  ]);
+  const paidOrders = report?.paid[0]?.count ?? 0;
+  const grossPaisa = report?.paid[0]?.total ?? 0;
+  return {
+    grossPaisa,
+    refundedPaisa: report?.refunded[0]?.total ?? 0,
+    platformPaisa: report?.paid[0]?.platform ?? 0,
+    paidOrders,
+    refundedOrders: report?.refunded[0]?.count ?? 0,
+    averageOrderPaisa: paidOrders > 0 ? Math.round(grossPaisa / paidOrders) : 0,
+    sharePercent: PLATFORM_SHARE_PERCENT,
+  };
+}
 
 type AuditInput = {
   actor: string;
@@ -75,7 +141,7 @@ export async function recordAuditEvent(input: AuditInput): Promise<void> {
 /** One screen of operating numbers for the admin overview. */
 export async function getAdminReport(): Promise<AdminReport> {
   await connectToDatabase();
-  const [users, courses, publishedCourses, enrolments, certificates, liveSessions, paidOrders, revenue] = await Promise.all([
+  const [users, courses, publishedCourses, enrolments, certificates, liveSessions, paidOrders, revenue, platform] = await Promise.all([
     User.countDocuments(),
     Course.countDocuments(),
     Course.countDocuments({ status: 'published' }),
@@ -87,6 +153,7 @@ export async function getAdminReport(): Promise<AdminReport> {
       { $match: { status: 'paid' } },
       { $group: { _id: null, total: { $sum: '$totalPaisa' } } },
     ]),
+    getPlatformRevenue(),
   ]);
   return {
     users,
@@ -97,6 +164,10 @@ export async function getAdminReport(): Promise<AdminReport> {
     liveSessions,
     paidOrders,
     revenuePaisa: revenue[0]?.total ?? 0,
+    refundedPaisa: platform.refundedPaisa,
+    platformPaisa: platform.platformPaisa,
+    platformSharePercent: platform.sharePercent,
+    averageOrderPaisa: platform.averageOrderPaisa,
   };
 }
 

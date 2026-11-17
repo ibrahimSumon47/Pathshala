@@ -29,6 +29,8 @@ export type OrderDoc = {
   amountPaisa: number;
   discountPaisa: number;
   totalPaisa: number;
+  /** The platform's share of `totalPaisa`, fixed when the payment is confirmed. */
+  platformFeePaisa: number;
   currency: 'BDT';
   provider: PaymentProvider | null;
   providerRef?: string | undefined;
@@ -78,6 +80,7 @@ const orderSchema = new Schema<OrderDoc>(
       },
     },
     discountPaisa: { type: Number, default: 0, min: 0 },
+    platformFeePaisa: { type: Number, default: 0, min: 0 },
     totalPaisa: {
       type: Number,
       required: true,

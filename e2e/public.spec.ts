@@ -75,7 +75,7 @@ test('a new learner can register, then sign in', async ({ page }) => {
   await page.getByLabel('Password').fill('production-learner-pass-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/dashboard/);
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.locator('#main').getByText(email)).toBeVisible();
 });
 
 test('a signed-out visitor can verify a seeded certificate by its public code', async ({ page }) => {

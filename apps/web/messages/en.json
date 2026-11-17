@@ -15,7 +15,12 @@
     "dashboard": "Dashboard",
     "studio": "Studio",
     "profile": "Profile",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "navLearning": "My learning",
+    "account": "Account menu",
+    "admin": "Admin",
+    "settings": "Settings",
+    "startLearning": "Start learning"
   },
   "Theme": {
     "toggle": "Toggle colour theme",

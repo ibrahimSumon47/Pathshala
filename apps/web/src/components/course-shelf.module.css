@@ -35,6 +35,22 @@
   list-style: none;
 }
 
+.list li {
+  animation: shelf-in var(--duration-slow) var(--ease-standard) both;
+}
+
+.list li:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.list li:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.list li:nth-child(4) {
+  animation-delay: 180ms;
+}
+
 .card {
   display: grid;
   align-content: start;
@@ -44,6 +60,16 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+  transition:
+    transform var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px);
 }
 
 .subject {
@@ -58,7 +84,27 @@
 }
 
 .courseTitle a {
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0 1px;
   text-decoration: none;
+  transition: background-size var(--duration-base) var(--ease-standard);
+}
+
+.courseTitle a:hover {
+  background-size: 100% 1px;
+}
+
+@keyframes shelf-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .meta {

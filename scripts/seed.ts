@@ -42,9 +42,30 @@ export async function seedDatabase(): Promise<void> {
   await connectToDatabase();
 
   const people = [
-    { name: 'Nusrat Jahan', email: 'student@pathshala.dev', roles: ['student'] as const, locale: 'bn' as const },
-    { name: 'Rafiqul Islam', email: 'instructor@pathshala.dev', roles: ['instructor'] as const, locale: 'bn' as const },
-    { name: 'Tania Rahman', email: 'admin@pathshala.dev', roles: ['admin'] as const, locale: 'bn' as const },
+    {
+      name: 'Nusrat Jahan',
+      email: 'student@pathshala.dev',
+      roles: ['student'] as const,
+      locale: 'bn' as const,
+      headline: 'প্রতিদিন একটু একটু করে শিখছি',
+      headlineEn: 'Learning a little every day',
+    },
+    {
+      name: 'Rafiqul Islam',
+      email: 'instructor@pathshala.dev',
+      roles: ['instructor'] as const,
+      locale: 'bn' as const,
+      headline: 'ওয়েব ডেভেলপার ও প্রশিক্ষক',
+      headlineEn: 'Web developer and teacher',
+    },
+    {
+      name: 'Tania Rahman',
+      email: 'admin@pathshala.dev',
+      roles: ['admin'] as const,
+      locale: 'bn' as const,
+      headline: 'প্ল্যাটফর্ম পরিচালনা ও কোর্স অনুমোদন',
+      headlineEn: 'Keeps the school running and approves courses',
+    },
   ];
 
   const userIds = new Map<string, mongoose.Types.ObjectId>();

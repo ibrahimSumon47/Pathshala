@@ -41,6 +41,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         certificates: 'Certificates',
         live: 'Live sessions',
         revenue: 'Test revenue',
+        platform: 'Platform share',
+        refunded: 'Refunded',
         approvals: 'Course approval',
         instructor: 'Instructor',
         status: 'Status',
@@ -68,6 +70,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         certificates: 'সার্টিফিকেট',
         live: 'লাইভ ক্লাস',
         revenue: 'পরীক্ষামূলক আয়',
+        platform: 'প্ল্যাটফর্মের অংশ',
+        refunded: 'রিফান্ড',
         approvals: 'কোর্স অনুমোদন',
         instructor: 'প্রশিক্ষক',
         status: 'অবস্থা',
@@ -104,6 +108,8 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
             [copy.certificates, report.certificates],
             [copy.live, report.liveSessions],
             [copy.revenue, formatPaisa(report.revenuePaisa, locale === 'en' ? 'en' : 'bn')],
+            [`${copy.platform} (${report.platformSharePercent}%)`, formatPaisa(report.platformPaisa, locale === 'en' ? 'en' : 'bn')],
+            [copy.refunded, formatPaisa(report.refundedPaisa, locale === 'en' ? 'en' : 'bn')],
           ].map(([label, value]) => (
             <div key={String(label)} className={styles.stat}>
               <p className={styles.statLabel}>{label}</p>

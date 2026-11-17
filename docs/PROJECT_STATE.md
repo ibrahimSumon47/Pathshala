@@ -1,7 +1,7 @@
 # Project state
 
 Snapshot: 2026-11-17. The first ten phases are complete and three expansion slices are live:
-course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 66/66
+course depth (P9), the learner account slice (P10, item 1) and discovery (P11, item 2). 70/70
 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
@@ -35,7 +35,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P9 | Course detail depth, preview lessons, refund policy, studio fields | done — 2026-11-17, 14/14 production journeys |
 | P10 | Cart and multi-course orders, invoices, settings, notifications, wishlist, notes, streaks and badges | done — 2026-11-17, 17/17 production journeys |
 | P11 | Both-script search, price buckets, sorting, best-rated shelf, learner recommendations | done — 2026-11-17, 20/20 production journeys |
-| P12 | Private profile, public teacher profile, header profile link and log out | done — 2026-11-17, 24/24 production journeys |
+| P12 | Private and public profiles, role desks, platform revenue share, sticky masthead, motion | done — 2026-11-17, 26/26 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -75,7 +75,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   `markOrderPaid` and `markOrderRefunded` are idempotent through unique webhook events,
   payment references and order status guards. Stripe creates a BDT Checkout Session and its
   hosted page is filled in the production test; PayBridge is our own gateway with a merchant
-  API key, hosted checkout, HMAC webhooks, retries, refunds and a ledger.
+  API key, hosted checkout, HMAC webhooks, retries, refunds and a ledger. Every paid sale
+  splits 80/20: the order records the platform's 20% and the admin overview shows it beside
+  gross sales, refunds and average order.
 - Theme: a server-read cookie renders `data-theme` on `<html>` before paint; the toggle writes
   the cookie. There is no boot script, so soft navigation cannot drop the theme.
 - Fonts: Inter for Latin, Noto Sans Bengali for Bangla, self-hosted by `next/font`.
@@ -99,7 +101,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (142 tests: 12 tokens, 13 shared, 42 database,
   58 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **24/24 pass** on
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **26/26 pass** on
   2026-11-17 after the auth split. The
   depth test opens a course page, counts at least six outcomes, checks the FAQ, instructor
   card, related courses and refund link, then reads a free preview lesson. The

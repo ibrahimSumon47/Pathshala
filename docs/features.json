@@ -745,6 +745,55 @@
         "the log out button submits the existing signOutAction, so it works from any page and clears the session cookie before returning home",
         "production 2026-11-17: e2e/profile.spec.ts logs the seeded learner out from the catalogue, sees Sign in return to the header and confirms /dashboard redirects to sign-in"
       ]
+    },
+    {
+      "id": "p12.role-desks",
+      "phase": "P12",
+      "title": "Different profile desks for learners, teachers and operators",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/profile.ts returns a role and role-specific numbers: learning counts for a learner, students/rating/earnings for an instructor, and the operating report for an admin",
+        "the profile hero leads with the reader’s name and role; learners get a completion trail, teachers get their 80% earnings desk, operators get the platform’s 20% share with gross sales, refunds, paid orders and average order",
+        "the public instructor page is now reserved for instructor accounts; operators no longer get an empty public page",
+        "production 2026-11-17: e2e/profile.spec.ts signs in as each of the three seeded roles and asserts the desks do not appear for the wrong role"
+      ]
+    },
+    {
+      "id": "p12.platform-share",
+      "phase": "P12",
+      "title": "Twenty percent of every paid sale is recorded for the platform",
+      "status": "done",
+      "evidence": [
+        "packages/db/src/commerce.ts exports PLATFORM_SHARE_PERCENT = 20 and stores platformFeePaisa on the order when a payment is signed",
+        "the platform ledger row now uses that exact integer share; a refund posts the same share as a negative row",
+        "packages/db/src/admin.ts getPlatformRevenue sums the recorded share on paid orders with a 20% fallback for older rows, so a refund removes the order and deleted test orders cannot inflate the figure; the admin overview shows a Platform share (20%) tile",
+        "packages/db/src/commerce.integration.test.ts proves 120000 paisa yields 24000 platform, 96000 instructor, and that a refund returns both to zero",
+        "packages/db/src/commerce.integration.test.ts also proves a ledger row left by a removed order is ignored"
+      ]
+    },
+    {
+      "id": "p12.account-menu",
+      "phase": "P12",
+      "title": "Sticky masthead with pill navigation and an account menu",
+      "status": "done",
+      "evidence": [
+        "apps/web/src/components/site-nav.tsx marks the current section with an aria-current pill; the header stays visible while reading and keeps Courses reachable on small screens",
+        "apps/web/src/components/site-header.tsx groups profile, dashboard, studio, admin and settings under a native details menu, with the owner’s initials and a log out form",
+        "signed-out visitors see Sign in and a Start learning button instead of a bare Dashboard link",
+        "production 2026-11-17: e2e/profile.spec.ts opens the menu, logs out and confirms the account controls disappear; axe still reports zero violations"
+      ]
+    },
+    {
+      "id": "p12.motion",
+      "phase": "P12",
+      "title": "Purposeful motion across the landing page, cards, header and profile",
+      "status": "done",
+      "evidence": [
+        "the landing hero, course cards, role desks, stat tiles and account menu animate in with short staggered translate/fade sequences",
+        "buttons lift on hover and press on active; course titles draw their underline; the profile completion bar grows from zero",
+        "every animation is decoration only and the existing prefers-reduced-motion block removes it",
+        "production 2026-11-17: axe scans after the entrance settles and still reports zero violations on public and signed-in pages"
+      ]
     }
   ]
 }

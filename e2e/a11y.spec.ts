@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 import { accounts, signIn } from './helpers';
 
 async function violations(page: Parameters<typeof signIn>[0]) {
+  // Entrance motion fades text in; scan the settled page, not a blended frame.
+  await page.waitForTimeout(900);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   return results.violations.map((violation) => ({
     id: violation.id,

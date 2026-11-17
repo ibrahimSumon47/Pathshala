@@ -276,3 +276,11 @@ that name a heading or a landmark survive navigation announcements; plain text d
 The sign-in link exists in the masthead, so a page-level "Sign in" link makes
 `getByRole('link', { name: 'Sign in' })` match twice. Scope the assertion to `#main`; the
 same fix applies to any label that also appears in navigation.
+
+## Axe measures the frame it is given
+
+Entrance fades make text translucent for a few hundred milliseconds, and axe reports the
+blended colour as a contrast failure. The scan now waits for the settle instead of removing the
+motion. Separately, a `<summary>` with an `aria-label` failed label-content-name-mismatch
+because the visible initials were not in the label; the menu now lets its own text name it, and
+the brand link no longer overrides its visible bilingual wordmark.

@@ -531,3 +531,22 @@ The header carries Profile and a log out button for signed-in readers; logging o
 post to the existing Auth.js action, not a link, so it cannot be triggered by prefetching.
 
 Revisit: a slug or handle instead of the ObjectId once people share profile links widely.
+
+## 2026-11-17 — The platform’s 20% is ledger money, not a number on a page
+
+Pathshala already split every payment 80/20 between instructor and platform. That split was
+real in the ledger but invisible: an operator opening their profile saw the same fields as a
+teacher. The share is now a named constant used by payment and refund, written to the order as
+`platformFeePaisa` when the webhook is signed, and reported from paid orders rather than the
+ledger: a removed test order can leave ledger rows behind, and adding them pushed the reported
+share above gross sales. Orders written before the field existed fall back to the same integer
+20% rule. Admins get an operator desk with the platform share, gross
+sales, refunds, paid orders and average order; teachers get their own earnings desk; learners
+get a completion trail instead of money they will never see.
+
+The masthead moved from a flat row of equal text links to a sticky bar with a monogram, a pill
+navigation that marks the current section, and one account menu. On small screens the links
+move to their own scrollable row instead of disappearing.
+
+Motion is CSS only and always optional: translate/fade entrances, a growing progress bar and
+hover lifts, all removed by the existing reduced-motion rule. No animation is load-bearing.

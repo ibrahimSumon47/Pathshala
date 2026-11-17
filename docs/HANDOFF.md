@@ -7,7 +7,7 @@ Updated: 2026-11-17, after the profile slice.
 The ten original phases are complete and the expansion slices have begun. Course depth (item 9)
 the learner account slice (item 1: settings, notifications, wishlist, cart, invoices, bookmarks,
 streaks and badges) and discovery (item 2: both-script search, price buckets, sorting, best-rated
-shelf, learner recommendations) are live and verified; `docs/features.json` tracks 66 features
+shelf, learner recommendations) are live and verified; `docs/features.json` tracks 70 features
 and `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
@@ -21,11 +21,11 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-17)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 24/24
-  Playwright journeys now finish in 2.2 minutes, and the five loading placeholders mirror the
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 26/26
+  Playwright journeys now finish in about 2.5 minutes, and the five loading placeholders mirror the
   catalogue, course, dashboard, lesson and cart grids.
-- 24/24 Playwright journeys against the deployed web origin, including the private profile edit,
-  the public teacher page, a header log out from a public page, separate sign-in and
+- 26/26 Playwright journeys against the deployed web origin, including the private profile edit,
+  the public teacher page, an operator revenue desk, a learner desk, an account-menu log out, separate sign-in and
   registration pages with centred forms, a fresh registration,
   a two-course cart paid once through PayBridge with an invoice PDF download, a settings
   round-trip (rename, password change, delete account), a completed free course with a
