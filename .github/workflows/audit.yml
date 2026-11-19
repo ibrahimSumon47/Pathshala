@@ -86,7 +86,7 @@ jobs:
           chmod +x /tmp/osv-scanner
           sudo install /tmp/osv-scanner /usr/local/bin/osv-scanner
       - name: Dependency advisories (OSV)
-        run: osv-scanner scan --format table .
+        run: osv-scanner scan --config osv-scanner.toml --format table .
       - name: Production advisories (pnpm)
         run: pnpm audit --prod --audit-level high
       - name: Semgrep

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 /**
  * The full local audit: static checks, security scans, dead code, the browser crawl, axe,
@@ -19,9 +19,20 @@ process.env.E2E_BASE_URL ??= base;
 const isWindows = process.platform === 'win32';
 const results = [];
 
-/** Resolve a CLI from the gitignored tools folder or the PATH. */
+/**
+ * Resolve a CLI from the gitignored tools folder or the PATH. The result is absolute, because
+ * a relative path with forward slashes is read as a command plus switches by cmd.exe.
+ */
 function tool(windowsPath, fallback) {
-  return windowsPath && existsSync(windowsPath) ? windowsPath : fallback;
+  return windowsPath && existsSync(windowsPath) ? resolve(windowsPath) : fallback;
+}
+
+/** Resolve an installed package's CLI script so it can run under node without a shell. */
+function cliScript(name) {
+  const manifest = JSON.parse(readFileSync(join('node_modules', name, 'package.json'), 'utf8'));
+  const bin = typeof manifest.bin === 'string' ? manifest.bin : Object.values(manifest.bin ?? {})[0];
+  if (typeof bin !== 'string') throw new Error(`${name} does not expose a bin script`);
+  return resolve('node_modules', name, bin);
 }
 
 const pnpm = isWindows ? 'pnpm.cmd' : 'pnpm';
@@ -30,19 +41,19 @@ const schemathesis = tool('tools/py/Scripts/schemathesis.exe', 'schemathesis');
 const gitleaks = tool('tools/gitleaks/gitleaks.exe', 'gitleaks');
 const osv = tool('tools/osv/osv-scanner_windows_amd64.exe', 'osv-scanner');
 
-function run(name, command, args, extraEnv = {}) {
+function run(name, command, args, extraEnv = {}, { shell = isWindows } = {}) {
   process.stdout.write(`\n=== ${name} ===\n`);
-  return new Promise((resolve) => {
+  return new Promise((done) => {
     const child = spawn(command, args, {
       stdio: 'inherit',
-      shell: isWindows,
+      shell,
       env: { ...process.env, PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', ...extraEnv },
     });
     child.on('close', (code) => {
       const ok = code === 0;
       results.push({ name, ok });
       if (!ok) process.stdout.write(`\n--- ${name} failed with exit ${code} ---\n`);
-      resolve(ok);
+      done(ok);
     });
   });
 }
@@ -101,7 +112,7 @@ async function apiFuzz() {
       'run', 'docs/audit/openapi.json', '-u', apiBase,
       '-c', 'all', '--max-examples', '10', '--rate-limit', '50/m',
       '--max-time', '120', '--workers', '1', '--phases', 'coverage,fuzzing',
-    ]);
+    ], {}, { shell: false });
   } finally {
     // On Windows the pnpm shim owns the real server, so end the whole tree.
     if (isWindows) spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
@@ -121,10 +132,10 @@ async function main() {
   await run('depcheck', pnpm, ['exec', 'depcheck',
     '--ignores=@pathshala/db,@vitest/coverage-v8,depcheck,knip,lighthouse,linkinator,madge,pa11y-ci,@lhci/cli,vite,vitest']);
 
-  await run('gitleaks', gitleaks, ['git', '--redact', '--no-banner', '--exit-code', '1', '--log-opts=--all']);
+  await run('gitleaks', gitleaks, ['git', '--redact', '--no-banner', '--exit-code', '1', '--log-opts=--all'], {}, { shell: false });
   await run('pnpm audit (production)', pnpm, ['audit', '--prod', '--audit-level', 'high']);
-  await run('OSV-Scanner', osv, ['scan', '--output-file', 'docs/audit/osv.json', '.']);
-  await run('Semgrep', semgrep, ['--config', 'p/ci', '--error', '--metrics=off', 'apps', 'packages', 'scripts']);
+  await run('OSV-Scanner', osv, ['scan', '--config', 'osv-scanner.toml', '--output-file', 'docs/audit/osv.json', '.'], {}, { shell: false });
+  await run('Semgrep', semgrep, ['--config', 'p/ci', '--error', '--metrics=off', 'apps', 'packages', 'scripts'], {}, { shell: false });
 
   if (process.env.MONGODB_URI) await run('route inventory', pnpm, ['audit:routes']);
 
@@ -144,13 +155,14 @@ async function main() {
   pa11yConfig.urls = publicUrls;
   writeFileSync('docs/audit/pa11y.json', `${JSON.stringify(pa11yConfig, null, 2)}\n`);
   const chrome = chromium();
-  await run('pa11y-ci (WCAG 2 AA)', pnpm, ['exec', 'pa11y-ci', '--config', 'docs/audit/pa11y.json'],
-    chrome ? { PUPPETEER_EXECUTABLE_PATH: chrome } : {});
+  await run('pa11y-ci (WCAG 2 AA)', process.execPath, [cliScript('pa11y-ci'), '--config', 'docs/audit/pa11y.json'],
+    chrome ? { PUPPETEER_EXECUTABLE_PATH: chrome } : {}, { shell: false });
 
-  await run('linkinator', pnpm, ['exec', 'linkinator', base, '--recurse',
+  // The skip patterns contain `|` and parentheses, which cmd.exe would split into commands.
+  await run('linkinator', process.execPath, [cliScript('linkinator'), base, '--recurse',
     '--skip', '^(mailto|tel):',
     '--skip', '^https?://(?!pathshala-web-eight\\.vercel\\.app)',
-    '--timeout', '20000', '--concurrency', '4']);
+    '--timeout', '20000', '--concurrency', '4'], {}, { shell: false });
 
   const lighthouseUrls = routes.public
     .filter((route) => !route.path.includes('sign-in') && !route.path.includes('register'))
@@ -175,9 +187,9 @@ async function main() {
       },
     };
     writeFileSync('docs/audit/lighthouserc.json', `${JSON.stringify(lhciConfig, null, 2)}\n`);
-    await run('Lighthouse (@lhci/cli)', pnpm, ['exec', 'lhci', 'autorun', '--config', 'docs/audit/lighthouserc.json'], {
-      CHROME_PATH: chrome,
-    });
+    await run('Lighthouse (@lhci/cli)', process.execPath,
+      [cliScript('@lhci/cli'), 'autorun', '--config', 'docs/audit/lighthouserc.json'],
+      { CHROME_PATH: chrome }, { shell: false });
   } else {
     process.stdout.write('\n=== Lighthouse skipped: no Chromium found or no routes ===\n');
   }

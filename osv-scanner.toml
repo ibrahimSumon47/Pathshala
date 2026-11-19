@@ -1,0 +1,6 @@
+# Vendored advisories that cannot be fixed from this repository. Every entry names the
+# reason and an expiry, so the exception is revisited instead of forgotten.
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2027-02-01
+reason = "depcheck 1.4.7 (its latest release) pins minimatch ^7.4.6, and the advisory is fixed only in 11.0.1; forcing 11 breaks depcheck because it requires the module from CommonJS. Dev-only tool run on our own files, never on user input. See docs/reports/audit.md."

@@ -727,3 +727,16 @@ and one sample even hung inside Lighthouse. The committed thresholds therefore u
 preset, where the numbers are stable; a mobile budget will need a median of at least three runs.
 Revisit: when a mobile budget is agreed, or when the course page is split so its client work
 lands later.
+
+## 2026-11-19 — Two dependency overrides, one dated exception
+
+The OSV scan of the full lockfile found three moderate advisories in dev tooling after
+`unlighthouse` was removed: `glob@13.0.7` through linkinator, `minimatch@10.2.6` through
+typescript-eslint, and `minimatch@7.4.9` through depcheck. `pnpm-workspace.yaml` now overrides
+`glob@^13` to `^14.0.6` and `minimatch@^10` to `^11.0.1`; lint, depcheck, linkinator and madge
+were re-run after the install to prove the majors are compatible. `minimatch@^7` cannot be
+forced: minimatch 11 is ESM-only and depcheck requires it from CommonJS, so the override makes
+depcheck exit without scanning. That single advisory is ignored in `osv-scanner.toml` with a
+reason and `ignoreUntil = 2027-02-01`, which makes the exception expire loudly instead of
+hiding it forever.
+Revisit: on or before 2027-02-01, or when depcheck ships a release that moves off minimatch 7.

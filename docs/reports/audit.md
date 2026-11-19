@@ -144,9 +144,14 @@ declaring the audit CLIs in the root `devDependencies`. Re-check: knip reports n
 **m1 — A course page's mobile Lighthouse score varies with the instance.** Measured, see
 limits below. Open.
 
-**m2 — Dev-only advisories remain from the audit tooling.** Production is clean; the dev tree
-keeps moderate findings in `basic-ftp`/`glob`/`minimatch`/`esbuild` that only affect local
-tooling and have no upstream fix on the pinned majors. Open, documented.
+**m2 — One dev-only advisory is accepted with an expiry.** OSV found three moderate findings in
+dev tooling after `unlighthouse` was dropped: `glob@13` through linkinator, `minimatch@10`
+through typescript-eslint, and `minimatch@7` through depcheck. The first two are fixed by
+workspace overrides to the patched releases, with lint, depcheck, linkinator and madge re-run
+afterwards. `minimatch@7` cannot be fixed: depcheck has no newer release, the advisory is fixed
+only in 11.0.1, and forcing 11 crashes depcheck because it loads the module from CommonJS. It
+is ignored for one review cycle in `osv-scanner.toml` with a reason and an expiry
+(2027-02-01); the production tree has no advisories. Open, documented.
 
 **m3 — The English preview of a seeded lesson shows the Bangla body.** The seed stores one body
 per lesson; the UI correctly shows what exists. Not a rendering bug; left as content.
@@ -162,10 +167,12 @@ pa11y's session support would duplicate that with a second harness.
 
 ## Checks that pass
 
-Local, 2026-11-19: `pnpm lint`, `pnpm typecheck`, `pnpm test` (**241 tests**: 12 tokens, 13
-shared, 118 database, 74 web, 24 API), `pnpm test:coverage`, knip, madge, depcheck, Semgrep (0
-findings), gitleaks (0 leaks in all history), `pnpm audit --prod --audit-level high` (clean),
-OSV-Scanner, and Schemathesis **101 generated, 101 passed** against the served schema.
+Local, 2026-11-19: `pnpm audit:all` is **17/17 checks passed** end to end (lint, types,
+**241 tests** — 12 tokens, 13 shared, 118 database, 74 web, 24 API — knip, madge, depcheck,
+Semgrep with 0 findings, gitleaks with 0 leaks in all history,
+`pnpm audit --prod --audit-level high`,
+OSV-Scanner (clean after the `glob`/`minimatch` overrides and one dated dev-only exception),
+and Schemathesis **101 generated, 101 passed** against the served schema.
 
 Production, `https://pathshala-web-eight.vercel.app`:
 
@@ -173,8 +180,9 @@ Production, `https://pathshala-web-eight.vercel.app`:
   operator 6, each at three widths in both themes.
 - axe: **3/3 suites, zero violations** — public templates, the learner pages (including the
   public teacher page) and the operator/studio desks.
-- pa11y-ci WCAG 2 AA: **21/21 URLs, 0 errors**.
-- linkinator: **60 links, 0 broken**.
+- pa11y-ci WCAG 2 AA: **20/20 URLs, 0 errors** on the current data (21 when a certificate row
+  exists; the crawl plan follows the live database).
+- linkinator: **61 links, 0 broken**.
 - Lighthouse desktop (`@lhci/cli`, the committed thresholds): **12 URLs pass** —
   performance 0.94–1.00 on the catalogue and course templates, accessibility,
   best-practices and SEO 1.00 everywhere, CLS 0.
@@ -197,8 +205,10 @@ M9; each was fixed and the affected pages re-captured.
   mobile sample hung inside Lighthouse and was terminated. The committed gate therefore
   measures the desktop preset, which is stable; a real mobile budget needs several runs and a
   median, and is the next performance task rather than a code defect this audit could pin down.
-- **A full dev-dependency audit is not clean.** `pnpm audit` without `--prod` reports moderate
-  advisories through the audit tooling. The production tree has none.
+- **One dev-only advisory stands.** OSV reports nothing for the repository now, but that is
+  partly because `osv-scanner.toml` ignores `GHSA-g3hv-75wg-m249` on `minimatch@7.4.9` until
+  2027-02-01; the entry carries the reason. `pnpm audit` without `--prod` may still mention the
+  same dev tree. The production tree has none.
 - **Schemathesis runs against a local API.** It starts the API on `127.0.0.1:4001` with the real
   Atlas data, read-only. The production schema is served and read, but the fuzz itself is local
   so it cannot trip the production rate limit.

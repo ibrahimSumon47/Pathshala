@@ -13,3 +13,9 @@ allowBuilds:
   '@scarf/scarf': false
   vue-demi: false
 
+# The OSV scan found two dev-tooling advisories with no upstream fix: linkinator pins
+# glob@^13 and depcheck/@typescript-eslint pin minimatch@^10. Both are dev-only; these
+# overrides take the patched releases so the dependency scan stays clean.
+overrides:
+  glob@^13: ^14.0.6
+  minimatch@^10: ^11.0.1

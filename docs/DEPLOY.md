@@ -1,9 +1,12 @@
 # Deployment guide
 
 The three apps are live on Vercel against a free MongoDB Atlas M0 cluster. This guide records
-the working path, including the two behaviours that cost deployments the first time: the API
-must ship prebuilt from the repository root, and a linked project's `rootDirectory` is
-resolved relative to the directory you deploy from.
+the working path and the four behaviours that cost deployments the first time: a linked
+project's `rootDirectory` is resolved relative to the directory you deploy from, so the API
+ships prebuilt from the repository root; that root deploy uploads the root `.vercel/output`,
+so the freshly built app output has to be copied there; the CLI uploads local files even when
+git ignores them, so `.vercelignore` keeps the audit tooling out of the upload; and the web
+app must use the `-eight` alias.
 
 | App | Vercel project | Production URL |
 | --- | --- | --- |
@@ -44,16 +47,31 @@ resolved relative to the directory you deploy from.
 
 Project `pathshala-api`, root directory `apps/api`, framework preset "Other". The function is
 one self-contained esbuild bundle; deploy it prebuilt **from the repository root**, because
-the CLI resolves the project's root directory against the current directory:
+the CLI resolves the project's root directory against the current directory. Running the
+deploy inside `apps/api` fails with `apps/api/apps/api does not exist` for the same reason.
+
+`vercel build --cwd apps/api` writes `apps/api/.vercel/output`, but a root deploy uploads
+`.vercel/output` **next to the CLI**, not the one inside the app directory. Copy the fresh
+app output over the root output before every deploy: if the root copy is missing or stale,
+the deploy still reports Ready while production keeps serving the previous bundle. Replace
+the directory instead of merging into it, and remove it afterwards so the next web deploy
+does not upload a function bundle.
 
 ```bash
 pnpm --filter @pathshala/api bundle
 vercel pull --yes --environment production --cwd apps/api
 vercel build --prod --cwd apps/api
+rm -rf .vercel/output && cp -r apps/api/.vercel/output .vercel/output
 vercel deploy --prebuilt --prod --project pathshala-api --yes
+rm -rf .vercel/output
 curl -s https://pathshala-api-lake.vercel.app/health
+curl -s https://pathshala-api-lake.vercel.app/openapi.json
 curl -s 'https://pathshala-api-lake.vercel.app/courses?limit=2'
 ```
+
+The schema check matters as much as `/health`: it proves the deployed bundle is the one
+just built. A request for a route added in the current slice that answers 404 while `/health`
+is 200 means the upload used a stale output, not that the route is broken.
 
 Environment: `MONGODB_URI` and `WEB_ORIGIN` (web plus gateway origins, comma separated).
 The second request must be a 200 with course rows; before Atlas it was an honest 503
@@ -67,6 +85,18 @@ repository root:
 ```bash
 vercel deploy --prod --project pathshala-web --yes
 ```
+
+### Upload hygiene (both projects)
+
+The repository root carries a `.vercelignore`. The CLI uploads files that exist locally even
+when git ignores them, so without this file a deploy from the root includes `tools/` (the
+Python virtualenv and the scanner binaries, about 500 MB) and `docs/audit/` (screenshots and
+reports). The upload then exceeds Vercel's 100 MB per-file limit and the deploy fails with
+`File size limit exceeded (100 MB)`.
+
+The committed list is `tools`, `docs/audit`, `test-results`, `playwright-report`,
+`blob-report`, `coverage`, `.next`, `.turbo` and `**/.vercel`. Add any new local tool or
+artifact directory here on the day it is created, not after a failed deploy.
 
 Production variables:
 
@@ -127,7 +157,8 @@ that parameter and expects payment methods to come from the dashboard.
 
 ## 6. Post-deploy verification
 
-1. `GET /health` 200 and `GET /courses` 200 with real course rows.
+1. `GET /health` 200, `GET /courses` 200 with real course rows, and `GET /openapi.json` 200
+   listing `/health`, `/courses` and `/courses/{slug}`.
 2. Sign in with a seeded account; refresh and confirm the session persists.
 3. Register a new learner from `/en/sign-in`, enrol in the free JavaScript course, finish all
    three lessons including the quiz, then open the certificate in a private window.

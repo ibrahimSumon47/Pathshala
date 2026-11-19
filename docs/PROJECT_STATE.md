@@ -264,8 +264,10 @@ The findings, fixes and remaining limits live in `docs/reports/audit.md`.
 - The demo live class is seeded two hours ahead so an upcoming room exists during a full
   suite; reseed when it passes.
 - The in-process rate limit is per function instance, not global.
-- A full dev-dependency `pnpm audit` still flags moderate advisories through the audit tooling
-  and typescript-eslint; the production tree is clean.
+- The audit's dependency tree is clean after two workspace overrides (`glob@^13` to 14,
+  `minimatch@^10` to 11). One dev-only advisory remains: depcheck pins `minimatch@^7`, whose
+  fix needs major 11 that depcheck cannot load from CommonJS; `osv-scanner.toml` ignores it
+  with a reason and an expiry of 2027-02-01. The production tree has no advisories.
 - Mobile Lighthouse on a course page is unstable on a cold Vercel instance (0.67–0.88 with LCP
   3.0–3.1 s) while the same page scores 1.00 with LCP 0.7 s warm and on the desktop preset. The
   committed gate uses the desktop preset; a median-of-three mobile run is the next step before
