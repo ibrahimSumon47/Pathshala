@@ -1374,6 +1374,7 @@
         "sniffImageType reads the file signature, so an SVG, an HTML page or a renamed text file is refused whatever the browser claimed",
         "GET /api/media/[id] serves the stored bytes with the sniffed content type, nosniff, a sandboxing CSP and immutable one-year caching",
         "packages/db/src/p22.integration.test.ts covers sniffing, empty, oversized and unknown files, the store/read round trip, owner-only deletion and the course read path",
+        "e2e/studio-media.spec.ts uploads a renamed HTML file and a 1.6 MB PNG through the real cover form, reads 'Upload a PNG, JPEG or WebP image.' and 'Each image must be under 1.5 MB.' in the page alert, and confirms the cover URL and route answer are unchanged",
         "scripts/cleanup-e2e.ts removes the media rows that deleted e2e- courses referenced, so a production run does not leave images behind in Atlas"
       ]
     }

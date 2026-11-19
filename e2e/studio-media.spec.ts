@@ -119,6 +119,62 @@ test('an instructor uploads a cover and a preview picture, sees them publicly, t
   await expect(page.locator(`img[src="${coverUrl}"]`)).toHaveCount(0);
 });
 
+test('the studio refuses a fake image and an oversized file, and keeps the cover it already had', async ({ page }) => {
+  const suffix = Date.now().toString(36);
+  const slug = `e2e-media-refused-${suffix}`;
+  const title = `E2E Refused Upload ${suffix}`;
+
+  await signIn(page, accounts.instructor.email, accounts.instructor.password);
+  await page.goto('/en/studio');
+  await page.locator('#titleEn').fill(title);
+  await page.getByLabel('Subtitle (English)', { exact: true }).fill('A course that keeps its first cover');
+  await page.getByLabel('Slug').fill(slug);
+  await page.getByLabel('Price (taka)').fill('500');
+  await page.getByRole('button', { name: 'Create draft' }).click();
+  await expect(page).toHaveURL(/\/en\/studio\/[a-f0-9]{24}$/);
+  const studioPath = new URL(page.url()).pathname;
+
+  // Start from a cover that is known to work, so a refusal is the only thing that can change it.
+  await page.setInputFiles('#course-cover', { name: 'cover.png', mimeType: 'image/png', buffer: PNG });
+  await page.getByRole('button', { name: 'Save cover' }).click();
+  await expect(page).toHaveURL(/\?saved=1$/);
+  const coverUrl = await page.locator('figure img[alt="Cover image"]').getAttribute('src');
+  expect(coverUrl).toMatch(/^\/api\/media\/[a-f0-9]{24}$/);
+
+  // A browser-declared image type means nothing: the server reads the signature, so an HTML
+  // file named cover.png is refused rather than stored and served back.
+  const fake = Buffer.from('<!doctype html><title>Not an image</title><p>Just text</p>', 'utf8');
+  await page.setInputFiles('#course-cover', { name: 'cover.png', mimeType: 'image/png', buffer: fake });
+  await page.getByRole('button', { name: 'Save cover' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  // The page's own alert; Next's route announcer is the other role="alert" on a fresh render.
+  await expect(page.locator('p[role="alert"]')).toHaveText('Upload a PNG, JPEG or WebP image.');
+  await expect(page.locator('figure img[alt="Cover image"]')).toHaveAttribute('src', coverUrl!);
+  await expect(page.locator('section[aria-labelledby="course-media"] figure')).toHaveCount(1);
+
+  // Oversized: a real PNG header padded past the 1.5 MB limit, so the size check is what refuses it.
+  const oversized = Buffer.concat([PNG, Buffer.alloc(1_600_000)]);
+  expect(oversized.byteLength).toBeGreaterThan(1_572_864);
+  await page.setInputFiles('#course-cover', { name: 'huge.png', mimeType: 'image/png', buffer: oversized });
+  await page.getByRole('button', { name: 'Save cover' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  await expect(page.locator('p[role="alert"]')).toHaveText('Each image must be under 1.5 MB.');
+  await expect(page.locator('figure img[alt="Cover image"]')).toHaveAttribute('src', coverUrl!);
+
+  // The refusals must also leave the stored course alone, not just this render.
+  await page.goto(studioPath);
+  await expect(page.locator('figure img[alt="Cover image"]')).toHaveAttribute('src', coverUrl!);
+  const served = await page.request.get(coverUrl!);
+  expect(served.status()).toBe(200);
+  expect(served.headers()['content-type']).toContain('image/png');
+
+  // Remove the cover so the course leaves no image rows behind for the cleanup script.
+  await page.getByLabel('Remove cover').check();
+  await page.getByRole('button', { name: 'Save cover' }).click();
+  await expect(page).toHaveURL(/\?saved=1$/);
+  await expect(page.locator(`img[src="${coverUrl}"]`)).toHaveCount(0);
+});
+
 test('an instructor sets a preview video and a lesson video, and both reach the learner', async ({ page }) => {
   // Two studio saves, a public page, a preview lesson and the learning room outrun the 45s default.
   test.setTimeout(90_000);

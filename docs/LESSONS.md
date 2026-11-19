@@ -421,3 +421,12 @@ things a reader actually interacts with.
 
 The same run also showed that `getByLabel('Type')` matches "File type" too, so a select with a
 short label needs `{ exact: true }` in a form that also asks for a file MIME type.
+
+## 2026-11-19 — Next's route announcer is a second `role="alert"`
+
+The refusal journey asserted the page's error alert with `getByRole('alert')` and failed in
+strict mode with two matches: the form alert and `<div role="alert" id="__next-route-announcer__">`,
+which announces the new page title after the redirect. Both are correct accessibility, so the
+test was the thing to narrow. `p[role="alert"]` names the product's own feedback and stays
+independent of the framework's announcement. Lesson: after a redirect, a role query that the
+framework also uses is ambiguous; anchor it to the element the page renders.

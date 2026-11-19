@@ -24,8 +24,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-19)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 41/41
-  Playwright journeys finish in about 4.0 minutes, and the five loading placeholders mirror
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 42/42
+  Playwright journeys finish in about 4.4 minutes, and the five loading placeholders mirror
   the catalogue, course, dashboard, lesson and cart grids.
 - The media test counts the six seeded covers on `/en/courses`, asserts a 16:9 box and a
   200 `image/jpeg` response, and opens the JavaScript course to read its hero, the Inside the
@@ -48,11 +48,16 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   its curriculum row reach the public preview page and the learning room. Clearing the flag
   removes the public Preview link. This test runs on its own 90-second budget because it makes
   five studio saves and four page visits.
+- The refusal path is a journey too: `e2e/studio-media.spec.ts` stores a working cover, then
+  uploads a renamed HTML file and a PNG padded past 1.5 MB through the same form. It reads
+  "Upload a PNG, JPEG or WebP image." and "Each image must be under 1.5 MB." from the page
+  alert and proves the refusal changed nothing — the same cover URL on the page, one media
+  figure only, and the stored image still answering 200 `image/png` after a fresh load.
 - A just-saved studio page can answer the first request with the previous render, so the
   journey reloads (bounded, eight attempts) until the stored value appears rather than
   trusting the first paint. The form itself keeps typed values, which is why the assertions
   read a fresh page instead of the DOM right after submitting.
-- 41/41 Playwright journeys against the deployed web origin, including the admin audit filter
+- 42/42 Playwright journeys against the deployed web origin, including the admin audit filter
   with its filtered CSV and the notification-linked live session badge, the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,

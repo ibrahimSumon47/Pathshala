@@ -48,7 +48,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P19 | Studio seat release, stale waitlist cleanup, roster CSV, coupon cap note | done — 2026-11-17, 38/38 production journeys |
 | P20 | Exact-session notifications, seat-release audit, filtered roster CSV, recent cap marker | done — 2026-11-17, 38/38 production journeys |
 | P21 | Seat-release confirmation, seat-note read state, notification-linked session highlight, audit action filter | done — 2026-11-19, 38/38 production journeys |
-| P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store, browser journeys | done — 2026-11-19, 41/41 production journeys |
+| P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store, refused uploads, browser journeys | done — 2026-11-19, 42/42 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -167,7 +167,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (231 tests: 12 tokens, 13 shared, 117 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **41/41 pass** on
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **42/42 pass** on
   2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
   on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
   and the two preview pictures under Inside the course. A second new journey,
@@ -179,7 +179,10 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   lesson's video link plus free-preview flag, then checks the inline player and Watch the
   preview video button on the public page, opens the free lesson signed out, reads the Watch
   the video link in the learning room, and finally clears the flag and the video file to prove
-  both branches. The admin journey filters the audit trail by `audit.export`
+  both branches. A fourth journey in that file uploads a renamed HTML file and a PNG padded past
+  1.5 MB through the cover form, reads each refusal sentence from the page alert, and proves the
+  cover URL, the single media figure and a fresh route answer all stayed as they were. The admin
+  journey filters the audit trail by `audit.export`
   and checks the filtered CSV; the live journey opens the class by its session id and reads
   the notification badge. The teacher journey downloads both CSVs, applies the
   completed/active roster filters and clears them; the promotions journey checks the At limit
