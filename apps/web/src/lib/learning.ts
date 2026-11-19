@@ -20,7 +20,7 @@ import {
 
 type Localized = { bn?: string; en?: string };
 
-export type LearningLesson = {
+type LearningLesson = {
   id: string;
   title: Localized;
   type: 'reading' | 'video' | 'quiz';
@@ -30,7 +30,7 @@ export type LearningLesson = {
   videoUrl: string;
 };
 
-export type LearningSection = { id: string; title: Localized; lessons: LearningLesson[] };
+type LearningSection = { id: string; title: Localized; lessons: LearningLesson[] };
 
 export type LearningCourse = {
   id: string;
@@ -210,7 +210,7 @@ export async function getDashboardLearning(userId: string): Promise<{
   };
 }
 
-export type QuizReviewRow = {
+type QuizReviewRow = {
   prompt: string;
   options: string[];
   selected: number[];

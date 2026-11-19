@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-19, after the P22 course-media round.
+Updated: 2026-11-19, after the P23 quality audit.
 
 ## Where we are
 
@@ -9,8 +9,8 @@ the learner account slice (item 1: settings, notifications, wishlist, cart, invo
 streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
 shelf, learner recommendations), the P12-P15 polish slices, P16's studio and operations work
 P17's classroom and commerce work, P18's waitlist/commerce follow-through, P19's teacher data
-loop, P20's polish round, P21's confirmation/state/filter round and P22's course-media round
-are live and verified; `docs/features.json` tracks 122 features and
+loop, P20's polish round, P21's confirmation/state/filter round, P22's course-media round and
+P23's quality audit are live and verified; `docs/features.json` tracks 123 features and
 `node scripts/check-done.mjs` exits 0.
 
 | App | URL |
@@ -88,8 +88,10 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   promotions, roster and quiz-bank pages.
 - Lighthouse mobile: 100/100/100/100 on landing, 99/100/100/100 on the catalogue, FCP/LCP
   0.9 s, CLS 0, TBT under 120 ms. JSON reports sit in `docs/screenshots`.
-- API `/health` and `/courses` are 200 from Atlas; `/courses?limit=99` is 400; unknown routes
-  are 404.
+- API `/health`, `/courses` and `/openapi.json` are 200 from Atlas; `/courses?limit=99` is 400;
+  unknown routes are 404; a known route with another method is 405 with `Allow`.
+- The audit crawl is 4/4 on production at three widths in both themes, axe 3/3, pa11y 21/21,
+  linkinator 60 links clean and Lighthouse desktop 12 URLs passing its thresholds.
 
 ## What is deliberately not done
 
@@ -101,14 +103,24 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   live account would need a fresh review of BDT support and a live webhook.
 - Shared rate limiting: the limiter is per function instance.
 
+## What the audit left behind
+
+`pnpm audit:all` repeats the whole sweep locally with a pass/FAIL summary, and
+`.github/workflows/audit.yml` runs the cheap checks weekly and on demand without writing
+anything. `docs/reports/audit.md` is the record: three blockers and ten majors found and fixed
+with regression tests, two open minors (mobile Lighthouse variance on cold instances, dev-only
+advisories) and four documented limits.
+
+Two deployment facts worth remembering: the API must be deployed with a fresh
+`apps/api/.vercel/output` copied to the repository root's `.vercel/output` (or the root deploy
+ships a stale bundle), and `.vercelignore` keeps the local audit tooling out of the upload —
+without it the web deploy exceeds Vercel's 100 MB file limit.
+
 ## Next step in the expansion
 
-P22 is live: a teacher or admin uploads a course cover, up to three preview pictures and an
-https preview video from the studio, and can set a lesson's video link and free-preview flag
-in place. Item 13 of
-the agreed expansion order is still next; its wording is not in the repository yet, so
-`docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
-every remaining item. Replace the placeholder with the brief's sentence before writing code.
+Item 13 of the agreed expansion order is still next; its wording is not in the repository yet,
+so `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder
+for every remaining item. Replace the placeholder with the brief's sentence before writing code.
 
 ## Exact next step
 
@@ -163,4 +175,4 @@ Payment environment lives only in gitignored `.env.local` files. All local origi
 
 ## Current gate
 
-`node scripts/check-done.mjs` reports **122/122 — every feature is done with evidence**.
+`node scripts/check-done.mjs` reports **123/123 — every feature is done with evidence**.

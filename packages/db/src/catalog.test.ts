@@ -29,6 +29,13 @@ describe('escapedSearch', () => {
     expect(searchFilter('   ')).toBeNull();
   });
 
+  it('drops control characters instead of handing them to the driver', () => {
+    expect(escapedSearch('ja\u0000va\u0007')).toBe('java');
+    const filter = searchFilter('ja\u0000va') as { $or: Array<Record<string, RegExp>> };
+    const english = filter.$or.map((clause) => clause['title.en']).find(Boolean);
+    expect(english?.test('javascript')).toBe(true);
+  });
+
   it('searches titles in both scripts', () => {
     const filter = searchFilter('ইংরেজি');
     const fields = (filter?.$or as Array<Record<string, unknown>>).map((clause) => Object.keys(clause)[0]);

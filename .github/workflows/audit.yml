@@ -1,0 +1,119 @@
+name: Weekly audit
+
+# Cheap, read-only checks against the deployed site. Nothing here commits, pushes, opens
+# a pull request or deploys: a red run is the report.
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SITE: https://pathshala-web-eight.vercel.app
+  E2E_BASE_URL: https://pathshala-web-eight.vercel.app
+
+jobs:
+  static:
+    name: Lint, types, tests, structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Types
+        run: pnpm typecheck
+      - name: Tests with coverage
+        run: pnpm test:coverage
+      - name: Unused files and exports
+        run: pnpm exec knip
+      - name: Circular imports
+        run: >-
+          pnpm exec madge --circular --extensions ts,tsx
+          apps/web/src apps/api/src apps/paybridge/src
+          packages/db/src packages/shared/src packages/tokens/src
+      - name: Unused dependencies
+        run: >-
+          pnpm exec depcheck
+          --ignores=@pathshala/db,@vitest/coverage-v8,depcheck,knip,lighthouse,linkinator,madge,pa11y-ci,@lhci/cli,vite,vitest
+
+  security:
+    name: Security scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          version=8.30.1
+          asset="gitleaks_${version}_linux_x64.tar.gz"
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+          curl -sSfL "${base}/${asset}" -o "/tmp/${asset}"
+          curl -sSfL "${base}/gitleaks_${version}_checksums.txt" -o /tmp/gitleaks-checksums.txt
+          (cd /tmp && grep "${asset}" gitleaks-checksums.txt | sha256sum -c -)
+          tar -xzf "/tmp/${asset}" -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Secret scan
+        run: gitleaks git --redact --no-banner --exit-code 1 --log-opts="--all"
+      - name: Install OSV-Scanner
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/osv-scanner \
+            https://github.com/google/osv-scanner/releases/download/v2.7.1/osv-scanner_linux_amd64
+          chmod +x /tmp/osv-scanner
+          sudo install /tmp/osv-scanner /usr/local/bin/osv-scanner
+      - name: Dependency advisories (OSV)
+        run: osv-scanner scan --format table .
+      - name: Production advisories (pnpm)
+        run: pnpm audit --prod --audit-level high
+      - name: Semgrep
+        run: |
+          python3 -m pip install --quiet semgrep
+          semgrep --config p/ci --error --metrics=off apps packages scripts
+
+  browser:
+    name: Browser checks on the deployed site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: axe on the product pages
+        run: pnpm exec playwright test e2e/a11y.spec.ts --reporter=line
+      - name: Broken links
+        run: >-
+          pnpm exec linkinator "$SITE" --recurse
+          --skip '^(mailto|tel):'
+          --skip '^https?://(?!pathshala-web-eight\.vercel\.app)'
+          --timeout 20000 --concurrency 4

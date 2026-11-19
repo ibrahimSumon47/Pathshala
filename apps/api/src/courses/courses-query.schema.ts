@@ -1,10 +1,18 @@
+import { withoutControlCharacters } from '@pathshala/db';
 import { z } from 'zod';
+
+/** Drop control characters before a query reaches a regular expression. */
+const searchText = z
+  .string()
+  .trim()
+  .transform((value) => withoutControlCharacters(value).trim())
+  .pipe(z.string().max(80));
 
 /** Catalogue query: bounded text, facet filters and a page size a client cannot exceed. */
 export const coursesQuerySchema = z
   .object({
-    q: z.string().trim().max(80).optional(),
-    category: z.string().trim().max(80).optional(),
+    q: searchText.optional(),
+    category: searchText.optional(),
     level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
     language: z.enum(['bn', 'en']).optional(),
     price: z.enum(['all', 'free', 'paid']).default('all'),

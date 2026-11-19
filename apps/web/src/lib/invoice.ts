@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 
-export type InvoiceItem = { title: string; pricePaisa: number };
+type InvoiceItem = { title: string; pricePaisa: number };
 
 export type InvoiceInput = {
   invoiceNumber: string;

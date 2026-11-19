@@ -7,6 +7,7 @@ import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
+import { plural } from '@/lib/plural';
 import { requireUser } from '@/lib/auth/guard';
 import { applyCouponAction, payWithPayBridgeAction, payWithStripeAction, removeCouponAction } from './actions';
 import styles from './checkout.module.css';
@@ -99,7 +100,9 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPro
 
   const title =
     order.items.length > 1
-      ? `${order.items.length} ${language === 'en' ? 'courses' : 'টি কোর্স'}`
+      ? language === 'en'
+        ? `${order.items.length} ${plural(order.items.length, 'course', 'courses')}`
+        : `${order.items.length}টি কোর্স`
       : order.courseTitle[language] || order.courseTitle.en || order.courseTitle.bn || order.courseSlug;
   const stripeReady = Boolean(process.env.STRIPE_SECRET_KEY);
   const paybridgeReady = Boolean(process.env.PAYBRIDGE_BASE_URL && process.env.PAYBRIDGE_API_KEY);

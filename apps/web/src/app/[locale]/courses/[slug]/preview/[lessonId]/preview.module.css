@@ -17,6 +17,11 @@
   border-bottom: 1px solid var(--color-line);
 }
 
+/* A grid child stretches by default; the label should hug its own words. */
+.badge {
+  justify-self: start;
+}
+
 .head h1 {
   font-size: clamp(var(--text-2xl), 4vw, var(--text-3xl));
   line-height: var(--leading-tight);

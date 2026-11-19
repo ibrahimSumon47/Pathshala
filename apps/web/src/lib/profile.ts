@@ -12,7 +12,6 @@ export const profileDetailsSchema = z.object({
   bioEn: z.string().trim().max(600, 'Keep the introduction under 600 characters.').default(''),
 });
 
-export type ProfileDetails = z.infer<typeof profileDetailsSchema>;
 
 /** Two letters for an avatar without a photo; works for Bangla names as well as Latin ones. */
 export function initialsFor(name: string): string {

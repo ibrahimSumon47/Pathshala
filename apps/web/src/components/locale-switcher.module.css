@@ -23,3 +23,11 @@
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
 }
+
+/* On a 375px phone the two labels sit beside four other controls, so the pills and the
+   header gaps tighten before the account button has to wrap. */
+@media (max-width: 600px) {
+  .option {
+    padding-inline: 7px;
+  }
+}

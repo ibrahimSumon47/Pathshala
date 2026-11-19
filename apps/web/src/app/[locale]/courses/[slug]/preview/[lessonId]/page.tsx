@@ -43,7 +43,9 @@ export default async function PreviewLessonPage({ params }: PreviewProps) {
           ← {copy.back}
         </Link>
         <div className={styles.head}>
-          <Badge tone="accent">{copy.preview}</Badge>
+          <Badge tone="accent" className={styles.badge}>
+            {copy.preview}
+          </Badge>
           <p className={styles.eyebrow}>{courseTitle}</p>
           <h1>{text(lesson.title)}</h1>
           <p className={styles.meta}>
@@ -52,7 +54,10 @@ export default async function PreviewLessonPage({ params }: PreviewProps) {
           </p>
         </div>
         {lesson.bodyHtml ? (
-          <div className={styles.body} dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(lesson.bodyHtml) }} />
+          <>
+            {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml -- the body is sanitized before it reaches this render */}
+            <div className={styles.body} dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(lesson.bodyHtml) }} />
+          </>
         ) : null}
         {lesson.attachments.length > 0 ? (
           <section className={styles.attachments}>

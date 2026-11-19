@@ -695,3 +695,35 @@ picture is not discoverable after the page drops it. The production journey chec
 then asks a cache-busted URL to prove the row is really gone. Revisit if a teacher needs an
 image taken down immediately for a sensitive reason; that needs a cache purge API or an
 uncached route, both of which change the cost model.
+
+## 2026-11-19 — The audit is free CLIs, and Lighthouse is `@lhci/cli`
+
+`unlighthouse` was the first candidate for site-wide Lighthouse. Its dependency tree pulled
+`basic-ftp`, `extract-zip` and a second `zod` major, several with open advisories, for a
+dashboard `@lhci/cli` already provides. `@lhci/cli` 0.16.1 asserts scores in CI and writes the
+JSON reports, so it is the only Lighthouse tool installed. pa11y-ci covers WCAG 2 AA page by
+page and axe covers the signed-in pages inside Playwright; both stay because they disagree on
+different things and neither needs an account.
+Revisit: if a mobile performance budget matters, add a median-of-three run to `@lhci/cli`
+rather than a second tool.
+
+## 2026-11-19 — The API contract is written by hand and served
+
+`@nestjs/swagger` generated the document at boot, but bundling it into the one-file Vercel
+function broke at load: swagger-ui calls `createRequire(import.meta.url)` and esbuild's CJS
+output has no `import.meta`, so the function threw before answering anything. Three routes and
+one error envelope are cheaper to describe than to generate, so `apps/api/src/openapi.ts` holds
+the document and `openapi.test.ts` checks the route list, every response `$ref`, every `$ref`
+target and the required slug. `@nestjs/swagger` was removed from the API.
+Revisit: if the API grows past a handful of controllers, generate the document at build time
+from decorators and ship the JSON as a static asset instead of a runtime dependency.
+
+## 2026-11-19 — The audit gate measures the desktop preset
+
+Mobile Lighthouse on a cold Vercel instance measured a course page at 0.67–0.88 with 3.0–3.1 s
+LCP, while the warm desktop run measured 1.00 at 0.7 s with the same HTML, 411 KiB total and a
+40 ms document response. A single throttled mobile sample is dominated by cold-start variance,
+and one sample even hung inside Lighthouse. The committed thresholds therefore use the desktop
+preset, where the numbers are stable; a mobile budget will need a median of at least three runs.
+Revisit: when a mobile budget is agreed, or when the course page is split so its client work
+lands later.

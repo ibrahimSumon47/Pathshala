@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import styles from './badge.module.css';
 
-export type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
+type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
 
 export type BadgeProps = {
   children: ReactNode;

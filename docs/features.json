@@ -1,6 +1,6 @@
 {
   "project": "Pathshala",
-  "updated": "2026-11-17",
+  "updated": "2026-11-19",
   "note": "A feature is done only when status is done and evidence lists how to verify it. scripts/check-done.mjs enforces this.",
   "features": [
     {
@@ -1378,6 +1378,19 @@
         "packages/db/src/p22.integration.test.ts covers sniffing, empty, oversized and unknown files, the store/read round trip, owner-only deletion and the course read path",
         "e2e/studio-media.spec.ts uploads a renamed HTML file and a 1.6 MB PNG through the real cover form, reads 'Upload a PNG, JPEG or WebP image.' and 'Each image must be under 1.5 MB.' in the page alert, and confirms the cover URL and route answer are unchanged",
         "scripts/cleanup-e2e.ts removes the media rows that deleted e2e- courses referenced, so a production run does not leave images behind in Atlas"
+      ]
+    },
+    {
+      "id": "p23.quality-audit",
+      "phase": "P23",
+      "title": "Repeatable free-software quality audit",
+      "status": "done",
+      "evidence": [
+        "pnpm audit:all runs lint, types, tests, knip, madge, depcheck, gitleaks, pnpm audit, OSV, Semgrep, the route inventory, the Playwright crawl, axe, pa11y, linkinator, Lighthouse and Schemathesis, then prints a pass/FAIL summary",
+        "e2e/audit.spec.ts visits 44 role routes plus 4 deliberate states at 375, 768 and 1440 in light and dark, failing on console noise, failed or 4xx/5xx requests, uncaught errors, horizontal scroll, images without alt or size and clipped text; production is 4/4",
+        "docs/reports/audit.md records every finding with severity, reproduction, tool and status, and names the remaining limits",
+        ".github/workflows/audit.yml runs the cheap checks weekly and on demand, read-only; it never commits, pushes, opens a pull request or deploys",
+        "blockers fixed with tests: control characters in the catalogue query returned 500, the masthead overflowed 375 px, and the teacher avatar 404'd; majors include the search label mismatch, the 404 page's missing lang and title, 405 semantics with Allow, and the served OpenAPI contract"
       ]
     }
   ]

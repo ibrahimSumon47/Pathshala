@@ -222,7 +222,10 @@ export default async function LearnPage({ params, searchParams }: LearnPageProps
             ) : null}
 
             {current.bodyHtml ? (
-              <div className={styles.body} dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(current.bodyHtml) }} />
+              <>
+                {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml -- the lesson body goes through sanitizeLessonHtml */}
+                <div className={styles.body} dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(current.bodyHtml) }} />
+              </>
             ) : null}
 
             {current.attachments.length > 0 ? (

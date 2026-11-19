@@ -15,10 +15,11 @@ export type PublicUser = {
 type StoredUser = PublicUser & { passwordHash: string };
 
 // bcrypt hashes of the public demo passwords above; generated once with cost 10.
+// These are published demo credentials, not secrets; docs/DEMO.md lists the same passwords.
 const DEMO_HASHES: Record<string, string> = {
-  'student@pathshala.dev': '$2b$10$4BV/E4MkmJgoW9KFxDQrXugLGeVtUpjSVrNSuuNQynaIUKTLL6kaq',
-  'instructor@pathshala.dev': '$2b$10$MIxFtDABNO2BmG/WOS/y1uMsN0VW2PLUzr626crJu5gcnymF8F7fW',
-  'admin@pathshala.dev': '$2b$10$/KV7QxcTwEPz3n7WcqyfcOCKkeFWNm1n177rckHovZvisY/fzrz9m',
+  'student@pathshala.dev': '$2b$10$4BV/E4MkmJgoW9KFxDQrXugLGeVtUpjSVrNSuuNQynaIUKTLL6kaq', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
+  'instructor@pathshala.dev': '$2b$10$MIxFtDABNO2BmG/WOS/y1uMsN0VW2PLUzr626crJu5gcnymF8F7fW', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
+  'admin@pathshala.dev': '$2b$10$/KV7QxcTwEPz3n7WcqyfcOCKkeFWNm1n177rckHovZvisY/fzrz9m', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
 };
 
 /** Build a stored user from the public demo list and its hash. */

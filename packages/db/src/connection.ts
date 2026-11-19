@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 type CachedConnection = {
   connection: typeof mongoose | null;
   pending: Promise<typeof mongoose> | null;
+  /** The URI the cached pool belongs to, so a changed URI opens a new one. */
+  uri?: string;
 };
 
 // Serverless functions reuse a process across requests; a global cache avoids opening a
@@ -21,7 +23,10 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     throw new Error('MONGODB_URI is not configured');
   }
 
-  if (cache.connection) return cache.connection;
+  if (cache.connection && cache.uri === uri) return cache.connection;
+  // A test file may start its own in-memory server in the same process; reconnecting
+  // keeps that file's rows out of the previous file's database.
+  if (cache.connection && cache.uri !== uri) await disconnectFromDatabase();
 
   if (!cache.pending) {
     cache.pending = mongoose.connect(uri, {
@@ -33,6 +38,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
 
   try {
     cache.connection = await cache.pending;
+    cache.uri = uri;
     return cache.connection;
   } catch (error) {
     cache.pending = null;
@@ -45,4 +51,5 @@ export async function disconnectFromDatabase(): Promise<void> {
   await mongoose.disconnect();
   cache.connection = null;
   cache.pending = null;
+  delete cache.uri;
 }

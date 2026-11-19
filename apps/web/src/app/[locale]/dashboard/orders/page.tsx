@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Link } from '@/i18n/navigation';
+import { plural } from '@/lib/plural';
 import { requireUser } from '@/lib/auth/guard';
 import { requestRefundAction } from './actions';
 import styles from './orders.module.css';
@@ -58,7 +59,9 @@ export default async function OrdersPage({ params, searchParams }: OrdersProps) 
                   <div>
                     <p className={styles.title}>
                       {order.items.length > 1
-                        ? `${order.items.length} ${language === 'en' ? 'courses' : 'টি কোর্স'}`
+                        ? language === 'en'
+        ? `${order.items.length} ${plural(order.items.length, 'course', 'courses')}`
+        : `${order.items.length}টি কোর্স`
                         : order.courseTitle[language] || order.courseTitle.en || order.courseSlug}
                     </p>
                     {order.items.length > 1 ? (

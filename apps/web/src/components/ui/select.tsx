@@ -2,7 +2,7 @@ import type { SelectHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 import styles from './select.module.css';
 
-export type SelectOption = { value: string; label: string };
+type SelectOption = { value: string; label: string };
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id' | 'children'> & {
   id: string;

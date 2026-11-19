@@ -440,6 +440,55 @@ now navigates to the clean studio URL between the two attempts, which makes the 
 proof that the form ran. Lesson: an assertion about a repeated failure needs a starting state
 that differs from the failed one, or it only re-reads the first result.
 
+## 2026-11-19 — A bundled CJS function cannot carry swagger-ui
+
+`@nestjs/swagger` looks small, but its `swagger-ui` module calls `createRequire(import.meta.url)`
+at load. esbuild's CJS output stubs `import.meta` to `{}`, so the deployed function threw
+`createRequire(undefined)` while the provider's own tests passed. The API now writes its three
+routes' contract by hand and serves it, which also removed a dependency from the function.
+Lesson: bundle the production artifact and require it in a bare directory before believing a
+library is serverless-safe.
+
+## 2026-11-19 — A prebuilt deploy from the repository root uses the root `.vercel/output`
+
+The API's project root directory is `apps/api`, so `vercel build --cwd apps/api` writes
+`apps/api/.vercel/output`. Running `vercel deploy --prebuilt` from the repository root uploads
+`.vercel/output` next to the CLI, which was a stale copy from an earlier slice — production kept
+answering with old code while every deploy reported Ready. Copying the fresh app output to the
+root output fixed it. Lesson: after a prebuilt deploy, request the new route and check the
+response, not just the deployment status.
+
+## 2026-11-19 — A 250 MB upload is the local audit tooling, not the app
+
+After adding a Python virtualenv and scanner binaries under `tools/`, the web deploy failed with
+"File size limit exceeded (100 MB)" because the CLI uploads ignored-but-present files. A
+`.vercelignore` with `tools`, `docs/audit`, `test-results` and `**/.vercel` brought the upload
+back under the limit. Lesson: a new local tool directory belongs in `.vercelignore` the same day
+it is created.
+
+## 2026-11-19 — Overflow and clipped text are measured, not eyeballed
+
+A 375 px viewport produced a 379–387 px document on every page, which no desktop screenshot
+would ever show, and the Search label collapsed to 1 px behind an `overflow: hidden`. The crawl
+now compares `scrollWidth` with `clientWidth` and each leaf's `scrollWidth` with its
+`clientWidth`, skipping the 1 px visually-hidden pattern. Lesson: responsive bugs need a
+measurement at the narrow width, in both themes and both locales.
+
+## 2026-11-19 — An aria-label must contain the visible words
+
+Hiding the visible "Search ⌘K" text on small screens and adding `aria-label="Search"` broke
+axe's `label-content-name-mismatch`: the accessible name has to start with the visible label.
+Naming the shortcut in the label fixed it. Lesson: when a control's visible text changes by
+breakpoint, the label has to account for the widest version.
+
+## 2026-11-19 — A single Lighthouse run on a cold function is not a measurement
+
+Three mobile runs of the same course page scored 0.67, 0.85 and 0.88 with 3.0–3.1 s LCP, while a
+warm desktop run scored 1.00 at 0.7 s; the document itself took 40 ms and hydration finished in
+0.6 s. One more run hung inside Lighthouse. The gate now uses the stable desktop preset, and a
+mobile budget needs a median of several runs before it means anything. Lesson: report the
+conditions a score was taken under, and never tune a page against one noisy sample.
+
 ## 2026-11-19 — One page can hold two `videoUrl` fields
 
 The lesson-video refusal first asserted the stored value with a page-level

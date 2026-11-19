@@ -67,7 +67,7 @@ export default async function InstructorPage({ params }: InstructorPageProps) {
 
         <header className={styles.hero}>
           {profile.image ? (
-            <img src={profile.image} alt="" className={styles.avatar} />
+            <img src={profile.image} alt="" width={112} height={112} className={styles.avatar} />
           ) : (
             <span className={styles.avatarFallback} aria-hidden="true">
               {initialsFor(profile.name)}

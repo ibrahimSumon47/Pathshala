@@ -1,4 +1,4 @@
-export type RateLimitResult = { ok: true; remaining: number } | { ok: false; retryAfterSeconds: number };
+type RateLimitResult = { ok: true; remaining: number } | { ok: false; retryAfterSeconds: number };
 
 export type RateLimiter = {
   check: (key: string, now?: number) => RateLimitResult;

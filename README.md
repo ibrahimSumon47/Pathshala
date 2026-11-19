@@ -112,18 +112,19 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 pnpm test:e2e        # Playwright against the production build on :59802
 pnpm test:a11y       # axe, included in test:e2e
 pnpm audit           # production advisories
+pnpm audit:all       # crawl, axe, pa11y, links, Lighthouse and the API contract fuzz
 node scripts/check-done.mjs
 ```
 
-Current results: **231 unit and integration tests** (12 tokens, 13 shared, 117 database,
-72 web, 17 API), **44 Playwright flows against production**, **zero axe violations** on
+Current results: **241 unit and integration tests** (12 tokens, 13 shared, 118 database,
+74 web, 24 API), **44 Playwright flows against production**, a **288-load route crawl** at
+three widths in both themes, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
 wishlist, cart, notifications, saved searches, surveys, the operator desks and the teacher
-studio pages (including the roster and question bank), and Lighthouse mobile
-on the deployed origin **100/100/100/100** on landing, **99/100/100/100** on the catalogue and
-**97/100/100/100** on a course page (performance/accessibility/best-practices/SEO), with LCP
-between 0.9 and 1.0 s and CLS 0, with a warm server response of 0.26–0.31 s after the web
-functions were moved beside the database in `sin1`.
+studio pages (including the roster and question bank), and Lighthouse desktop
+on the deployed origin **0.94–1.00** performance on the catalogue and course templates with
+accessibility, best practices and SEO at **1.00** and CLS 0. The audit and its remaining
+limits are recorded in [docs/reports/audit.md](docs/reports/audit.md).
 
 ## Security
 

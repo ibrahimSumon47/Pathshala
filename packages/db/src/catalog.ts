@@ -114,9 +114,24 @@ export const PRICE_BUCKETS: Record<PriceBucket, { min: number; max?: number }> =
   'over-1500': { min: 150001 },
 };
 
-/** Escape a reader's query so punctuation never becomes a regular expression. */
+/** Drop the ASCII control characters, including the NUL a BSON regex cannot store. */
+export function withoutControlCharacters(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const code = character.codePointAt(0) ?? 0;
+      return code > 31 && code !== 127;
+    })
+    .join('');
+}
+
+/**
+ * Escape a reader's query so punctuation never becomes a regular expression. Control
+ * characters are dropped first: a NUL byte would reach the driver and turn a search into
+ * a 500 instead of an empty result.
+ */
 export function escapedSearch(query: string): string {
-  return query.trim().slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, (character) => `\\${character}`);
+  const clean = withoutControlCharacters(query).trim().slice(0, 80);
+  return clean.replace(/[.*+?^${}()|[\]\\]/g, (character) => `\\${character}`);
 }
 
 /** A reader's query matches either script, in the title and subtitle. */

@@ -31,6 +31,9 @@ tools/
 .DS_Store
 Thumbs.db
 
+# --- Audit artifacts (screens, reports, logs) ---------------------------
+docs/audit/
+
 # --- Test artifacts ------------------------------------------------------
 playwright-report/
 test-results/
@@ -50,6 +53,9 @@ temp/
 tmp/
 # Generated serverless bundle; build with `pnpm --filter @pathshala/api bundle`.
 apps/api/api/index.cjs
+# Lighthouse and Schemathesis working directories created by the audit run.
+.lighthouseci/
+.schemathesis/
 *.dump
 *.bson
 *.pem.tmp

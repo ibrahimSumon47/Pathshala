@@ -1,0 +1,12 @@
+# Keep the upload to source: local tool binaries and audit artifacts are large and are
+# never part of a deployment.
+.git
+tools
+docs/audit
+test-results
+playwright-report
+blob-report
+coverage
+.next
+.turbo
+**/.vercel

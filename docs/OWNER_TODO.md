@@ -83,3 +83,13 @@ ever exposed.
 ## Email digests (optional, needs an account)
 
 In-app notifications and teacher sale alerts are live. Outward email is not wired because it needs a provider account and API key chosen by the owner. When one is picked, check its current pricing against the free-forever rule before adding it, then set the key through Vercel and document the sender address. No account has been created.
+
+## 7. Quality audit — nothing needed (done 2026-11-19)
+
+The weekly audit workflow (`.github/workflows/audit.yml`) uses only the repository's own
+dependencies and the public production URL; it needs no token beyond the default read-only
+`GITHUB_TOKEN`, creates no pull request and deploys nothing. `pnpm audit:all` runs the same
+sweep locally. Findings are in `docs/reports/audit.md`.
+
+Owner action: none. If GitHub ever re-enables a write-scoped default token for the repository,
+the workflow still declares `permissions: contents: read`, so nothing it does can push.

@@ -49,6 +49,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
             <Field
               id="signup-name"
               name="name"
+              type="text"
               label={t('registerName')}
               minLength={2}
               maxLength={80}

@@ -25,6 +25,10 @@ describe('coursesQuerySchema', () => {
     expect(coursesQuerySchema.safeParse({ price: 'cheap' }).success).toBe(false);
   });
 
+  it('strips control characters from the search text', () => {
+    expect(coursesQuerySchema.parse({ q: 'ja\u0000va\u0007' }).q).toBe('java');
+  });
+
   it('rejects unknown query parameters', () => {
     expect(coursesQuerySchema.safeParse({ limit: '5', sort: 'price' }).success).toBe(false);
   });

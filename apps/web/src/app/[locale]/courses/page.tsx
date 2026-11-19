@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
+import { plural } from '@/lib/plural';
 import { saveCatalogueSearchAction } from './actions';
 import { coursesCopy } from './copy';
 import styles from './courses.module.css';
@@ -160,7 +161,9 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
         </form>
 
         <p className={styles.count} aria-live="polite">
-          {result.total} {copy.results}
+          {result.total}
+          {language === 'en' ? ' ' : ''}
+          {plural(result.total, copy.resultOne, copy.results)}
         </p>
 
         {result.courses.length === 0 ? (
@@ -178,7 +181,9 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
                       <Link href={`/courses?category=${item.slug}`} className={styles.nearbyLink}>
                         <span>{item.name[language] ?? item.name.en ?? item.slug}</span>
                         <span className={styles.nearbyCount}>
-                          {item.count} {copy.results}
+                          {item.count}
+                          {language === 'en' ? ' ' : ''}
+                          {plural(item.count, copy.resultOne, copy.results)}
                         </span>
                       </Link>
                     </li>

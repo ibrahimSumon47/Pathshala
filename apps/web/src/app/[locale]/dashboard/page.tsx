@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
+import { plural } from '@/lib/plural';
 import { signOutAction } from '@/lib/auth/actions';
 import { requireUser } from '@/lib/auth/guard';
 import {
@@ -105,7 +106,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </div>
             {learning.certificateCount > 0 ? (
               <p className={styles.courseMeta}>
-                {learning.certificateCount} {locale === 'en' ? 'certificate(s)' : 'টি সার্টিফিকেট'}
+                {locale === 'en'
+                  ? `${learning.certificateCount} ${plural(learning.certificateCount, 'certificate', 'certificates')}`
+                  : `${learning.certificateCount}টি সার্টিফিকেট`}
               </p>
             ) : null}
             <form action={signOutAction} className={styles.signOut}>

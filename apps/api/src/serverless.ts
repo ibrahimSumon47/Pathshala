@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { configureApp } from './bootstrap.js';
+import { buildOpenApiDocument, rememberOpenApiDocument } from './openapi.js';
 
 let serverPromise: Promise<Express> | null = null;
 
@@ -14,6 +15,7 @@ async function createServer(): Promise<Express> {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(), { logger: ['error', 'warn'] });
   configureApp(app);
   await app.init();
+  rememberOpenApiDocument(buildOpenApiDocument());
   return app.getHttpAdapter().getInstance() as Express;
 }
 

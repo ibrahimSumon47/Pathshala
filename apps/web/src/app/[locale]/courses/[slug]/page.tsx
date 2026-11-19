@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { plural } from '@/lib/plural';
 import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
@@ -24,6 +25,7 @@ const COPY = {
     by: 'শিক্ষক',
     curriculum: 'পাঠক্রম',
     lessons: 'পাঠ',
+    lessonOne: 'পাঠ',
     outcomes: 'শেষে কী শিখবেন',
     requirements: 'যা লাগবে',
     audience: 'কাদের জন্য',
@@ -72,6 +74,7 @@ const COPY = {
     related: 'একই বিষয়ের অন্য কোর্স',
     ratings: 'রেটিং',
     ratingCount: 'টি মতামত',
+    ratingOne: 'টি মতামত',
     aboutInstructor: 'পরিচিতি',
     includes: 'কোর্সে যা আছে',
     includesLessons: 'পাঠ ও অনুশীলন',
@@ -85,6 +88,7 @@ const COPY = {
     by: 'Teacher',
     curriculum: 'Curriculum',
     lessons: 'lessons',
+    lessonOne: 'lesson',
     outcomes: 'What you will learn',
     requirements: 'What you need',
     audience: 'Who it is for',
@@ -133,6 +137,7 @@ const COPY = {
     related: 'More in this subject',
     ratings: 'Ratings',
     ratingCount: 'reviews',
+    ratingOne: 'review',
     aboutInstructor: 'About',
     includes: 'This course includes',
     includesLessons: 'Lessons and practice',
@@ -206,7 +211,10 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
           <p className={styles.subtitle}>{pick(course.shortDescription ?? course.subtitle, language)}</p>
           <p className={styles.meta}>
             {copy.by} <strong>{course.instructor.name}</strong> · ★ {course.ratingAverage.toFixed(1)} (
-            {course.ratingCount} {copy.ratingCount}) · {lessonCount} {copy.lessons} ·{' '}
+            {course.ratingCount}
+            {language === 'en' ? ' ' : ''}
+            {plural(course.ratingCount, copy.ratingOne, copy.ratingCount)}) ·{' '}
+            {lessonCount} {plural(lessonCount, copy.lessonOne, copy.lessons)} ·{' '}
             {copy.updated} {formatDate(course.updatedAt, locale)}
           </p>
           {course.thumbnailUrl ? (
@@ -405,7 +413,9 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
                     <strong>{course.ratingAverage.toFixed(1)}</strong>
                     <span aria-hidden="true">★★★★★</span>
                     <span className={styles.meta}>
-                      {course.ratingCount} {copy.ratingCount}
+                      {course.ratingCount}
+                      {language === 'en' ? ' ' : ''}
+                      {plural(course.ratingCount, copy.ratingOne, copy.ratingCount)}
                     </span>
                   </div>
                   <ul className={styles.histogramBars}>

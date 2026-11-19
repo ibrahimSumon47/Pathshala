@@ -1,0 +1,4 @@
+{
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["@lhci/cli", "lighthouse", "pa11y-ci"]
+}

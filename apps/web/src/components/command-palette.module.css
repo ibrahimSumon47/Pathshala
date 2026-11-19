@@ -21,6 +21,20 @@
 
 .triggerLabel {
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* The icon carries the action on phones; the word and the shortcut would push the
+   masthead wider than the screen. */
+@media (max-width: 600px) {
+  .triggerLabel,
+  .key {
+    display: none;
+  }
+
+  .trigger {
+    padding: 0 var(--space-2);
+  }
 }
 
 .key {

@@ -27,7 +27,7 @@ type StudioSection = {
   lessons: StudioLesson[];
 };
 
-export type QuizQuestionView = {
+type QuizQuestionView = {
   id: string;
   prompt: string;
   type: string;

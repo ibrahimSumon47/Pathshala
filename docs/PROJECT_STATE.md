@@ -4,9 +4,9 @@ Snapshot: 2026-11-19. The first ten phases are complete and the expansion slices
 course depth (P9), the learner account slice (P10, item 1), discovery (P11, item 2), the
 P12-P15 polish slices, the P16 studio/operations slice, P17's classroom/commerce slice,
 P18's waitlist/commerce follow-through, P19's teacher/data loop, the P20 polish round,
-P21's confirmation, notification-state and audit-filter round, and P22's course-media round.
-122/122 features carry production evidence, the three apps run on Atlas and Vercel, and
-`node scripts/check-done.mjs` exits 0.
+P21's confirmation, notification-state and audit-filter round, P22's course-media round and
+the P23 quality audit. 123/123 features carry production evidence, the three apps run on Atlas
+and Vercel, and `node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
 
@@ -49,6 +49,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P20 | Exact-session notifications, seat-release audit, filtered roster CSV, recent cap marker | done — 2026-11-17, 38/38 production journeys |
 | P21 | Seat-release confirmation, seat-note read state, notification-linked session highlight, audit action filter | done — 2026-11-19, 38/38 production journeys |
 | P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store, refused uploads, preview and lesson video links, browser journeys | done — 2026-11-19, 44/44 production journeys |
+| P23 | Quality audit: crawl, axe, pa11y, Lighthouse, links, contract fuzz, security scans, dead code, fixes with tests, weekly workflow | done — 2026-11-19, zero blockers or majors open; see `docs/reports/audit.md` |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -163,10 +164,36 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - `scripts/cleanup-e2e.ts` (`pnpm db:cleanup-e2e`) removes the `e2e-` users, courses and
   their dependent rows, so the demo catalogue stays clean after a suite.
 
+## Quality audit (P23, 2026-11-19)
+
+`pnpm audit:all` is the whole sweep — lint, types, tests, knip, madge, depcheck, gitleaks,
+`pnpm audit`, OSV-Scanner, Semgrep, the route inventory, the Playwright crawl, axe, pa11y,
+linkinator, Lighthouse and Schemathesis — and ends with a pass/FAIL table.
+`.github/workflows/audit.yml` runs the cheap half weekly and on demand, read-only.
+
+- `scripts/audit/routes.ts` (`pnpm audit:routes`) reads the database and writes 44 role routes
+  plus 4 deliberate states to `docs/audit/routes.json`.
+- `e2e/audit.spec.ts` visits every route at 375/768/1440 in light and dark (288 page loads per
+  run), failing on console errors or warnings, failed requests, unexpected 4xx/5xx, uncaught
+  exceptions, horizontal scroll, images without alt, broken or unsized images and clipped
+  text; it also captures the reviewed templates to `docs/audit/screens/`.
+- `apps/api/src/openapi.ts` serves the contract at `/openapi.json`; `openapi.test.ts` checks
+  every route, response reference and `$ref`, and Schemathesis fuzzes the running API against
+  it (101 generated, 101 passed).
+- `apps/api/src/bootstrap.ts` answers an unsupported method on a known route with 405 and an
+  `Allow` header instead of Express's 404.
+
+The findings, fixes and remaining limits live in `docs/reports/audit.md`.
+
 ## Verification recorded 2026-11-19 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (231 tests: 12 tokens, 13 shared, 117 database,
-  72 web, 17 API) and `pnpm build` all exit 0 locally.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (241 tests: 12 tokens, 13 shared, 118 database,
+  74 web, 24 API), `pnpm test:coverage` and `pnpm build` all exit 0 locally.
+- The audit on production: crawl 4/4 (public 21 including four states, learner 13, studio 8,
+  admin 6, three widths in both themes), axe 3/3 with zero violations, pa11y 21/21 with 0
+  errors, linkinator 60 links with 0 broken, and Lighthouse desktop 12 URLs with performance
+  0.94–1.00 on the catalogue and course templates and 1.00 for accessibility, best practices
+  and SEO. `/openapi.json` answers 200.
 - `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **44/44 pass** on
   2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
   on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
@@ -237,8 +264,12 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - The demo live class is seeded two hours ahead so an upcoming room exists during a full
   suite; reseed when it passes.
 - The in-process rate limit is per function instance, not global.
-- A full dev-dependency `pnpm audit` still flags the known moderate minimatch advisory through
-  typescript-eslint; the production tree is clean.
+- A full dev-dependency `pnpm audit` still flags moderate advisories through the audit tooling
+  and typescript-eslint; the production tree is clean.
+- Mobile Lighthouse on a course page is unstable on a cold Vercel instance (0.67–0.88 with LCP
+  3.0–3.1 s) while the same page scores 1.00 with LCP 0.7 s warm and on the desktop preset. The
+  committed gate uses the desktop preset; a median-of-three mobile run is the next step before
+  claiming a mobile budget.
 - Next.js downloads the two fonts at build time, so CI needs network access.
 - Course images are stored in MongoDB, so uploaded media counts against the Atlas M0 storage.
   The six seeded covers ship as static files instead and cost the database nothing; the 1.5 MB
@@ -246,6 +277,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 ## Next action
 
-Deployment is finished. The only remaining work is optional and owner-gated: Google OAuth, a
-transactional email sender, and any live-mode payment work. See `docs/OWNER_TODO.md` and
-`docs/HANDOFF.md`.
+Deployment is finished and the audit is clean of blockers and majors. The remaining work is the
+first unrecorded expansion item in `docs/EXPANSION_PLAN.md` and the optional owner-gated
+services: Google OAuth, a transactional email sender and live-mode payments. See
+`docs/OWNER_TODO.md` and `docs/HANDOFF.md`.

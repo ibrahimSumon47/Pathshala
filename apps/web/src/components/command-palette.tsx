@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import styles from './command-palette.module.css';
 
-export type PaletteItem = { label: string; href: string };
+type PaletteItem = { label: string; href: string };
 
 type CourseResult = {
   slug: string;
@@ -119,12 +119,14 @@ export function CommandPalette({ items }: CommandPaletteProps) {
 
   return (
     <>
+      {/* The visible label is hidden on narrow screens, so the name comes from aria-label. */}
       <button
         ref={trigger}
         type="button"
         className={styles.trigger}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
+        aria-label={`${t('label')} ⌘K`}
       >
         <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="7" />

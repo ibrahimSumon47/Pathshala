@@ -11,4 +11,3 @@ export const routing = defineRouting({
   localePrefix: 'as-needed',
 });
 
-export type AppLocale = (typeof routing.locales)[number];

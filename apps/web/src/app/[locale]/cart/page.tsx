@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
+import { plural } from '@/lib/plural';
 import { requireUser } from '@/lib/auth/guard';
 import {
   applyCartCouponAction,
@@ -39,6 +40,7 @@ const COPY = {
     checkout: 'সবগুলো কিনুন',
     testNote: 'চেকআউট পরীক্ষা মোডে; আসল টাকা কাটা হবে না।',
     courses: 'কোর্স',
+    course: 'কোর্স',
     couponProblem: 'কুপনটি লাগেনি:',
   },
   en: {
@@ -59,6 +61,7 @@ const COPY = {
     checkout: 'Buy all of these',
     testNote: 'Checkout runs in test mode; no real money is charged.',
     courses: 'courses',
+    course: 'course',
     couponProblem: 'That coupon did not apply:',
   },
 } as const;
@@ -127,7 +130,7 @@ export default async function CartPage({ params, searchParams }: CartProps) {
 
             <Card className={styles.summary}>
               <h2>
-                {cart.courses.length} {copy.courses}
+                {cart.courses.length} {plural(cart.courses.length, copy.course, copy.courses)}
               </h2>
               {cart.couponCode ? (
                 <form action={clearCartCouponAction} className={styles.couponRow}>

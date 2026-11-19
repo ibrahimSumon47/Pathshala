@@ -41,9 +41,9 @@ const COURSE_PREVIEWS: Record<string, string[]> = {
 };
 
 const DEMO_HASHES: Record<string, string> = {
-  'student@pathshala.dev': '$2b$10$4BV/E4MkmJgoW9KFxDQrXugLGeVtUpjSVrNSuuNQynaIUKTLL6kaq',
-  'instructor@pathshala.dev': '$2b$10$MIxFtDABNO2BmG/WOS/y1uMsN0VW2PLUzr626crJu5gcnymF8F7fW',
-  'admin@pathshala.dev': '$2b$10$/KV7QxcTwEPz3n7WcqyfcOCKkeFWNm1n177rckHovZvisY/fzrz9m',
+  'student@pathshala.dev': '$2b$10$4BV/E4MkmJgoW9KFxDQrXugLGeVtUpjSVrNSuuNQynaIUKTLL6kaq', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
+  'instructor@pathshala.dev': '$2b$10$MIxFtDABNO2BmG/WOS/y1uMsN0VW2PLUzr626crJu5gcnymF8F7fW', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
+  'admin@pathshala.dev': '$2b$10$/KV7QxcTwEPz3n7WcqyfcOCKkeFWNm1n177rckHovZvisY/fzrz9m', // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash -- published demo password
 };
 
 /** Build the bilingual list shape used by outcomes, requirements and audience. */

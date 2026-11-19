@@ -9,4 +9,7 @@ allowBuilds:
   '@swc/core': true
   esbuild: true
   mongodb-memory-server: true
+  puppeteer: false
+  '@scarf/scarf': false
+  vue-demi: false
 

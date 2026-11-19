@@ -9,7 +9,6 @@ const registrationSchema = z.object({
   password: z.string().min(12).max(72),
 });
 
-export type RegistrationInput = z.infer<typeof registrationSchema>;
 export type RegistrationResult = { ok: true } | { ok: false; code: 'invalid' | 'exists' };
 
 /** Validate fields, hash the password and create a student account atomically by unique email. */

@@ -18,14 +18,14 @@ export function generateApiKey(): { key: string; hash: string; prefix: string } 
 }
 
 /** Sign the dashboard cookie with a server-only secret. */
-export function signDashboard(merchantId: string, expiresAt: number): string {
+function signDashboard(merchantId: string, expiresAt: number): string {
   const secret = process.env.PAYBRIDGE_DASHBOARD_SECRET;
   if (!secret) throw new Error('PAYBRIDGE_DASHBOARD_SECRET is required');
   return createHmac('sha256', secret).update(`${merchantId}.${expiresAt}`).digest('hex');
 }
 
 /** Constant-time check of a dashboard cookie token. */
-export function verifyDashboardToken(token: string | undefined): string | null {
+function verifyDashboardToken(token: string | undefined): string | null {
   if (!token) return null;
   const [merchantId, expires, signature] = token.split('.');
   if (!merchantId || !expires || !signature) return null;

@@ -94,6 +94,7 @@
 }
 
 .sectionTitle {
+  margin-block-start: var(--space-7);
   font-size: var(--text-2xl);
 }
 
