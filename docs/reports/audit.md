@@ -10,12 +10,12 @@ half weekly. Nothing in either path commits, pushes, opens a pull request or dep
 | --- | --- | --- | --- |
 | Blocker | 3 | 3 | 0 |
 | Major | 10 | 10 | 0 |
-| Minor | 6 | 4 | 2 |
+| Minor | 6 | 5 | 1 |
 | Limit (documented, not a defect) | 4 | — | 4 |
 
-All blockers and majors are closed and re-checked on production. The two open minors are
-performance variance on course pages measured on a cold serverless instance, and the dev-only
-dependency advisories left by the audit tooling itself. Both are described under limits.
+All blockers and majors are closed and re-checked on production. The one open minor is the
+dev-only advisory left by the audit tooling itself, described under limits. The mobile
+performance finding is closed by a median-of-three budget rather than by the score moving.
 
 ## Tools and the questions each answers
 
@@ -141,8 +141,15 @@ declaring the audit CLIs in the root `devDependencies`. Re-check: knip reports n
 
 ### Minors
 
-**m1 — A course page's mobile Lighthouse score varies with the instance.** Measured, see
-limits below. Open.
+**m1 — A course page's mobile Lighthouse score varies with the instance.** Single throttled
+mobile runs of the course page scored 0.67, 0.85 and 0.88 on cold instances while the same page
+scored 1.00 warm. Fixed as a measurement problem, not by touching the page: the runner now
+asserts a **median-of-three mobile budget** on the catalogue and course pages in both locales
+at performance 0.80 and 0.95/0.90/0.90 for accessibility, best practices and SEO, beside the
+unchanged desktop thresholds. Measured production medians: catalogue 0.96 (bn) and 0.99 (en),
+course 0.92 (bn) and 0.93 (en), with individual samples reaching 0.83–0.84 when LCP sat near
+3 s — which is why the budget sits below the medians instead of on them. Re-check:
+`pnpm audit:all` runs both passes, and the mobile one prints `Lighthouse mobile, median of 3`.
 
 **m2 — One dev-only advisory is accepted with an expiry.** OSV found three moderate findings in
 dev tooling after `unlighthouse` was dropped: `glob@13` through linkinator, `minimatch@10`
@@ -167,7 +174,8 @@ pa11y's session support would duplicate that with a second harness.
 
 ## Checks that pass
 
-Local, 2026-11-19: `pnpm audit:all` is **17/17 checks passed** end to end (lint, types,
+Local, 2026-11-19: `pnpm audit:all` is **18/18 checks passed** end to end (the two Lighthouse passes are
+separate checks) (lint, types,
 **241 tests** — 12 tokens, 13 shared, 118 database, 74 web, 24 API — knip, madge, depcheck,
 Semgrep with 0 findings, gitleaks with 0 leaks in all history,
 `pnpm audit --prod --audit-level high`,
@@ -186,6 +194,8 @@ Production, `https://pathshala-web-eight.vercel.app`:
 - Lighthouse desktop (`@lhci/cli`, the committed thresholds): **12 URLs pass** —
   performance 0.94–1.00 on the catalogue and course templates, accessibility,
   best-practices and SEO 1.00 everywhere, CLS 0.
+- Lighthouse mobile, median of three (`@lhci/cli`, budget 0.80): **4 URLs pass** — catalogue
+  0.96 (bn) and 0.99 (en), course 0.92 (bn) and 0.93 (en); LCP 2.7–3.5 s, TBT 118–399 ms.
 - API: `/health` 200, `/courses` 200 from Atlas, `/openapi.json` 200.
 
 ## Screenshots
@@ -198,13 +208,12 @@ M9; each was fixed and the affected pages re-captured.
 
 ## Limits of this audit
 
-- **Mobile Lighthouse on course pages is unstable on cold instances.** Single mobile runs of
-  `/en/courses/spoken-english-daily` scored 0.67, 0.85 and 0.88 with LCP 3.0–3.1 s and TBT up
-  to 1.63 s; the same page scores 1.00 with LCP 0.7 s on a warm desktop run, and the server
-  answers the document in 40 ms with 411 KiB total and hydration finishing inside 0.6 s. One
-  mobile sample hung inside Lighthouse and was terminated. The committed gate therefore
-  measures the desktop preset, which is stable; a real mobile budget needs several runs and a
-  median, and is the next performance task rather than a code defect this audit could pin down.
+- **Mobile performance on course pages is close to the line, not behind it.** The median-of-three
+  budget is 0.80 against measured medians of 0.83–0.98, so it catches a real regression but
+  would not notice a small one. The page's LCP is 2.9–3.1 s on mobile with TBT up to 399 ms,
+  while the document itself answers in 40 ms with 411 KiB total; the next performance task is
+  the course page's client work, not the image weight. Two of three runs must be slow before the
+  budget fails, and one sample hung inside Lighthouse during this audit and had to be killed.
 - **One dev-only advisory stands.** OSV reports nothing for the repository now, but that is
   partly because `osv-scanner.toml` ignores `GHSA-g3hv-75wg-m249` on `minimatch@7.4.9` until
   2027-02-01; the entry carries the reason. `pnpm audit` without `--prod` may still mention the
@@ -222,8 +231,12 @@ export MONGODB_URI="$(node -e 'const fs=require("fs");const m=fs.readFileSync(".
 pnpm audit:all          # everything below, then a pass/FAIL summary
 ```
 
-Or one step at a time: `pnpm audit:routes`, `npx playwright test e2e/audit.spec.ts`,
+The two Lighthouse passes write `docs/audit/lighthouserc.json` (desktop) and
+`docs/audit/lighthouserc-mobile.json` (mobile, median of three) and report into separate
+folders. Or one step at a time: `pnpm audit:routes`, `npx playwright test e2e/audit.spec.ts`,
 `npx playwright test e2e/a11y.spec.ts`, `npx pa11y-ci --config docs/audit/pa11y.json`,
-`npx linkinator <origin> --recurse`, `npx lhci autorun --config docs/audit/lighthouserc.json`.
+`npx linkinator <origin> --recurse`, `npx lhci autorun --config docs/audit/lighthouserc.json`
+for desktop, `npx lhci autorun --config docs/audit/lighthouserc-mobile.json` for the mobile
+median.
 `AUDIT_BASE_URL` points the browser tools at another origin; `AUDIT_API_PORT` moves the fuzz
 port.

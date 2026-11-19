@@ -90,8 +90,10 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   0.9 s, CLS 0, TBT under 120 ms. JSON reports sit in `docs/screenshots`.
 - API `/health`, `/courses` and `/openapi.json` are 200 from Atlas; `/courses?limit=99` is 400;
   unknown routes are 404; a known route with another method is 405 with `Allow`.
-- The audit crawl is 4/4 on production at three widths in both themes, axe 3/3, pa11y 21/21,
-  linkinator 60 links clean and Lighthouse desktop 12 URLs passing its thresholds.
+- The audit crawl is 4/4 on production at three widths in both themes, axe 3/3, pa11y 20/20,
+  linkinator 61 links clean, Lighthouse desktop 12 URLs passing its thresholds and a mobile
+  budget of 0.80 on the median of three runs for the catalogue and course pages in both locales
+  (measured medians 0.92–0.99).
 
 ## What is deliberately not done
 

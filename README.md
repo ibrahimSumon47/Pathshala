@@ -121,9 +121,10 @@ Current results: **241 unit and integration tests** (12 tokens, 13 shared, 118 d
 three widths in both themes, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
 wishlist, cart, notifications, saved searches, surveys, the operator desks and the teacher
-studio pages (including the roster and question bank), and Lighthouse desktop
-on the deployed origin **0.94–1.00** performance on the catalogue and course templates with
-accessibility, best practices and SEO at **1.00** and CLS 0. The audit and its remaining
+studio pages (including the roster and question bank), and Lighthouse on the deployed origin:
+desktop **0.94–1.00** performance on the catalogue and course templates with accessibility,
+best practices and SEO at **1.00** and CLS 0, plus a mobile median-of-three budget of 0.80 that
+currently measures 0.92–0.99. The audit and its remaining
 limits are recorded in [docs/reports/audit.md](docs/reports/audit.md).
 
 ## Security

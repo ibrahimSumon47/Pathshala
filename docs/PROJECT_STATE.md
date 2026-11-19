@@ -193,7 +193,8 @@ The findings, fixes and remaining limits live in `docs/reports/audit.md`.
   admin 6, three widths in both themes), axe 3/3 with zero violations, pa11y 21/21 with 0
   errors, linkinator 60 links with 0 broken, and Lighthouse desktop 12 URLs with performance
   0.94–1.00 on the catalogue and course templates and 1.00 for accessibility, best practices
-  and SEO. `/openapi.json` answers 200.
+  and SEO, and Lighthouse mobile with a median of three at budget 0.80 (catalogue 0.96 bn /
+  0.99 en, course 0.92 bn / 0.93 en). `/openapi.json` answers 200.
 - `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **44/44 pass** on
   2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
   on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
@@ -268,10 +269,11 @@ The findings, fixes and remaining limits live in `docs/reports/audit.md`.
   `minimatch@^10` to 11). One dev-only advisory remains: depcheck pins `minimatch@^7`, whose
   fix needs major 11 that depcheck cannot load from CommonJS; `osv-scanner.toml` ignores it
   with a reason and an expiry of 2027-02-01. The production tree has no advisories.
-- Mobile Lighthouse on a course page is unstable on a cold Vercel instance (0.67–0.88 with LCP
-  3.0–3.1 s) while the same page scores 1.00 with LCP 0.7 s warm and on the desktop preset. The
-  committed gate uses the desktop preset; a median-of-three mobile run is the next step before
-  claiming a mobile budget.
+- The audit runs two Lighthouse passes: the desktop thresholds unchanged, and a mobile budget
+  on the catalogue and course pages in both locales that asserts the median of three runs at
+  0.80 performance. Measured medians are 0.92–0.99, so the budget catches a real regression but
+  not a small one; the course page's mobile LCP is 2.9–3.1 s, and splitting its client work is
+  the next performance task before the budget can be raised.
 - Next.js downloads the two fonts at build time, so CI needs network access.
 - Course images are stored in MongoDB, so uploaded media counts against the Atlas M0 storage.
   The six seeded covers ship as static files instead and cost the database nothing; the 1.5 MB

@@ -740,3 +740,16 @@ depcheck exit without scanning. That single advisory is ignored in `osv-scanner.
 reason and `ignoreUntil = 2027-02-01`, which makes the exception expire loudly instead of
 hiding it forever.
 Revisit: on or before 2027-02-01, or when depcheck ships a release that moves off minimatch 7.
+
+## 2026-11-19 — Mobile gets a median-of-three budget beside the desktop thresholds
+
+The earlier entry kept the gate on the desktop preset because a single throttled mobile run on a
+cold Vercel instance swung between 0.67 and 0.93 for the same HTML. The fix is measurement, not
+the page: `pnpm audit:all` now runs the desktop pass unchanged and a second mobile pass with
+`numberOfRuns: 3`, which makes LHCI assert the median, on the catalogue and course pages in both
+locales. The performance budget is 0.80 against measured medians of 0.92–0.99; individual
+samples reached 0.83–0.84 while LCP sat near 3 s, so a budget on the medians would flip on a
+slow but healthy run, and 0.80 still fails a real regression. Accessibility, best practices and
+SEO keep 0.95/0.90/0.90 on mobile, and the desktop thresholds stay at 0.85/0.95/0.90/0.90.
+Revisit: when the course page's client work is split and its mobile LCP falls under 2.5 s, raise
+the mobile budget with the new medians.

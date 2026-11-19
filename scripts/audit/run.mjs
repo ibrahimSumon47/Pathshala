@@ -72,6 +72,13 @@ function chromium() {
   return undefined;
 }
 
+/** Write one Lighthouse config and run it under its own report folder. */
+async function lighthouse(name, configPath, config, chrome) {
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+  await run(name, process.execPath, [cliScript('@lhci/cli'), 'autorun', '--config', configPath],
+    { CHROME_PATH: chrome }, { shell: false });
+}
+
 async function waitFor(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -164,34 +171,61 @@ async function main() {
     '--skip', '^https?://(?!pathshala-web-eight\\.vercel\\.app)',
     '--timeout', '20000', '--concurrency', '4'], {}, { shell: false });
 
-  const lighthouseUrls = routes.public
+  const desktopUrls = routes.public
     .filter((route) => !route.path.includes('sign-in') && !route.path.includes('register'))
     .slice(0, 12);
-  if (chrome && lighthouseUrls.length > 0) {
-    const lhciConfig = {
-      ci: {
-        collect: {
-          url: lighthouseUrls.map((route) => `${base}${route.path}`),
-          numberOfRuns: 1,
-          settings: { preset: 'desktop', chromeFlags: '--no-sandbox' },
-        },
-        assert: {
-          assertions: {
-            'categories:performance': ['error', { minScore: 0.85 }],
-            'categories:accessibility': ['error', { minScore: 0.95 }],
-            'categories:best-practices': ['error', { minScore: 0.9 }],
-            'categories:seo': ['error', { minScore: 0.9 }],
-          },
-        },
-        upload: { target: 'filesystem', outputDir: 'docs/audit/lighthouse' },
-      },
-    };
-    writeFileSync('docs/audit/lighthouserc.json', `${JSON.stringify(lhciConfig, null, 2)}\n`);
-    await run('Lighthouse (@lhci/cli)', process.execPath,
-      [cliScript('@lhci/cli'), 'autorun', '--config', 'docs/audit/lighthouserc.json'],
-      { CHROME_PATH: chrome }, { shell: false });
+  // The mobile preset is the default and is heavily throttled. One sample on a cold Vercel
+  // instance swung between 0.67 and 0.88, so the mobile budget reads the median of three runs
+  // on the two templates people land on. The desktop thresholds stay as they were.
+  const mobileLabels = new Set(['catalogue-en', 'catalogue-bn', 'course-en', 'course-bn']);
+  const mobileUrls = routes.public
+    .filter((route) => mobileLabels.has(route.label))
+    .map((route) => `${base}${route.path}`);
+
+  if (!chrome) {
+    process.stdout.write('\n=== Lighthouse skipped: no Chromium found ===\n');
   } else {
-    process.stdout.write('\n=== Lighthouse skipped: no Chromium found or no routes ===\n');
+    if (desktopUrls.length > 0) {
+      await lighthouse('Lighthouse desktop (@lhci/cli)', 'docs/audit/lighthouserc.json', {
+        ci: {
+          collect: {
+            url: desktopUrls.map((route) => `${base}${route.path}`),
+            numberOfRuns: 1,
+            settings: { preset: 'desktop', chromeFlags: '--no-sandbox' },
+          },
+          assert: {
+            assertions: {
+              'categories:performance': ['error', { minScore: 0.85 }],
+              'categories:accessibility': ['error', { minScore: 0.95 }],
+              'categories:best-practices': ['error', { minScore: 0.9 }],
+              'categories:seo': ['error', { minScore: 0.9 }],
+            },
+          },
+          upload: { target: 'filesystem', outputDir: 'docs/audit/lighthouse' },
+        },
+      }, chrome);
+    }
+    if (mobileUrls.length > 0) {
+      await lighthouse('Lighthouse mobile, median of 3 (@lhci/cli)', 'docs/audit/lighthouserc-mobile.json', {
+        ci: {
+          collect: { url: mobileUrls, numberOfRuns: 3, settings: { chromeFlags: '--no-sandbox' } },
+          assert: {
+            assertions: {
+              // Medians measured 0.91-0.98 on 2026-11-19; 0.80 leaves room for a slow but
+              // normal 3 s LCP sample while still failing a real regression.
+              'categories:performance': ['error', { minScore: 0.8 }],
+              'categories:accessibility': ['error', { minScore: 0.95 }],
+              'categories:best-practices': ['error', { minScore: 0.9 }],
+              'categories:seo': ['error', { minScore: 0.9 }],
+            },
+          },
+          upload: { target: 'filesystem', outputDir: 'docs/audit/lighthouse-mobile' },
+        },
+      }, chrome);
+    }
+    if (desktopUrls.length === 0 && mobileUrls.length === 0) {
+      process.stdout.write('\n=== Lighthouse skipped: no routes in the plan ===\n');
+    }
   }
 
   await apiFuzz();
