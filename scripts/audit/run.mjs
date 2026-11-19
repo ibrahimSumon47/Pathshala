@@ -211,8 +211,9 @@ async function main() {
           collect: { url: mobileUrls, numberOfRuns: 3, settings: { chromeFlags: '--no-sandbox' } },
           assert: {
             assertions: {
-              // Medians measured 0.91-0.98 on 2026-11-19; 0.80 leaves room for a slow but
-              // normal 3 s LCP sample while still failing a real regression.
+              // Two sessions after the course cover moved to WebP measured medians of 0.86-0.98,
+              // and the untouched catalogue moved 0.96 -> 0.86 between them, so run-to-run
+              // variance is larger than the fix's ~300 ms and the budget stays at 0.80.
               'categories:performance': ['error', { minScore: 0.8 }],
               'categories:accessibility': ['error', { minScore: 0.95 }],
               'categories:best-practices': ['error', { minScore: 0.9 }],

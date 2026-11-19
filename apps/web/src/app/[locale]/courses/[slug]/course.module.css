@@ -462,6 +462,11 @@
   }
 }
 
+/* The picture wrapper only chooses a format, so it must not add a box of its own. */
+.coverFrame {
+  display: contents;
+}
+
 .cover {
   width: 100%;
   aspect-ratio: 16 / 9;

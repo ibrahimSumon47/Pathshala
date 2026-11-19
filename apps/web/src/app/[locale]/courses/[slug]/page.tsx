@@ -160,6 +160,17 @@ function playableVideo(url: string): boolean {
   return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url);
 }
 
+/**
+ * Seeded covers ship two WebP twins beside the JPEG, so a phone fetches roughly a third of the
+ * bytes; uploaded media has no twin and keeps the single JPEG.
+ */
+function coverSources(url: string): { phone: string; full: string } | null {
+  const match = /^\/images\/courses\/([a-z0-9-]+)\.jpg$/.exec(url);
+  if (!match) return null;
+  const base = `/images/courses/${match[1]}`;
+  return { phone: `${base}-1024.webp`, full: `${base}.webp` };
+}
+
 /** Dates follow the reader's locale, so Bangla shows Bangla digits. */
 function formatDate(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale === 'en' ? 'en-GB' : 'bn-BD', {
@@ -192,6 +203,7 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
     .slice(0, 2)
     .join('');
   const ratingTotal = Object.values(course.ratingBreakdown).reduce((total, count) => total + count, 0);
+  const cover = course.thumbnailUrl ? coverSources(course.thumbnailUrl) : null;
 
   return (
     <div className={styles.page}>
@@ -218,14 +230,21 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
             {copy.updated} {formatDate(course.updatedAt, locale)}
           </p>
           {course.thumbnailUrl ? (
-            <img
-              src={course.thumbnailUrl}
-              alt=""
-              className={styles.cover}
-              width={1280}
-              height={720}
-              fetchPriority="high"
-            />
+            // This cover is the largest paint on the page, so it is fetched eagerly and the
+            // browser can take the half-size WebP beside the JPEG.
+            <picture className={styles.coverFrame}>
+              {cover ? (
+                <source type="image/webp" srcSet={`${cover.phone} 1024w, ${cover.full} 1392w`} />
+              ) : null}
+              <img
+                src={course.thumbnailUrl}
+                alt=""
+                className={styles.cover}
+                width={1280}
+                height={720}
+                fetchPriority="high"
+              />
+            </picture>
           ) : null}
         </header>
 

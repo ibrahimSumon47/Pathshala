@@ -93,7 +93,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 - The audit crawl is 4/4 on production at three widths in both themes, axe 3/3, pa11y 20/20,
   linkinator 61 links clean, Lighthouse desktop 12 URLs passing its thresholds and a mobile
   budget of 0.80 on the median of three runs for the catalogue and course pages in both locales
-  (measured medians 0.92–0.99).
+  (medians 0.86–0.98 across two sessions, after the course cover moved to WebP twins: 66.4 KB
+  JPEG → 19.2 KB on a phone).
 
 ## What is deliberately not done
 

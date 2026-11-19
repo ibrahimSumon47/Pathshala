@@ -194,7 +194,8 @@ The findings, fixes and remaining limits live in `docs/reports/audit.md`.
   errors, linkinator 60 links with 0 broken, and Lighthouse desktop 12 URLs with performance
   0.94–1.00 on the catalogue and course templates and 1.00 for accessibility, best practices
   and SEO, and Lighthouse mobile with a median of three at budget 0.80 (catalogue 0.96 bn /
-  0.99 en, course 0.92 bn / 0.93 en). `/openapi.json` answers 200.
+  0.98 en, course 0.89 bn / 0.95 en) after the course cover moved to WebP twins.
+  `/openapi.json` answers 200.
 - `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **44/44 pass** on
   2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
   on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
@@ -271,9 +272,13 @@ The findings, fixes and remaining limits live in `docs/reports/audit.md`.
   with a reason and an expiry of 2027-02-01. The production tree has no advisories.
 - The audit runs two Lighthouse passes: the desktop thresholds unchanged, and a mobile budget
   on the catalogue and course pages in both locales that asserts the median of three runs at
-  0.80 performance. Measured medians are 0.92–0.99, so the budget catches a real regression but
-  not a small one; the course page's mobile LCP is 2.9–3.1 s, and splitting its client work is
-  the next performance task before the budget can be raised.
+  0.80 performance, because two sessions after the cover change measured 0.86–0.98 and the
+  untouched catalogue alone moved 0.96 → 0.86 between them. The course page's simulated LCP is
+  ~2.8 s while its observed paint is 0.8–1.5 s: for an image LCP the simulator serializes every
+  request and layout node up to the paint, so a long page pays for its length. The seeded covers
+  now ship 1024 px and 1392 px WebP twins (66.4 KB → 19.2 KB on a phone, −71 %). The real tail is
+  cold-start TTFB (3.0 s cold against 250 ms warm); caching the course HTML needs the viewer
+  state split into a client island first, which is the next performance task.
 - Next.js downloads the two fonts at build time, so CI needs network access.
 - Course images are stored in MongoDB, so uploaded media counts against the Atlas M0 storage.
   The six seeded covers ship as static files instead and cost the database nothing; the 1.5 MB

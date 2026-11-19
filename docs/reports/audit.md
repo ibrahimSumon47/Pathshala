@@ -143,13 +143,31 @@ declaring the audit CLIs in the root `devDependencies`. Re-check: knip reports n
 
 **m1 — A course page's mobile Lighthouse score varies with the instance.** Single throttled
 mobile runs of the course page scored 0.67, 0.85 and 0.88 on cold instances while the same page
-scored 1.00 warm. Fixed as a measurement problem, not by touching the page: the runner now
-asserts a **median-of-three mobile budget** on the catalogue and course pages in both locales
-at performance 0.80 and 0.95/0.90/0.90 for accessibility, best practices and SEO, beside the
-unchanged desktop thresholds. Measured production medians: catalogue 0.96 (bn) and 0.99 (en),
-course 0.92 (bn) and 0.93 (en), with individual samples reaching 0.83–0.84 when LCP sat near
-3 s — which is why the budget sits below the medians instead of on them. Re-check:
-`pnpm audit:all` runs both passes, and the mobile one prints `Lighthouse mobile, median of 3`.
+scored 1.00 warm, and the LCP element is the hero cover. Fixed in two parts. The runner asserts a
+**median-of-three mobile budget** on the catalogue and course pages in both locales, beside the
+unchanged desktop thresholds, and the cover now goes out as WebP through a `<picture>` element:
+seeded covers ship 1024 px and 1392 px twins, so a phone fetches 19.2 KB instead of 66.4 KB
+(−71 %), while uploaded media keeps its single JPEG.
+
+Ablations located the cost before any of that was written. On one warm local build, swapping
+only the cover file for a 20.8 KB copy moved the simulated LCP 3 639 → 3 319 ms, whereas blocking
+both fonts, all eight scripts, every stylesheet, all eight prefetch requests or even the whole
+cover moved it by under 200 ms, and preloading the cover from the document made it *worse*
+(2 989 → 3 627 ms) because React streams that link after the shell. Reading
+`LargestContentfulPaint.getPessimisticGraph` explained the floor: for an image LCP the simulator
+treats every request and layout node up to the paint as serial and averages that with the
+parallel estimate, so the 0.745 s paint simulates as 3 s while the text-LCP catalogue simulates
+at 0.9 s. The page controls the image's bytes, not that serialization.
+
+`next/image` was tried first and rejected: it delivered 11 KB at the exact width (simulated LCP
+2 670–2 726 ms), but the first hit on each cold optimizer transcode took 1.8–1.9 s, and the
+single-run desktop pass fell to 0.82–0.84 on course pages. Pre-built static WebP twins keep the
+byte saving with no runtime transcode, and desktop went back to 1.00 there. Re-measured mobile
+medians did **not** improve beyond noise — two sessions after the change gave 0.86–0.98, and the
+catalogue, whose markup did not change, moved from 0.96 to 0.86 between them — so the budget
+stays at 0.80 rather than moving up on a number the run-to-run variance cannot resolve.
+Re-check: `pnpm audit:all` runs both passes, and the mobile one prints `Lighthouse mobile,
+median of 3`.
 
 **m2 — One dev-only advisory is accepted with an expiry.** OSV found three moderate findings in
 dev tooling after `unlighthouse` was dropped: `glob@13` through linkinator, `minimatch@10`
@@ -166,8 +184,11 @@ per lesson; the UI correctly shows what exists. Not a rendering bug; left as con
 **m4 — The API rate limit is per function instance.** Pre-existing and documented; a shared
 store is the fix when it matters.
 
-**m5 — Course covers are 38–81 KB JPEGs.** They are not the LCP driver on the course page, so
-no re-encoding was done.
+**m5 — Course covers were 38–81 KB JPEGs.** The course hero *is* the LCP element, so the six
+seeded covers now ship 1024 px and 1392 px WebP twins beside the JPEG (66.4 KB → 19.2 KB on a
+phone) and the page renders them through `<picture>`. Catalogue cards keep the plain `<img>`:
+their LCP is text, so re-encoding them would cost bytes and screenshots without moving the metric.
+Uploaded media is stored as the user provided it and has no twin.
 
 **m6 — pa11y scans public pages only.** Signed-in pages are covered by axe in Playwright;
 pa11y's session support would duplicate that with a second harness.
@@ -195,7 +216,8 @@ Production, `https://pathshala-web-eight.vercel.app`:
   performance 0.94–1.00 on the catalogue and course templates, accessibility,
   best-practices and SEO 1.00 everywhere, CLS 0.
 - Lighthouse mobile, median of three (`@lhci/cli`, budget 0.80): **4 URLs pass** — catalogue
-  0.96 (bn) and 0.99 (en), course 0.92 (bn) and 0.93 (en); LCP 2.7–3.5 s, TBT 118–399 ms.
+  0.96 (bn) and 0.98 (en), course 0.89 (bn) and 0.95 (en) in that session; simulated LCP 2.4–3.1 s
+  on the course page against an observed paint of 0.8–1.5 s, TBT 118–399 ms.
 - API: `/health` 200, `/courses` 200 from Atlas, `/openapi.json` 200.
 
 ## Screenshots
@@ -208,12 +230,18 @@ M9; each was fixed and the affected pages re-captured.
 
 ## Limits of this audit
 
-- **Mobile performance on course pages is close to the line, not behind it.** The median-of-three
-  budget is 0.80 against measured medians of 0.83–0.98, so it catches a real regression but
-  would not notice a small one. The page's LCP is 2.9–3.1 s on mobile with TBT up to 399 ms,
-  while the document itself answers in 40 ms with 411 KiB total; the next performance task is
-  the course page's client work, not the image weight. Two of three runs must be slow before the
-  budget fails, and one sample hung inside Lighthouse during this audit and had to be killed.
+- **The course page's ~2.8 s mobile LCP is mostly Lighthouse's simulation, not the paint.** Its
+  LCP element is the hero cover, and for an image LCP the simulator's pessimistic graph treats
+  every request and every layout node up to the paint as serial, so a long page pays ~2 s that
+  its 0.8–1.5 s observed paint does not show (the catalogue, whose LCP is text, simulates at
+  0.9 s on the same run). What the page controls is the image's bytes: 66.4 KB → 19.2 KB is worth
+  ~320 ms in a controlled ablation, which is smaller than the ~0.1 the medians move between
+  sessions — the untouched catalogue dropped 0.96 → 0.86 in one. That is why the budget stays at
+  0.80 instead of following the medians up. The real tail is cold-start TTFB: a cold Vercel
+  instance answered in 3.0 s and put LCP at 5.0 s, while warm instances answer in 250 ms.
+  Caching the course HTML would fix that tail, but the page reads `auth()` for the buy panel, so
+  it needs the viewer state split into a client island first — that is the next performance
+  task, and the budget should be revisited after it.
 - **One dev-only advisory stands.** OSV reports nothing for the repository now, but that is
   partly because `osv-scanner.toml` ignores `GHSA-g3hv-75wg-m249` on `minimatch@7.4.9` until
   2027-02-01; the entry carries the reason. `pnpm audit` without `--prod` may still mention the

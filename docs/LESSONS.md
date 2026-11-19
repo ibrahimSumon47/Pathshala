@@ -497,3 +497,23 @@ own `videoUrl` field, so the locator matched two inputs, and a per-lesson check 
 filled the add form instead of the row. Binding the locator to the lesson row fixes both the
 strict-mode failure and the ambiguity. Lesson: scope a control to the record it belongs to
 before asserting on it, especially when a create form and an edit form share field names.
+
+## 2026-11-19 — For an image LCP, Lighthouse's pessimistic graph charges for the whole page
+
+The course page painted its hero at 0.745 s while the metric reported 2.989 s, and blocking both
+fonts, all eight scripts, every stylesheet, all eight prefetch requests or even the cover moved
+that number by at most 320 ms — the cover, at 66.7 KB, was the only input the page really
+controlled. Reading `LargestContentfulPaint.getPessimisticGraph` explained it: for an image LCP
+the simulator treats every request and every layout node up to the paint as serial and averages
+that with the parallel estimate, so a long page pays for its length while a text-LCP page (the
+catalogue at 0.9 s) does not. Lesson: ablate the resources one at a time before optimising, and
+read the metric's implementation before promising a number the page cannot reach.
+
+## 2026-11-19 — On-demand image optimization is slow on its first hit
+
+`next/image` cut the course cover from 66.4 KB to 11 KB and lowered the simulated LCP by
+~320 ms, but the first request for each cold (url, width, format) spent 1.8–1.9 s inside the
+optimizer transcode, which dropped the single-run desktop pass to 0.82–0.84 on course pages.
+Pre-built WebP twins in `public/` give the same weight class (~19 KB) with a static file and no
+runtime cost. Lesson: a build-time asset beats a runtime transform for the image that is painted
+first, and a single-run budget is sensitive to a first-hit cost a median would hide.

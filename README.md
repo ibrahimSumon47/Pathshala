@@ -124,7 +124,7 @@ wishlist, cart, notifications, saved searches, surveys, the operator desks and t
 studio pages (including the roster and question bank), and Lighthouse on the deployed origin:
 desktop **0.94–1.00** performance on the catalogue and course templates with accessibility,
 best practices and SEO at **1.00** and CLS 0, plus a mobile median-of-three budget of 0.80 that
-currently measures 0.92–0.99. The audit and its remaining
+currently measures 0.86–0.98. The audit and its remaining
 limits are recorded in [docs/reports/audit.md](docs/reports/audit.md).
 
 ## Security

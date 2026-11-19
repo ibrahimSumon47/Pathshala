@@ -753,3 +753,28 @@ slow but healthy run, and 0.80 still fails a real regression. Accessibility, bes
 SEO keep 0.95/0.90/0.90 on mobile, and the desktop thresholds stay at 0.85/0.95/0.90/0.90.
 Revisit: when the course page's client work is split and its mobile LCP falls under 2.5 s, raise
 the mobile budget with the new medians.
+
+## 2026-11-19 — The course cover ships pre-built WebP twins, and the mobile budget stays 0.80
+
+The mobile LCP looked like a font or JavaScript problem, but ablations said otherwise: blocking
+both fonts, all eight script chunks, every stylesheet, all eight prefetch requests or even the
+cover itself moved the simulated LCP by at most 320 ms, and preloading the cover from the
+document made it worse because React streams that link after the shell. Reading the metric's
+implementation settled it — for an image LCP, Lighthouse's pessimistic graph treats every
+request and layout node up to the paint as serial, which is why the 0.745 s paint simulates as
+3 s and why the text-LCP catalogue simulates at 0.9 s. Only the image's own bytes are the page's
+to change.
+
+`next/image` went in first and came back out: it delivered 11 KB at the requested width and
+simulated 2.67–2.73 s, but the first hit on each cold optimizer transcode took 1.8–1.9 s and the
+single-run desktop pass dropped to 0.82–0.84 on course pages. Pre-built static twins — 1024 px
+and 1392 px WebP beside each seeded JPEG, chosen by `<picture>` with `w` descriptors — give the
+same weight class (19.2 KB on a phone, −71 %) with no runtime transcode, no monthly optimizer
+quota, and desktop back at 1.00. Uploaded media keeps its single JPEG because it has no twin.
+
+The budget stays at 0.80. Two mobile sessions after the change measured medians of 0.86–0.98,
+and the catalogue — whose markup did not change — moved 0.96 → 0.86 between them, so the
+run-to-run variance is larger than the ~320 ms the cover is worth and a higher gate would flip
+on a healthy cold run.
+Revisit: when the cold-start tail is addressed by splitting viewer state out of the course page,
+or when the variance between sessions drops enough for a median to mean something again.
