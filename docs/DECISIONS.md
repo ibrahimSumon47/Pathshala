@@ -679,3 +679,19 @@ Course media writes use a targeted `Course.updateOne({_id, instructor}, {...})` 
 `document.save()`. Saving re-validates every field, including prose that was seeded before a
 limit existed, and one picture change should not fail because of an unrelated paragraph.
 Atomic writes also keep two teachers' simultaneous edits from overwriting each other's fields.
+
+## 2026-11-19 — A removed course picture is gone from the page before it is gone from a URL
+
+`GET /api/media/[id]` is cached for a year as immutable, which is what keeps a picture request
+away from the database. Removing a preview picture deletes its row and its bytes, but an edge
+cache that already holds that URL keeps answering it. Purging a single URL is not available on
+the free tier, and serving images uncached would put a Mongo read in front of every classroom
+screenshot.
+
+The behaviour that ships is therefore: the studio and the public page stop showing the
+picture immediately, the row and the bytes are deleted, and a URL that was already cached can
+still be fetched until it expires. The URL contains a 24-character random id, so a removed
+picture is not discoverable after the page drops it. The production journey checks the page,
+then asks a cache-busted URL to prove the row is really gone. Revisit if a teacher needs an
+image taken down immediately for a sensitive reason; that needs a cache purge API or an
+uncached route, both of which change the cost model.

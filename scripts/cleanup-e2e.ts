@@ -6,6 +6,7 @@ import {
   Enrolment,
   Lesson,
   LiveWaitlist,
+  Media,
   Note,
   Notification,
   Order,
@@ -18,6 +19,7 @@ import {
   User,
   Wishlist,
   connectToDatabase,
+  imageIdFromUrl,
 } from '@pathshala/db';
 
 /**
@@ -28,8 +30,15 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
   await connectToDatabase();
   const users = await User.find({ email: /^e2e-.*@pathshala\.dev$/ }).select('_id').lean();
   const userIds = users.map((user) => user._id);
-  const courses = await Course.find({ slug: /^e2e-/ }).select('_id').lean();
+  const courses = await Course.find({ slug: /^e2e-/ })
+    .select('_id thumbnailUrl previewImageUrls')
+    .lean();
   const courseIds = courses.map((course) => course._id);
+  // Test uploads are stored in the Media collection; drop the ones these courses pointed at.
+  const mediaIds = courses
+    .flatMap((course) => [course.thumbnailUrl ?? '', ...(course.previewImageUrls ?? [])])
+    .map((url) => imageIdFromUrl(url))
+    .filter((id): id is string => Boolean(id));
 
   const removed: Record<string, number> = {};
   const record = (name: string, result: { deletedCount?: number }) => {
@@ -47,6 +56,7 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
     record('notes', await Note.deleteMany({ course: { $in: courseIds } }));
     record('lessons', await Lesson.deleteMany({ course: { $in: courseIds } }));
     record('sections', await Section.deleteMany({ course: { $in: courseIds } }));
+    if (mediaIds.length > 0) record('media', await Media.deleteMany({ _id: { $in: mediaIds } }));
     record('courses', await Course.deleteMany({ _id: { $in: courseIds } }));
   }
 

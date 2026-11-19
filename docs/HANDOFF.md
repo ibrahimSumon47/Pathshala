@@ -24,19 +24,25 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-19)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 39/39
-  Playwright journeys finish in about 4.2 minutes, and the five loading placeholders mirror
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 40/40
+  Playwright journeys finish in about 4.4 minutes, and the five loading placeholders mirror
   the catalogue, course, dashboard, lesson and cart grids.
 - The media test counts the six seeded covers on `/en/courses`, asserts a 16:9 box and a
   200 `image/jpeg` response, and opens the JavaScript course to read its hero, the Inside the
   course heading and both preview pictures. `scripts/seed.ts` is what gives every demo course
   a cover; rerun it after a fresh database.
-- Uploading through the studio was exercised locally against the memory database (cover
-  upload, `/api/media/<id>` 200 `image/jpeg` with immutable caching, cover replaced on the
-  course page). Production has no demo sign-in, so that action is covered by
-  `packages/db/src/p22.integration.test.ts` plus this manual pass rather than a production
-  journey.
-- 39/39 Playwright journeys against the deployed web origin, including the admin audit filter
+- Uploading is now a production journey: `e2e/studio-media.spec.ts` creates a course as the
+  seeded instructor, uploads a real PNG cover and a preview PNG through the studio forms,
+  reads both `/api/media/<id>` URLs (200 `image/png`, immutable cache), finds the cover in the
+  published hero and the picture under Inside the course, removes the picture and asserts the
+  page and a fresh media request both drop it, then clears the cover. The run adds about
+  thirteen seconds.
+- The media route is cached for a year at the edge, so a removed image URL can still answer
+  from that cache even though its row is gone; the journey asks a cache-busted URL to check the
+  deletion, and the page-level assertions are the real behaviour check. This trade-off is
+  recorded in `docs/DECISIONS.md`, and `pnpm db:cleanup-e2e` now deletes the media rows that
+  `e2e-` courses referenced.
+- 40/40 Playwright journeys against the deployed web origin, including the admin audit filter
   with its filtered CSV and the notification-linked live session badge, the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,
@@ -89,8 +95,9 @@ pnpm db:seed
 unset MONGODB_URI
 ```
 
-Playwright leaves one learner account and one `e2e-studio-*` course behind per run; delete
-those rows if the catalogue should look like the seed screenshot. Then rerun
+Playwright leaves one learner account and two `e2e-` courses (plus the media rows they
+uploaded) behind per run; `pnpm db:cleanup-e2e` removes all of it if the catalogue should look
+like the seed screenshot. Then rerun
 `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e` to confirm nothing drifted.
 
 ## Local commands

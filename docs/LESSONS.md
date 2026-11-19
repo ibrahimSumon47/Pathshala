@@ -381,3 +381,16 @@ streamed HTML with its reveal scripts, and Playwright against production read th
 normally in the passes before and after. Lesson: when layout measurements contradict the HTML
 and the same thing happens on a known-good deployment, check the harness before changing
 application code.
+
+## 2026-11-19 — A 200 from an image URL is not proof the row exists
+
+The upload journey's last check asserted that a removed picture's URL returns 404. It returned
+200, and the collection held no row for it: the edge cache was answering because the route is
+served as immutable for a year. Deleting and long-caching the same URL are separate promises,
+and the test was written against the wrong one.
+
+Lesson: when a test asserts that a resource is gone, ask which layer could still answer —
+browser cache, edge cache, service worker or a second copy of the data — and give the request a
+cache-busting URL when the point is to test the origin. Assert the user-visible outcome (the
+page no longer shows it) at the level the user sees it, and keep the underlying deletion check
+separate.

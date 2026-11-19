@@ -1323,7 +1323,8 @@
         "the studio course page has an Images and preview panel that uploads a PNG, JPEG or WebP as the cover, shows the current one, and offers Remove cover when a cover exists",
         "updateCourseMediaAction stores the upload for the signed-in teacher, writes Course.thumbnailUrl with one atomic update scoped to the course owner, and deletes the replaced file",
         "the catalogue cards, the landing shelf, the studio list and the course hero render the cover at a 16:9 ratio with height auto",
-        "e2e/public.spec.ts asserts six seeded covers on /en/courses, their box ratio and a 200 image/jpeg response, then the hero image on the course page"
+        "e2e/public.spec.ts asserts six seeded covers on /en/courses, their box ratio and a 200 image/jpeg response, then the hero image on the course page",
+        "e2e/studio-media.spec.ts signs in as the seeded instructor, creates a course, uploads a real PNG through the studio form, reads the returned /api/media/<id> URL with its immutable cache header, and finds it in the hero of the published course page before clearing it"
       ]
     },
     {
@@ -1335,7 +1336,8 @@
         "the studio media panel adds one preview image at a time up to three and removes any of them, each change redirecting back with the saved notice",
         "the public course page renders the uploaded previews as a gallery under an Inside the course heading, with the course title and position as alt text",
         "addCoursePreviewImageAction and removeCoursePreviewImageAction cap the list at MAX_COURSE_PREVIEW_IMAGES and only delete media owned by the uploader",
-        "e2e/public.spec.ts opens the JavaScript course and asserts the gallery images of the seeded previews are visible"
+        "e2e/public.spec.ts opens the JavaScript course and asserts the gallery images of the seeded previews are visible",
+        "e2e/studio-media.spec.ts uploads a preview picture, sees it under Inside the course on the published page, removes just that picture from the studio, and then finds it gone from the page and answered with 404 by the media route"
       ]
     },
     {
@@ -1369,7 +1371,8 @@
         "Media rows keep the bytes out of normal reads, accept only image/png, image/jpeg and image/webp, and cap a file at 1.5 MB under the serverless request limit",
         "sniffImageType reads the file signature, so an SVG, an HTML page or a renamed text file is refused whatever the browser claimed",
         "GET /api/media/[id] serves the stored bytes with the sniffed content type, nosniff, a sandboxing CSP and immutable one-year caching",
-        "packages/db/src/p22.integration.test.ts covers sniffing, empty, oversized and unknown files, the store/read round trip, owner-only deletion and the course read path"
+        "packages/db/src/p22.integration.test.ts covers sniffing, empty, oversized and unknown files, the store/read round trip, owner-only deletion and the course read path",
+        "scripts/cleanup-e2e.ts removes the media rows that deleted e2e- courses referenced, so a production run does not leave images behind in Atlas"
       ]
     }
   ]
