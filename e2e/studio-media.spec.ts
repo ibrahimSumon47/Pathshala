@@ -220,6 +220,70 @@ test('the studio refuses a non-https preview video and keeps the link it already
   await expect(page.locator('#promoVideoUrl')).toHaveValue(savedVideo);
 });
 
+test('the studio refuses a non-https lesson video and keeps the link already stored on the row', async ({ page }) => {
+  // Course, section and lesson creation plus three saves outrun the 45s default.
+  test.setTimeout(90_000);
+  const suffix = Date.now().toString(36);
+  const slug = `e2e-lesson-refused-${suffix}`;
+  const title = `E2E Refused Lesson Video ${suffix}`;
+  const savedVideo = 'https://media.example.com/lessons/first-recording.mp4';
+
+  await signIn(page, accounts.instructor.email, accounts.instructor.password);
+  await page.goto('/en/studio');
+  await page.locator('#titleEn').fill(title);
+  await page.getByLabel('Subtitle (English)', { exact: true }).fill('A lesson that keeps its first video');
+  await page.getByLabel('Slug').fill(slug);
+  await page.getByLabel('Price (taka)').fill('500');
+  await page.getByRole('button', { name: 'Create draft' }).click();
+  await expect(page).toHaveURL(/\/en\/studio\/[a-f0-9]{24}$/);
+  const studioPath = new URL(page.url()).pathname;
+
+  const sectionForm = page.locator('details').filter({ hasText: 'Add section' }).first();
+  await sectionForm.locator('summary').click();
+  await sectionForm.locator('#sectionTitleEn').fill('Lessons with video');
+  await sectionForm.getByRole('button', { name: 'Add section' }).click();
+  await expect(page.getByText('Changes saved.')).toBeVisible();
+
+  const lessonForm = page.locator('details').filter({ hasText: 'Add lesson' }).first();
+  await lessonForm.locator('summary').click();
+  await lessonForm.locator('input[name="titleEn"]').fill('One lesson with a video link');
+  await lessonForm.locator('textarea[name="bodyHtml"]').fill('<p>Watch, then try it yourself.</p>');
+  await lessonForm.getByRole('button', { name: 'Add lesson' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'One lesson with a video link' })).toBeVisible();
+
+  // The per-lesson controls live on the curriculum row, next to the lesson they belong to.
+  // Scope to the row: the add-lesson form above it also has a videoUrl field.
+  const lessonRow = page.getByRole('listitem').filter({ hasText: 'One lesson with a video link' });
+  const rowVideo = lessonRow.locator('input[name="videoUrl"]');
+  await lessonRow.locator('summary').click();
+  await rowVideo.fill(savedVideo);
+  await lessonRow.getByRole('button', { name: 'Save this lesson' }).click();
+  await expect(page).toHaveURL(/\?saved=1$/);
+  await expect(page.getByText('Changes saved.')).toBeVisible();
+  // The disclosure is closed after a reload, but the stored input still holds its value.
+  await loadUntil(page, studioPath, async () => (await rowVideo.inputValue()) === savedVideo);
+
+  // A plain http link would be blocked as mixed content, and a relative path is not a video.
+  await lessonRow.locator('summary').click();
+  await rowVideo.fill('http://media.example.com/lessons/first-recording.mp4');
+  await lessonRow.getByRole('button', { name: 'Save this lesson' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  await expect(page.locator('p[role="alert"]')).toHaveText('Video links need https.');
+  await expect(rowVideo).toHaveValue(savedVideo);
+
+  // Start from the clean studio URL, so this redirect proves the second submission ran.
+  await page.goto(studioPath);
+  await lessonRow.locator('summary').click();
+  await rowVideo.fill('/lessons/first-recording.mp4');
+  await lessonRow.getByRole('button', { name: 'Save this lesson' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  await expect(page.locator('p[role="alert"]')).toHaveText('Video links need https.');
+
+  // Read the stored lesson rather than the render that answered the refusal.
+  await page.goto(studioPath);
+  await expect(rowVideo).toHaveValue(savedVideo);
+});
+
 test('an instructor sets a preview video and a lesson video, and both reach the learner', async ({ page }) => {
   // Two studio saves, a public page, a preview lesson and the learning room outrun the 45s default.
   test.setTimeout(90_000);

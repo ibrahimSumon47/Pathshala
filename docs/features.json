@@ -1362,7 +1362,8 @@
         "every lesson row in the studio curriculum opens a Video and preview disclosure with an https video link and a Free to preview checkbox",
         "updateLessonAction writes only that lesson's video slot and isPreview flag, scoped to the owning instructor or an admin",
         "a lesson marked free already opens through the public preview route, so the flag here is what makes a preview reachable from the syllabus",
-        "e2e/studio-media.spec.ts sets a lesson's video link and Free to preview flag from its curriculum row, opens the free lesson signed out from the public page, finds the Watch the video link in the learning room, then clears the flag and confirms both the public Preview link and the stored flag are gone"
+        "e2e/studio-media.spec.ts sets a lesson's video link and Free to preview flag from its curriculum row, opens the free lesson signed out from the public page, finds the Watch the video link in the learning room, then clears the flag and confirms both the public Preview link and the stored flag are gone",
+        "e2e/studio-media.spec.ts also saves an https lesson video from the row, then submits an http link and a relative path there, reads 'Video links need https.' from the page alert, and finds the row input and a fresh studio render still holding the stored link"
       ]
     },
     {

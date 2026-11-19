@@ -24,8 +24,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-19)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 43/43
-  Playwright journeys finish in about 4.4 minutes, and the five loading placeholders mirror
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 44/44
+  Playwright journeys finish in about 4.5 minutes, and the five loading placeholders mirror
   the catalogue, course, dashboard, lesson and cart grids.
 - The media test counts the six seeded covers on `/en/courses`, asserts a 16:9 box and a
   200 `image/jpeg` response, and opens the JavaScript course to read its hero, the Inside the
@@ -58,11 +58,16 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   time, and finds the stored field plus a freshly loaded studio page still holding the https
   link. The second submission starts from the clean studio URL, so its `?error=` redirect is
   evidence the form ran instead of the assertion repeating the first render.
+- The lesson refusal follows the same shape one level down: it creates a section and a lesson,
+  saves an https video from that row's Video and preview disclosure, then submits an http link
+  and a relative path, reads "Video links need https." both times, and proves the row input and
+  a freshly loaded studio page still hold the saved link. The row scoping matters — the
+  add-lesson form above carries its own `videoUrl` field.
 - A just-saved studio page can answer the first request with the previous render, so the
   journey reloads (bounded, eight attempts) until the stored value appears rather than
   trusting the first paint. The form itself keeps typed values, which is why the assertions
   read a fresh page instead of the DOM right after submitting.
-- 43/43 Playwright journeys against the deployed web origin, including the admin audit filter
+- 44/44 Playwright journeys against the deployed web origin, including the admin audit filter
   with its filtered CSV and the notification-linked live session badge, the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,

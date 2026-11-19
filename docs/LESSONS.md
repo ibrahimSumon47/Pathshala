@@ -439,3 +439,12 @@ alert after the second submit would pass even if nothing was posted a second tim
 now navigates to the clean studio URL between the two attempts, which makes the redirect itself
 proof that the form ran. Lesson: an assertion about a repeated failure needs a starting state
 that differs from the failed one, or it only re-reads the first result.
+
+## 2026-11-19 — One page can hold two `videoUrl` fields
+
+The lesson-video refusal first asserted the stored value with a page-level
+`input[name="videoUrl"]` and failed: the add-lesson disclosure on the same studio page has its
+own `videoUrl` field, so the locator matched two inputs, and a per-lesson check could have
+filled the add form instead of the row. Binding the locator to the lesson row fixes both the
+strict-mode failure and the ambiguity. Lesson: scope a control to the record it belongs to
+before asserting on it, especially when a create form and an edit form share field names.
