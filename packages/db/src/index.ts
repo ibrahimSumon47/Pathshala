@@ -9,6 +9,7 @@ export * from './curriculum';
 export * from './earnings';
 export * from './learner';
 export * from './live';
+export * from './media';
 export * from './promotions';
 export * from './question-bank';
 export * from './refunds';

@@ -60,6 +60,9 @@ export type StudioCourse = {
   level: 'beginner' | 'intermediate' | 'advanced';
   language: 'bn' | 'en';
   status: 'draft' | 'pending' | 'published' | 'archived';
+  thumbnailUrl: string | null;
+  previewImageUrls: string[];
+  promoVideoUrl: string;
   sections: StudioSection[];
   lessonCount: number;
 };
@@ -123,6 +126,9 @@ export async function getStudioCourse(courseId: string, userId: string, isAdmin:
     level: course.level,
     language: course.language,
     status: course.status,
+    thumbnailUrl: course.thumbnailUrl ?? null,
+    previewImageUrls: course.previewImageUrls ?? [],
+    promoVideoUrl: course.promoVideoUrl ?? '',
     lessonCount: lessons.length,
     sections: sections.map((section) => ({
       id: String(section._id),

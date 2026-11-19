@@ -352,3 +352,32 @@ A native `<details>` is enough for a one-step confirmation. It keeps the server 
 Unread state should follow the action the note asked for. Clearing a seat note when the learner merely opens the live page would hide the prompt without freeing a seat; clearing it inside check-in makes the badge tell the truth. Scope the update by owner and session, then a shared helper cannot leak across rooms.
 
 A filter that is not on the export is a reporting bug waiting for an audit. The audit desk and its CSV now share one query builder, and the export row stores the action it filtered by. When the two reads are separate functions, compare them in a test; the parity assertion caught nothing here, but it will catch the next divergence.
+
+## 2026-11-19 — A save validates the whole document, including old rows
+
+Adding a cover image exposed a dormant schema bug. The studio action loaded the course and
+called `course.save()`, which re-validated every field; the seeded description was 432
+characters long against a 200-character `localizedTextSchema`, so a picture upload failed with
+500 "Course validation failed". The seed had written that text with `findOneAndUpdate`, which
+does not run validators by default, and the studio's own save path had the same latent 500.
+Two fixes: prose fields now use `localizedProseSchema`, and media actions write one field with
+a scoped `updateOne`. Lesson: a small feature can be the first code path that ever validated a
+document; check the whole schema, not just the field being touched.
+
+## 2026-11-19 — `height` beats `aspect-ratio` on an img
+
+The course cover markup passes `width` and `height` attributes so the browser can reserve the
+box before the file loads. With only `width: 100%` in CSS, the presentational height attribute
+is what applies: one revealed render measured the hero at 473×720 instead of 473×266, which
+crops a 16:9 picture. Adding `height: auto` next to `aspect-ratio: 16 / 9` fixes it, and the
+production journey now asserts the 16:9 box so the ratio cannot regress silently.
+
+## 2026-11-19 — The preview browser's hidden Suspense boundary is not a page bug
+
+Every streamed page measured 0×0 with a `<div hidden id="S:0">` wrapper while the loading
+skeleton stayed on screen, including pages this slice never touched and the already-deployed
+origin. That was the local browser panel, not the app: `curl` showed the content in the
+streamed HTML with its reveal scripts, and Playwright against production read the same page
+normally in the passes before and after. Lesson: when layout measurements contradict the HTML
+and the same thing happens on a known-good deployment, check the harness before changing
+application code.

@@ -4,6 +4,7 @@ import type { Locale } from '@pathshala/shared';
 import {
   courseFaqSchema,
   localizedListField,
+  localizedProseSchema,
   localizedTextSchema,
   localizedTextValidator,
   SLUG_PATTERN,
@@ -37,7 +38,11 @@ export type CourseDoc = {
   /** Who the course is written for. */
   audience: LocalizedText[];
   faqs: CourseFaq[];
+  /** Cover image: an uploaded /api/media/<id> path or a seeded static path. */
   thumbnailUrl?: string;
+  /** Up to three screenshots shown as a preview of the course page. */
+  previewImageUrls: string[];
+  /** https link to a short course preview video. */
   promoVideoUrl?: string;
   /** Seeded demo content, so an operator can tell it apart from real courses. */
   isDemo: boolean;
@@ -72,8 +77,9 @@ const courseSchema = new Schema<CourseDoc>(
       match: [SLUG_PATTERN, 'Use lowercase words separated by hyphens'],
     },
     subtitle: { type: localizedTextSchema },
-    shortDescription: { type: localizedTextSchema },
-    description: { type: localizedTextSchema },
+    // Prose fields hold real paragraphs, so they use the prose limit rather than a title's.
+    shortDescription: { type: localizedProseSchema },
+    description: { type: localizedProseSchema },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     language: { type: String, enum: ['bn', 'en'], required: true },
@@ -86,6 +92,7 @@ const courseSchema = new Schema<CourseDoc>(
     audience: localizedListField,
     faqs: { type: [courseFaqSchema], default: [] },
     thumbnailUrl: { type: String, trim: true },
+    previewImageUrls: { type: [String], default: [] },
     promoVideoUrl: { type: String, trim: true },
     isDemo: { type: Boolean, default: false },
     // Denormalised counters, updated when reviews and enrolments change.

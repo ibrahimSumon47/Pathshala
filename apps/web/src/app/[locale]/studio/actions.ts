@@ -6,17 +6,22 @@ import {
   Category,
   Course,
   Lesson,
+  MAX_COURSE_PREVIEW_IMAGES,
   QuizQuestion,
   Section,
   addBankItemToQuiz,
   connectToDatabase,
   createLiveSession,
+  deleteImage,
+  imageIdFromUrl,
   moveLesson,
   notifyWishlistPriceDrop,
   releaseAttendance,
+  saveImage,
   saveQuestionToBank,
   scheduleSessionReminders,
   updateLiveSessionCapacity,
+  type ImageError,
   type QuizType,
 } from '@pathshala/db';
 import { toPaisa } from '@pathshala/shared';
@@ -36,8 +41,8 @@ const courseSchema = z.object({
   subtitleEn: z.string().trim().max(200).default(''),
   shortDescriptionBn: z.string().trim().max(300).default(''),
   shortDescriptionEn: z.string().trim().max(300).default(''),
-  descriptionBn: z.string().trim().max(8000).default(''),
-  descriptionEn: z.string().trim().max(8000).default(''),
+  descriptionBn: z.string().trim().max(4000).default(''),
+  descriptionEn: z.string().trim().max(4000).default(''),
   outcomesBn: z.string().max(4000).default(''),
   outcomesEn: z.string().max(4000).default(''),
   requirementsBn: z.string().max(4000).default(''),
@@ -51,6 +56,7 @@ const courseSchema = z.object({
   priceTaka: z.coerce.number().min(0).max(100000),
   level: z.enum(['beginner', 'intermediate', 'advanced']),
   language: z.enum(['bn', 'en']),
+  promoVideoUrl: z.string().trim().max(500).default(''),
 });
 
 const lessonSchema = z.object({
@@ -96,6 +102,7 @@ function courseFields(form: FormData) {
     priceTaka: text(form, 'priceTaka') || '0',
     level: text(form, 'level'),
     language: text(form, 'language'),
+    promoVideoUrl: text(form, 'promoVideoUrl'),
   };
 }
 
@@ -106,6 +113,26 @@ function localePath(form: FormData, path: string): string {
 /** Send the instructor back to the form with one readable message. */
 function fail(form: FormData, path: string, message: string): never {
   redirect(`${localePath(form, path)}?error=${encodeURIComponent(message)}`);
+}
+
+/** One readable sentence for each upload refusal. */
+function imageErrorText(error: ImageError): string {
+  if (error === 'too-large') return 'Each image must be under 1.5 MB.';
+  if (error === 'unsupported') return 'Upload a PNG, JPEG or WebP image.';
+  return 'That file was empty, so nothing was saved.';
+}
+
+/** A preview video must be an https link; a bare path would be a broken player. */
+function validVideoUrl(url: string): boolean {
+  return url === '' || url.startsWith('https://');
+}
+
+/** Clear studio and public caches after a course's pictures change. */
+function revalidateCourse(courseId: string, slug: string): void {
+  revalidatePath(`/studio/${courseId}`);
+  revalidatePath('/studio');
+  revalidatePath('/courses');
+  revalidatePath(`/courses/${slug}`);
 }
 
 /** Create a lowercase hyphen slug when the instructor leaves it blank. */
@@ -136,6 +163,7 @@ export async function createCourseAction(form: FormData): Promise<void> {
   if (!parsed.success) fail(form, '/studio', 'Check the course details and try again.');
   if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, '/studio', 'Add a title in Bangla or English.');
   if (!OBJECT_ID.test(parsed.data.categoryId)) fail(form, '/studio', 'Choose a category.');
+  if (!validVideoUrl(parsed.data.promoVideoUrl)) fail(form, '/studio', 'Preview video links need https.');
   if (!SLUG.test(makeSlug(parsed.data.slug, parsed.data.titleEn))) fail(form, '/studio', 'Use a valid slug.');
 
   await connectToDatabase();
@@ -159,6 +187,7 @@ export async function createCourseAction(form: FormData): Promise<void> {
       requirements: mergeLocalized(parsed.data.requirementsBn, parsed.data.requirementsEn),
       audience: mergeLocalized(parsed.data.audienceBn, parsed.data.audienceEn),
       faqs: mergeFaqs(parsed.data.faqBn, parsed.data.faqEn),
+      ...(parsed.data.promoVideoUrl ? { promoVideoUrl: parsed.data.promoVideoUrl } : {}),
     });
     revalidatePath('/studio');
     redirect(localePath(form, `/studio/${course._id}`));
@@ -180,7 +209,7 @@ export async function updateCourseAction(form: FormData): Promise<void> {
   const parsed = courseSchema.safeParse(courseFields(form));
   if (!parsed.success) fail(form, `/studio/${courseId}`, 'Check the course details and try again.');
   if (!parsed.data.titleBn && !parsed.data.titleEn) fail(form, `/studio/${courseId}`, 'Add a title.');
-
+  if (!validVideoUrl(parsed.data.promoVideoUrl)) fail(form, `/studio/${courseId}`, 'Preview video links need https.');
   const outcomes = mergeLocalized(parsed.data.outcomesBn, parsed.data.outcomesEn, MAX_OUTCOMES);
   const publish = form.get('publish') === 'on';
   if (publish) {
@@ -207,6 +236,7 @@ export async function updateCourseAction(form: FormData): Promise<void> {
     requirements: mergeLocalized(parsed.data.requirementsBn, parsed.data.requirementsEn),
     audience: mergeLocalized(parsed.data.audienceBn, parsed.data.audienceEn),
     faqs: mergeFaqs(parsed.data.faqBn, parsed.data.faqEn),
+    promoVideoUrl: parsed.data.promoVideoUrl || undefined,
     status: publish ? 'published' : course.status === 'published' ? 'published' : 'draft',
     publishedAt: publish ? (course.publishedAt ?? new Date()) : course.publishedAt,
   });
@@ -468,5 +498,111 @@ export async function addLessonAction(form: FormData): Promise<void> {
     durationMinutes: parsed.data.durationMinutes,
   });
   revalidatePath(`/studio/${courseId}`);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Upload, replace or clear the cover image used on cards and the course page. */
+export async function updateCourseMediaAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const isAdmin = user.roles.includes('admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, isAdmin);
+  if (!course) fail(form, '/studio', 'Course not found.');
+
+  const file = form.get('cover');
+  const hasFile = file instanceof File && file.size > 0;
+  const remove = form.get('removeCover') === 'on';
+  if (!hasFile && !remove) fail(form, `/studio/${courseId}`, 'Choose an image to upload first.');
+
+  // One field changes: an atomic write keeps long prose out of the validator's way.
+  const owned = isAdmin ? { _id: course._id } : { _id: course._id, instructor: user.id };
+  const previousId = imageIdFromUrl(course.thumbnailUrl);
+  if (hasFile) {
+    const saved = await saveImage({
+      ownerId: user.id,
+      kind: 'course-cover',
+      bytes: new Uint8Array(await file.arrayBuffer()),
+    });
+    if (!saved.ok) fail(form, `/studio/${courseId}`, imageErrorText(saved.error));
+    await Course.updateOne(owned, { $set: { thumbnailUrl: saved.image.url } });
+  } else {
+    await Course.updateOne(owned, { $unset: { thumbnailUrl: '' } });
+  }
+  // Stored before the old row is dropped, so a refused upload never leaves a blank cover.
+  if (previousId) await deleteImage({ id: previousId, ownerId: user.id }).catch(() => false);
+
+  revalidateCourse(courseId, course.slug);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Add one screenshot to the course preview, up to the cap the page can show. */
+export async function addCoursePreviewImageAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const isAdmin = user.roles.includes('admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, isAdmin);
+  if (!course) fail(form, '/studio', 'Course not found.');
+  if (course.previewImageUrls.length >= MAX_COURSE_PREVIEW_IMAGES) {
+    fail(form, `/studio/${courseId}`, `A course shows up to ${MAX_COURSE_PREVIEW_IMAGES} preview images.`);
+  }
+
+  const file = form.get('preview');
+  if (!(file instanceof File) || file.size === 0) fail(form, `/studio/${courseId}`, 'Choose an image to upload first.');
+  const saved = await saveImage({
+    ownerId: user.id,
+    kind: 'course-preview',
+    bytes: new Uint8Array(await file.arrayBuffer()),
+  });
+  if (!saved.ok) fail(form, `/studio/${courseId}`, imageErrorText(saved.error));
+
+  const previewImageUrls = [...course.previewImageUrls, saved.image.url].slice(0, MAX_COURSE_PREVIEW_IMAGES);
+  const owned = isAdmin ? { _id: course._id } : { _id: course._id, instructor: user.id };
+  await Course.updateOne(owned, { $set: { previewImageUrls } });
+  revalidateCourse(courseId, course.slug);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Take one screenshot off the course preview and forget its bytes. */
+export async function removeCoursePreviewImageAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const isAdmin = user.roles.includes('admin');
+  const courseId = text(form, 'courseId');
+  const course = await ownedCourse(courseId, user.id, isAdmin);
+  if (!course) fail(form, '/studio', 'Course not found.');
+
+  const imageUrl = text(form, 'imageUrl').trim();
+  if (!course.previewImageUrls.includes(imageUrl)) fail(form, `/studio/${courseId}`, 'That image is not on this course.');
+  const previewImageUrls = course.previewImageUrls.filter((item) => item !== imageUrl);
+  const owned = isAdmin ? { _id: course._id } : { _id: course._id, instructor: user.id };
+  await Course.updateOne(owned, { $set: { previewImageUrls } });
+
+  const id = imageIdFromUrl(imageUrl);
+  if (id) await deleteImage({ id, ownerId: user.id }).catch(() => false);
+
+  revalidateCourse(courseId, course.slug);
+  redirect(localePath(form, `/studio/${courseId}?saved=1`));
+}
+
+/** Give one lesson in a section a video link and choose whether it is free to preview. */
+export async function updateLessonAction(form: FormData): Promise<void> {
+  const user = await requireRole('instructor', 'admin');
+  const courseId = text(form, 'courseId');
+  const lessonId = text(form, 'lessonId');
+  const course = await ownedCourse(courseId, user.id, user.roles.includes('admin'));
+  if (!course) fail(form, '/studio', 'Course not found.');
+  if (!OBJECT_ID.test(lessonId)) fail(form, `/studio/${courseId}`, 'Lesson not found.');
+
+  const videoUrl = text(form, 'videoUrl').trim();
+  if (!validVideoUrl(videoUrl)) fail(form, `/studio/${courseId}`, 'Video links need https.');
+
+  await connectToDatabase();
+  const updated = await Lesson.findOneAndUpdate(
+    { _id: lessonId, course: course._id },
+    { video: videoUrl ? { url: videoUrl } : null, isPreview: form.get('isPreview') === 'on' },
+    { new: true },
+  ).lean();
+  if (!updated) fail(form, `/studio/${courseId}`, 'Lesson not found.');
+
+  revalidateCourse(courseId, course.slug);
   redirect(localePath(form, `/studio/${courseId}?saved=1`));
 }

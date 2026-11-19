@@ -3,9 +3,9 @@
 Snapshot: 2026-11-19. The first ten phases are complete and the expansion slices are live:
 course depth (P9), the learner account slice (P10, item 1), discovery (P11, item 2), the
 P12-P15 polish slices, the P16 studio/operations slice, P17's classroom/commerce slice,
-P18's waitlist/commerce follow-through, P19's teacher/data loop, the P20 polish round and
-P21's confirmation, notification-state and audit-filter round.
-117/117 features carry production evidence, the three apps run on Atlas and Vercel, and
+P18's waitlist/commerce follow-through, P19's teacher/data loop, the P20 polish round,
+P21's confirmation, notification-state and audit-filter round, and P22's course-media round.
+122/122 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
@@ -48,6 +48,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P19 | Studio seat release, stale waitlist cleanup, roster CSV, coupon cap note | done — 2026-11-17, 38/38 production journeys |
 | P20 | Exact-session notifications, seat-release audit, filtered roster CSV, recent cap marker | done — 2026-11-17, 38/38 production journeys |
 | P21 | Seat-release confirmation, seat-note read state, notification-linked session highlight, audit action filter | done — 2026-11-19, 38/38 production journeys |
+| P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store | done — 2026-11-19, 39/39 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -116,6 +117,14 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   inbox note per search when new matching courses are published. The dashboard now checks a
   stale search automatically on load, at most once every 24 hours, so no cron is required.
   A real price cut on a saved course notifies everyone who wishlisted it.
+- Course pictures: the studio course page has an Images and preview panel. A teacher or admin
+  uploads one cover (PNG, JPEG or WebP up to 1.5 MB) and up to three preview pictures; each
+  upload is sniffed from its bytes, stored in the `Media` collection and served by
+  `GET /api/media/[id]` with an immutable one-year cache. Covers appear on catalogue cards,
+  the landing shelf, the studio list and the course hero; previews and the https preview video
+  sit under an Inside the course heading. Every lesson row also reopens its own video link and
+  free-preview flag. `scripts/seed.ts` gives the six demo courses generated covers and gives
+  the JavaScript course two preview pictures.
 - Studio operations: `/studio/[id]/roster` lists the real class with progress, completion,
   certificate links and survey answers, and downloads the course's live attendance/waitlist
   and full roster as two formula-safe CSVs. The roster filters by status and enrolment date,
@@ -156,10 +165,12 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 ## Verification recorded 2026-11-19 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (224 tests: 12 tokens, 13 shared, 110 database,
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (231 tests: 12 tokens, 13 shared, 117 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **38/38 pass** on
-  2026-11-19 after the P21 slice. The admin journey filters the audit trail by `audit.export`
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **39/39 pass** on
+  2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
+  on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
+  and the two preview pictures under Inside the course. The admin journey filters the audit trail by `audit.export`
   and checks the filtered CSV; the live journey opens the class by its session id and reads
   the notification badge. The teacher journey downloads both CSVs, applies the
   completed/active roster filters and clears them; the promotions journey checks the At limit
@@ -212,6 +223,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - A full dev-dependency `pnpm audit` still flags the known moderate minimatch advisory through
   typescript-eslint; the production tree is clean.
 - Next.js downloads the two fonts at build time, so CI needs network access.
+- Course images are stored in MongoDB, so uploaded media counts against the Atlas M0 storage.
+  The six seeded covers ship as static files instead and cost the database nothing; the 1.5 MB
+  per-file cap keeps a demo upload in the low kilobytes.
 
 ## Next action
 

@@ -1313,6 +1313,64 @@
         "listAuditEvents accepts a validated action filter; getAuditRowsForExport applies the same query, so the CSV matches the screen and the export row records the filter",
         "packages/db/src/p19.integration.test.ts checks filtered desk/export parity, and e2e/admin.spec.ts filters by audit.export and asserts the filtered CSV and link"
       ]
+    },
+    {
+      "id": "p22.course-cover",
+      "phase": "P22",
+      "title": "Upload a cover image for a course",
+      "status": "done",
+      "evidence": [
+        "the studio course page has an Images and preview panel that uploads a PNG, JPEG or WebP as the cover, shows the current one, and offers Remove cover when a cover exists",
+        "updateCourseMediaAction stores the upload for the signed-in teacher, writes Course.thumbnailUrl with one atomic update scoped to the course owner, and deletes the replaced file",
+        "the catalogue cards, the landing shelf, the studio list and the course hero render the cover at a 16:9 ratio with height auto",
+        "e2e/public.spec.ts asserts six seeded covers on /en/courses, their box ratio and a 200 image/jpeg response, then the hero image on the course page"
+      ]
+    },
+    {
+      "id": "p22.preview-gallery",
+      "phase": "P22",
+      "title": "Show up to three preview pictures on a course",
+      "status": "done",
+      "evidence": [
+        "the studio media panel adds one preview image at a time up to three and removes any of them, each change redirecting back with the saved notice",
+        "the public course page renders the uploaded previews as a gallery under an Inside the course heading, with the course title and position as alt text",
+        "addCoursePreviewImageAction and removeCoursePreviewImageAction cap the list at MAX_COURSE_PREVIEW_IMAGES and only delete media owned by the uploader",
+        "e2e/public.spec.ts opens the JavaScript course and asserts the gallery images of the seeded previews are visible"
+      ]
+    },
+    {
+      "id": "p22.preview-video",
+      "phase": "P22",
+      "title": "Attach a course preview video",
+      "status": "done",
+      "evidence": [
+        "the course details form has an https course preview video field; any other scheme is refused with one readable message on create and update",
+        "the public course page plays an mp4, webm or ogg link inline and offers any other https link as a Watch the preview video button that opens in a new tab",
+        "packages/db/src/p22.integration.test.ts stores promoVideoUrl on a published course and reads it back from getCourseBySlug"
+      ]
+    },
+    {
+      "id": "p22.lesson-media",
+      "phase": "P22",
+      "title": "Set a lesson video and a free preview from the curriculum list",
+      "status": "done",
+      "evidence": [
+        "every lesson row in the studio curriculum opens a Video and preview disclosure with an https video link and a Free to preview checkbox",
+        "updateLessonAction writes only that lesson's video slot and isPreview flag, scoped to the owning instructor or an admin",
+        "a lesson marked free already opens through the public preview route, so the flag here is what makes a preview reachable from the syllabus"
+      ]
+    },
+    {
+      "id": "p22.media-store",
+      "phase": "P22",
+      "title": "Store and serve course images safely",
+      "status": "done",
+      "evidence": [
+        "Media rows keep the bytes out of normal reads, accept only image/png, image/jpeg and image/webp, and cap a file at 1.5 MB under the serverless request limit",
+        "sniffImageType reads the file signature, so an SVG, an HTML page or a renamed text file is refused whatever the browser claimed",
+        "GET /api/media/[id] serves the stored bytes with the sniffed content type, nosniff, a sandboxing CSP and immutable one-year caching",
+        "packages/db/src/p22.integration.test.ts covers sniffing, empty, oversized and unknown files, the store/read round trip, owner-only deletion and the course read path"
+      ]
     }
   ]
 }

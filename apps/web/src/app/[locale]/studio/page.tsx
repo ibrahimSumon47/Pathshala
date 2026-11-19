@@ -74,6 +74,16 @@ export default async function StudioPage({ params, searchParams }: StudioPagePro
           {courses.length === 0 ? <p className={styles.empty}>{copy.empty}</p> : null}
           {courses.map((course) => (
             <Card key={course.id} className={styles.courseCard}>
+              {course.thumbnailUrl ? (
+                <img
+                  src={course.thumbnailUrl}
+                  alt=""
+                  className={styles.cardThumb}
+                  width={160}
+                  height={90}
+                  loading="lazy"
+                />
+              ) : null}
               <div>
                 <div className={styles.cardTop}>
                   <Badge tone={course.publishedAt ? 'success' : 'neutral'}>

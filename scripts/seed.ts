@@ -22,6 +22,24 @@ import {
 } from '@pathshala/db';
 import { SEED_CATEGORIES, SEED_COURSES, SEED_INSTRUCTORS } from './seed-content';
 
+/** Seeded covers live in the web app's public folder, so a demo course always has art. */
+const COURSE_COVERS: Record<string, string> = {
+  'javascript-first-steps': '/images/courses/javascript-first-steps.jpg',
+  'spoken-english-daily': '/images/courses/spoken-english-daily.jpg',
+  'excel-for-office': '/images/courses/excel-for-office.jpg',
+  'algebra-without-fear': '/images/courses/algebra-without-fear.jpg',
+  'design-with-type': '/images/courses/design-with-type.jpg',
+  'harmonium-first-raga': '/images/courses/harmonium-first-raga.jpg',
+};
+
+/** Two screenshots show what the preview gallery looks like on a real course page. */
+const COURSE_PREVIEWS: Record<string, string[]> = {
+  'javascript-first-steps': [
+    '/images/courses/javascript-first-steps-editor.jpg',
+    '/images/courses/javascript-first-steps-exercise.jpg',
+  ],
+};
+
 const DEMO_HASHES: Record<string, string> = {
   'student@pathshala.dev': '$2b$10$4BV/E4MkmJgoW9KFxDQrXugLGeVtUpjSVrNSuuNQynaIUKTLL6kaq',
   'instructor@pathshala.dev': '$2b$10$MIxFtDABNO2BmG/WOS/y1uMsN0VW2PLUzr626crJu5gcnymF8F7fW',
@@ -133,6 +151,8 @@ export async function seedDatabase(): Promise<void> {
           question: { bn: faq.questionBn, en: faq.questionEn },
           answer: { bn: faq.answerBn, en: faq.answerEn },
         })),
+        ...(COURSE_COVERS[course.slug] ? { thumbnailUrl: COURSE_COVERS[course.slug] } : {}),
+        previewImageUrls: COURSE_PREVIEWS[course.slug] ?? [],
         isDemo: true,
         ratingAverage: 0,
         ratingCount: 0,

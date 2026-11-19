@@ -9,7 +9,7 @@ anyone can verify.
 **Gateway:** [pathshala-paybridge.vercel.app](https://pathshala-paybridge.vercel.app) ·
 **Repository:** [github.com/ibrahimSumon47/Pathshala](https://github.com/ibrahimSumon47/Pathshala)
 
-The live app runs on Atlas with the seeded catalogue, and its 38 Playwright journeys pass
+The live app runs on Atlas with the seeded catalogue, and its 39 Playwright journeys pass
 against that deployed origin. Anyone can create a learner account on the registration page; the
 test-mode checkout accepts `4242 4242 4242 4242`.
 
@@ -20,9 +20,10 @@ test-mode checkout accepts `4242 4242 4242 4242`.
 - **Bilingual by default.** Bangla lives at `/`, English at `/en`; copy, course titles,
   categories and certificates are translated rather than machine-switched.
 - **Teaching studio.** Instructors create courses, sections and lessons, sanitize lesson
-  HTML, add https attachments, reorder lessons, save quiz questions to a reusable bank,
-  schedule seat-capped Jitsi live rooms and read per-course revenue, sales, completion and
-  attendance. A roster shows the real class, its progress, certificates, anonymous survey
+  HTML, add https attachments, upload a cover, up to three preview pictures and an https
+  preview video, reopen any lesson's video link and free-preview flag, reorder lessons, save
+  quiz questions to a reusable bank, schedule seat-capped Jitsi live rooms and read
+  per-course revenue, sales, completion and attendance. A roster shows the real class, its progress, certificates, anonymous survey
   averages and written comment excerpts, with admin moderation, live-attendance CSV and a
   filterable roster CSV; releasing a checked-in seat asks for confirmation first.
 - **Learning.** Free or paid enrolment, lesson completion with whole-number progress, quiz
@@ -114,8 +115,8 @@ pnpm audit           # production advisories
 node scripts/check-done.mjs
 ```
 
-Current results: **224 unit and integration tests** (12 tokens, 13 shared, 110 database,
-72 web, 17 API), **38 Playwright flows against production**, **zero axe violations** on
+Current results: **231 unit and integration tests** (12 tokens, 13 shared, 117 database,
+72 web, 17 API), **39 Playwright flows against production**, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
 wishlist, cart, notifications, saved searches, surveys, the operator desks and the teacher
 studio pages (including the roster and question bank), and Lighthouse mobile

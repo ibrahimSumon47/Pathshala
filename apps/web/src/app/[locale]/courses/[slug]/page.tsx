@@ -78,6 +78,8 @@ const COPY = {
     includesAccess: 'স্থায়ী অ্যাক্সেস',
     includesLive: 'লাইভ প্রশ্নোত্তর',
     includesCertificate: 'যাচাইযোগ্য সার্টিফিকেট',
+    inside: 'কোর্সের ভেতরে',
+    watchPreview: 'প্রিভিউ ভিডিও দেখুন',
   },
   en: {
     by: 'Teacher',
@@ -137,6 +139,8 @@ const COPY = {
     includesAccess: 'Permanent access',
     includesLive: 'Live question sessions',
     includesCertificate: 'A verifiable certificate',
+    inside: 'Inside the course',
+    watchPreview: 'Watch the preview video',
   },
 } as const;
 
@@ -144,6 +148,11 @@ const COPY = {
 function pick(value: { bn?: string; en?: string } | null | undefined, language: Locale): string {
   if (!value) return '';
   return value[language] ?? value.en ?? value.bn ?? '';
+}
+
+/** A direct video file can play inline; anything else is offered as a link. */
+function playableVideo(url: string): boolean {
+  return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url);
 }
 
 /** Dates follow the reader's locale, so Bangla shows Bangla digits. */
@@ -200,6 +209,16 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
             {course.ratingCount} {copy.ratingCount}) · {lessonCount} {copy.lessons} ·{' '}
             {copy.updated} {formatDate(course.updatedAt, locale)}
           </p>
+          {course.thumbnailUrl ? (
+            <img
+              src={course.thumbnailUrl}
+              alt=""
+              className={styles.cover}
+              width={1280}
+              height={720}
+              fetchPriority="high"
+            />
+          ) : null}
         </header>
 
         <div className={styles.layout}>
@@ -208,6 +227,41 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
               <section className={styles.section}>
                 <h2>{copy.about}</h2>
                 <p className={styles.lede}>{pick(course.description, language)}</p>
+              </section>
+            ) : null}
+
+            {course.previewImageUrls.length > 0 || course.promoVideoUrl ? (
+              <section className={styles.section}>
+                <h2>{copy.inside}</h2>
+                {course.promoVideoUrl ? (
+                  playableVideo(course.promoVideoUrl) ? (
+                    <video className={styles.video} controls preload="metadata" src={course.promoVideoUrl} />
+                  ) : (
+                    <a
+                      href={course.promoVideoUrl}
+                      className={buttonStyles({ variant: 'secondary', size: 'sm' })}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {copy.watchPreview}
+                    </a>
+                  )
+                ) : null}
+                {course.previewImageUrls.length > 0 ? (
+                  <ul className={styles.gallery}>
+                    {course.previewImageUrls.map((imageUrl, index) => (
+                      <li key={imageUrl}>
+                        <img
+                          src={imageUrl}
+                          alt={`${pick(course.title, language)} — ${index + 1}`}
+                          width={640}
+                          height={360}
+                          loading="lazy"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </section>
             ) : null}
 

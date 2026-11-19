@@ -10,12 +10,16 @@ import { requireRole } from '@/lib/auth/guard';
 import { faqsToLines, listToLines } from '@/lib/course-content';
 import { getStudioCourse } from '@/lib/studio';
 import {
+  addCoursePreviewImageAction,
   addLessonAction,
   addSectionAction,
   moveLessonAction,
   releaseSeatAction,
+  removeCoursePreviewImageAction,
   scheduleSessionAction,
   updateCourseAction,
+  updateCourseMediaAction,
+  updateLessonAction,
   updateLiveCapacityAction,
 } from '../actions';
 import { studioCopy } from '../copy';
@@ -202,6 +206,15 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
               { value: 'en', label: 'English' },
             ]}
           />
+          <Field
+            id="promoVideoUrl"
+            name="promoVideoUrl"
+            label={copy.promoVideo}
+            hint={copy.promoVideoHint}
+            defaultValue={course.promoVideoUrl}
+            placeholder="https://"
+            maxLength={500}
+          />
           <label className={styles.check}>
             <input type="checkbox" name="publish" defaultChecked={published} />
             {copy.publish}
@@ -215,6 +228,106 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
             ) : null}
           </div>
         </form>
+
+        <section className={styles.panel} aria-labelledby="course-media">
+          <h2 className={styles.sectionHeading} id="course-media">
+            {copy.media}
+          </h2>
+          <p className={styles.meta}>{copy.mediaHint}</p>
+
+          <div className={styles.mediaGrid}>
+            <figure className={styles.mediaItem}>
+              {course.thumbnailUrl ? (
+                <img
+                  src={course.thumbnailUrl}
+                  alt={copy.coverImage}
+                  className={styles.mediaImage}
+                  width={640}
+                  height={360}
+                />
+              ) : (
+                <p className={styles.mediaPlaceholder}>{copy.noCover}</p>
+              )}
+              <figcaption className={styles.meta}>{copy.coverImage}</figcaption>
+            </figure>
+            {course.previewImageUrls.map((imageUrl) => (
+              <figure key={imageUrl} className={styles.mediaItem}>
+                <img
+                  src={imageUrl}
+                  alt={copy.previewAlt}
+                  className={styles.mediaImage}
+                  width={640}
+                  height={360}
+                  loading="lazy"
+                />
+                <figcaption className={styles.mediaCaption}>
+                  <span className={styles.meta}>{copy.previewImage}</span>
+                  <form action={removeCoursePreviewImageAction}>
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="courseId" value={course.id} />
+                    <input type="hidden" name="imageUrl" value={imageUrl} />
+                    <Button type="submit" variant="secondary" size="sm">
+                      {copy.removeImage}
+                    </Button>
+                  </form>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <form action={updateCourseMediaAction} className={styles.form} encType="multipart/form-data">
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="courseId" value={course.id} />
+            <div className={styles.fileField}>
+              <label className={styles.fileLabel} htmlFor="course-cover">
+                {copy.coverImage}
+              </label>
+              <input
+                id="course-cover"
+                name="cover"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className={styles.file}
+              />
+              <p className={styles.meta}>{copy.coverHint}</p>
+            </div>
+            {course.thumbnailUrl ? (
+              <label className={styles.check}>
+                <input type="checkbox" name="removeCover" /> {copy.removeCover}
+              </label>
+            ) : null}
+            <div className={styles.actions}>
+              <Button type="submit">{copy.uploadCover}</Button>
+            </div>
+          </form>
+
+          {course.previewImageUrls.length < 3 ? (
+            <form action={addCoursePreviewImageAction} className={styles.form} encType="multipart/form-data">
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="courseId" value={course.id} />
+              <div className={styles.fileField}>
+                <label className={styles.fileLabel} htmlFor="course-preview-image">
+                  {copy.previewImage}
+                </label>
+                <input
+                  id="course-preview-image"
+                  name="preview"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className={styles.file}
+                />
+                <p className={styles.meta}>{copy.coverHint}</p>
+              </div>
+              <div className={styles.actions}>
+                <Button type="submit" variant="secondary">
+                  {copy.addPreview}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className={styles.meta}>{copy.previewLimit}</p>
+          )}
+        </section>
 
         <section className={styles.panel}>
           <h2 className={styles.sectionHeading}>
@@ -243,6 +356,32 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                           {lesson.isPreview ? ' · preview' : ''}
                           {lesson.attachmentCount > 0 ? ` · ${lesson.attachmentCount}` : ''}
                         </span>
+                        <details className={styles.lessonDisclosure}>
+                          <summary>{copy.lessonMedia}</summary>
+                          <form action={updateLessonAction} className={styles.lessonMediaForm}>
+                            <input type="hidden" name="locale" value={locale} />
+                            <input type="hidden" name="courseId" value={course.id} />
+                            <input type="hidden" name="lessonId" value={lesson.id} />
+                            <Field
+                              id={`lesson-video-${lesson.id}`}
+                              name="videoUrl"
+                              label={copy.videoUrl}
+                              hint={copy.videoHint}
+                              defaultValue={lesson.videoUrl}
+                              placeholder="https://"
+                              maxLength={500}
+                            />
+                            <label className={styles.check}>
+                              <input type="checkbox" name="isPreview" defaultChecked={lesson.isPreview} />{' '}
+                              {copy.lessonPreview}
+                            </label>
+                            <div>
+                              <Button type="submit" variant="secondary" size="sm">
+                                {copy.saveLesson}
+                              </Button>
+                            </div>
+                          </form>
+                        </details>
                       </div>
                       <div className={styles.lessonActions}>
                         <form action={moveLessonAction}>

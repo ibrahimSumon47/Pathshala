@@ -212,6 +212,16 @@ export default async function CoursesPage({ params, searchParams }: CoursesPageP
             {result.courses.map((course) => (
               <li key={course.id}>
                 <Card className={styles.card}>
+                  {course.thumbnailUrl ? (
+                    <img
+                      src={course.thumbnailUrl}
+                      alt=""
+                      className={styles.cardCover}
+                      width={640}
+                      height={360}
+                      loading="lazy"
+                    />
+                  ) : null}
                   <div className={styles.cardTop}>
                     <Badge>{course.categoryName?.[language] ?? course.level}</Badge>
                     <span className={styles.price}>

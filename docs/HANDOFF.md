@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-19, after the P21 polish round.
+Updated: 2026-11-19, after the P22 course-media round.
 
 ## Where we are
 
@@ -9,8 +9,9 @@ the learner account slice (item 1: settings, notifications, wishlist, cart, invo
 streaks and badges), discovery (item 2: both-script search, price buckets, sorting, best-rated
 shelf, learner recommendations), the P12-P15 polish slices, P16's studio and operations work
 P17's classroom and commerce work, P18's waitlist/commerce follow-through, P19's teacher data
-loop, P20's polish round and P21's confirmation/state/filter round are live and verified;
-`docs/features.json` tracks 117 features and `node scripts/check-done.mjs` exits 0.
+loop, P20's polish round, P21's confirmation/state/filter round and P22's course-media round
+are live and verified; `docs/features.json` tracks 122 features and
+`node scripts/check-done.mjs` exits 0.
 
 | App | URL |
 | --- | --- |
@@ -23,10 +24,19 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## What was verified on production (2026-11-19)
 
-- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 38/38
-  Playwright journeys finish in about 4.3 minutes, and the five loading placeholders mirror
+- Warm TTFB is 0.26–0.31 s after the web functions moved to `sin1` beside Atlas; the 39/39
+  Playwright journeys finish in about 4.2 minutes, and the five loading placeholders mirror
   the catalogue, course, dashboard, lesson and cart grids.
-- 38/38 Playwright journeys against the deployed web origin, including the admin audit filter
+- The media test counts the six seeded covers on `/en/courses`, asserts a 16:9 box and a
+  200 `image/jpeg` response, and opens the JavaScript course to read its hero, the Inside the
+  course heading and both preview pictures. `scripts/seed.ts` is what gives every demo course
+  a cover; rerun it after a fresh database.
+- Uploading through the studio was exercised locally against the memory database (cover
+  upload, `/api/media/<id>` 200 `image/jpeg` with immutable caching, cover replaced on the
+  course page). Production has no demo sign-in, so that action is covered by
+  `packages/db/src/p22.integration.test.ts` plus this manual pass rather than a production
+  journey.
+- 39/39 Playwright journeys against the deployed web origin, including the admin audit filter
   with its filtered CSV and the notification-linked live session badge, the private profile edit,
   the public teacher page, statements and notes CSV downloads, review replies, course announcements, payout marking, bulk moderation, the command palette, order search, separate sign-in and
   registration pages with centred forms, a fresh registration,
@@ -62,9 +72,9 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
 
 ## Next step in the expansion
 
-P21 is live: a seat release asks for confirmation, claiming a seat marks its note read, the
-live room says when a notification opened it, and the audit desk filters by one exact action
-with the CSV following the screen. Item 13 of
+P22 is live: a teacher or admin uploads a course cover, up to three preview pictures and an
+https preview video from the studio, and can set a lesson's video link and free-preview flag
+in place. Item 13 of
 the agreed expansion order is still next; its wording is not in the repository yet, so
 `docs/EXPANSION_PLAN.md` carries the order, the finished items and an explicit placeholder for
 every remaining item. Replace the placeholder with the brief's sentence before writing code.

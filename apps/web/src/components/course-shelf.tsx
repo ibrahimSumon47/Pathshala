@@ -33,6 +33,16 @@ export function CourseShelf({ courses, language, title, lede, browseLabel, brows
         {courses.map((course) => (
           <li key={course.id}>
             <article className={styles.card}>
+              {course.thumbnailUrl ? (
+                <img
+                  src={course.thumbnailUrl}
+                  alt=""
+                  className={styles.cover}
+                  width={400}
+                  height={225}
+                  loading="lazy"
+                />
+              ) : null}
               <p className={styles.subject}>{course.categoryName?.[language] ?? course.level}</p>
               <h3 className={styles.courseTitle}>
                 <Link href={`/courses/${course.slug}`}>{course.title[language] || course.title.en || course.title.bn}</Link>

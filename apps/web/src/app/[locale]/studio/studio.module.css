@@ -458,3 +458,90 @@
   font-size: var(--text-sm);
   font-weight: 600;
 }
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.mediaItem {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.mediaImage,
+.mediaPlaceholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  object-fit: cover;
+  height: auto;
+}
+
+.mediaPlaceholder {
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.mediaCaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.fileField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.fileLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.file {
+  display: block;
+  width: 100%;
+  font: inherit;
+}
+
+.lessonDisclosure {
+  margin-top: var(--space-1);
+}
+
+.lessonDisclosure summary {
+  cursor: pointer;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.lessonMediaForm {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 26rem;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper);
+}
+
+.cardThumb {
+  flex-shrink: 0;
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  height: auto;
+}

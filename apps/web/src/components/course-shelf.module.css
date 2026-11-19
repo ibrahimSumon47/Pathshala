@@ -116,3 +116,14 @@
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
+
+.cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: var(--space-1);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  object-fit: cover;
+  height: auto;
+}

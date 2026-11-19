@@ -648,3 +648,34 @@ Read state follows the event, not the page view. `markSeatNoteRead` clears the c
 The live page already fell back to the next class when a linked session had started. The highlight therefore keys off the same resolved `next` object: the badge appears only when the selected room's id equals `?session=`, so a fallback never claims a notification opened a different class.
 
 An audit action filter is a read boundary like any other. The query accepts only the lowercase dotted shape the app writes (`live.seat_release`, `review.hide`), is capped at 80 characters, and both the desk and the CSV export share one query builder. The export records the filter in its own `audit.export` metadata, so an archived file can be traced to the view it came from. The desk's options come from `AuditEvent.distinct('action')` rather than a hand-maintained list, so a new action appears without another release.
+
+## 2026-11-19 — Course pictures live in MongoDB and one immutable route
+
+A course cover is a small, mostly static file that has to work on the free tier. The project
+already treats MongoDB as the only database, and adding object storage would mean a second
+account, a second SDK and a second set of credentials. Images therefore live in their own
+`Media` collection: one document per upload, bytes in a `data` Buffer that is `select: false`
+so no ordinary read can leak an image, plus the uploader, kind, sniffed type and size. Sequel:
+a 512 MB Atlas M0 holds a demo catalogue's pictures many times over; the ceiling is documented
+rather than hidden. Revisit if real traffic turns images into a bandwidth problem, at which
+point an object store becomes the cheaper answer.
+
+Files are validated by signature, not by the type the browser claims. `sniffImageType` reads
+the PNG, JPEG and WebP headers and refuses everything else, including SVG (script can ride
+inside it) and an HTML page renamed to `.jpg`. The stored type is the sniffed one, so the
+serving route can send it with `nosniff` and a sandboxing CSP without trusting the upload.
+
+`GET /api/media/[id]` returns the bytes with `cache-control: public, max-age=31536000,
+immutable`. Ids never change content: replacing a cover writes a new row and the old URL
+simply stops being referenced. That makes the route safe to cache at the edge and keeps the
+course page free of a per-request image read.
+
+Uploads are capped at 1.5 MB per file and one file per form. Vercel limits a function request
+body to about 4.5 MB, so three images in one submit would sit right at the ceiling; one file
+per submit keeps every request comfortably inside it, and `experimental.serverActions.
+bodySizeLimit` is raised to 3 MB to clear the framework's 1 MB default.
+
+Course media writes use a targeted `Course.updateOne({_id, instructor}, {...})` instead of
+`document.save()`. Saving re-validates every field, including prose that was seeded before a
+limit existed, and one picture change should not fail because of an unrelated paragraph.
+Atomic writes also keep two teachers' simultaneous edits from overwriting each other's fields.

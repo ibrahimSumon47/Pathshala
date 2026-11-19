@@ -39,6 +39,30 @@ test('a course page carries the full buying information and a free preview lesso
   await expect(page.getByText(/Ask within 14 days/)).toBeVisible();
 });
 
+test('course covers and the preview gallery load on the public pages', async ({ page }) => {
+  await page.goto('/en/courses');
+  const covers = page.locator(`img[src^="/images/courses/"]`);
+  await expect(covers).toHaveCount(6);
+  const first = covers.first();
+  await expect(first).toBeVisible();
+  // A wide 16:9 box proves the image was not collapsed by its height attribute.
+  const coverBox = await first.boundingBox();
+  expect(coverBox!.width).toBeGreaterThan(200);
+  expect(coverBox!.height).toBeGreaterThan(100);
+  expect(Math.abs(coverBox!.width / coverBox!.height - 16 / 9)).toBeLessThan(0.2);
+
+  const coverResponse = await page.request.get('/images/courses/javascript-first-steps.jpg');
+  expect(coverResponse.status()).toBe(200);
+  expect(coverResponse.headers()['content-type']).toContain('image/jpeg');
+
+  await page.goto('/en/courses/javascript-first-steps');
+  const hero = page.locator('header img[src="/images/courses/javascript-first-steps.jpg"]');
+  await expect(hero).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inside the course' })).toBeVisible();
+  await expect(page.locator('img[src="/images/courses/javascript-first-steps-editor.jpg"]')).toBeVisible();
+  await expect(page.locator('img[src="/images/courses/javascript-first-steps-exercise.jpg"]')).toBeVisible();
+});
+
 test('sign-in and registration are separate pages with centred forms', async ({ page }) => {
   await page.goto('/en/sign-in');
   await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();

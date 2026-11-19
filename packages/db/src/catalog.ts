@@ -38,6 +38,8 @@ export type CatalogCourse = {
   enrolmentCount: number;
   categoryName: CategoryDoc['name'] | null;
   instructorName: string;
+  /** Cover image path; null when the teacher has not added one. */
+  thumbnailUrl: string | null;
   publishedAt: string | null;
 };
 
@@ -83,6 +85,10 @@ export type CourseDetail = CatalogCourse & {
   faqs: CourseFaq[];
   instructor: CourseInstructor;
   sections: CourseSection[];
+  /** Screenshots the teacher uploaded for the course preview. */
+  previewImageUrls: string[];
+  /** https course preview video, when one is set. */
+  promoVideoUrl: string | null;
   lessonCount: number;
   totalDurationMinutes: number;
   ratingBreakdown: RatingBreakdown;
@@ -354,6 +360,8 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetail | null
     requirements: toLocalizedList(course.requirements),
     audience: toLocalizedList(course.audience),
     faqs: course.faqs ?? [],
+    previewImageUrls: course.previewImageUrls ?? [],
+    promoVideoUrl: course.promoVideoUrl ?? null,
     instructor: {
       id: String(course.instructor),
       name: instructor?.name ?? '',
@@ -460,6 +468,7 @@ function toCatalogCourse(
     enrolmentCount: document.enrolmentCount,
     categoryName: categoryNames.get(String(document.category)) ?? null,
     instructorName: instructorNames.get(String(document.instructor)) ?? '',
+    thumbnailUrl: document.thumbnailUrl ?? null,
     publishedAt: document.publishedAt?.toISOString() ?? null,
   };
 }

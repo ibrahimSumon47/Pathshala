@@ -20,6 +20,8 @@ export { Enrolment, ENROLMENT_STATUSES } from './enrolment';
 export type { EnrolmentDoc, EnrolmentStatus } from './enrolment';
 export { LESSON_TYPES, Lesson } from './lesson';
 export type { LessonContent, LessonDoc, LessonType, LessonVideo } from './lesson';
+export { IMAGE_MIME_TYPES, MEDIA_KINDS, Media } from './media';
+export type { ImageMime, MediaDoc, MediaKind } from './media';
 export { LEDGER_ACCOUNTS, LEDGER_TYPES, LedgerEntry } from './ledger-entry';
 export { LEARNING_EVENT_TYPES, LearningEvent } from './learning-event';
 export type { LearningEventDoc, LearningEventType } from './learning-event';
