@@ -48,7 +48,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P19 | Studio seat release, stale waitlist cleanup, roster CSV, coupon cap note | done — 2026-11-17, 38/38 production journeys |
 | P20 | Exact-session notifications, seat-release audit, filtered roster CSV, recent cap marker | done — 2026-11-17, 38/38 production journeys |
 | P21 | Seat-release confirmation, seat-note read state, notification-linked session highlight, audit action filter | done — 2026-11-19, 38/38 production journeys |
-| P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store, upload journey | done — 2026-11-19, 40/40 production journeys |
+| P22 | Uploaded course covers, preview gallery, preview video, per-lesson video/preview, media store, browser journeys | done — 2026-11-19, 41/41 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -167,7 +167,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` (231 tests: 12 tokens, 13 shared, 117 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
-- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **40/40 pass** on
+- `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **41/41 pass** on
   2026-11-19 after the P22 slice, including a new media test that counts the six seeded covers
   on the catalogue, checks their 16:9 box and image/jpeg response, then reads the course hero
   and the two preview pictures under Inside the course. A second new journey,
@@ -175,7 +175,11 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   a preview picture through the studio forms, reads both back from `/api/media/<id>` with the
   immutable cache header, finds the cover in the published hero and the picture under Inside
   the course as a visitor would, removes the picture and proves the page and the route drop it,
-  then clears the cover. The admin journey filters the audit trail by `audit.export`
+  then clears the cover. A third journey in the same file saves an mp4 preview video and a
+  lesson's video link plus free-preview flag, then checks the inline player and Watch the
+  preview video button on the public page, opens the free lesson signed out, reads the Watch
+  the video link in the learning room, and finally clears the flag and the video file to prove
+  both branches. The admin journey filters the audit trail by `audit.export`
   and checks the filtered CSV; the live journey opens the class by its session id and reads
   the notification badge. The teacher journey downloads both CSVs, applies the
   completed/active roster filters and clears them; the promotions journey checks the At limit

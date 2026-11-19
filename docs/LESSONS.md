@@ -394,3 +394,30 @@ browser cache, edge cache, service worker or a second copy of the data — and g
 cache-busting URL when the point is to test the origin. Assert the user-visible outcome (the
 page no longer shows it) at the level the user sees it, and keep the underlying deletion check
 separate.
+
+## 2026-11-19 — A page loaded right after a save can show the old render
+
+Two journeys failed intermittently on the first assertion after a studio save: the badge said
+Draft while the course in Atlas was published, and the public page omitted a free-preview link
+whose lesson already carried the flag. The writes were fine — a second load showed the change,
+and the same steps pass locally against the memory MongoDB. The read that raced the write was
+the problem, and a form that still holds the values typed into it made the studio look correct
+even when the stored row disagreed.
+
+The journey now reloads, up to eight times, until the persisted value appears, and reads stored
+inputs from that fresh page instead of trusting the DOM right after an action. Lesson: an E2E
+assertion made immediately after a mutation must name what it is testing — the write or the
+render — and when the platform can serve a stale render, poll a fresh load with a bound rather
+than either guessing or silently retrying forever.
+
+## 2026-11-19 — Nothing inside a closed `<details>` reaches getByRole
+
+The lesson video and free-preview controls sit in a collapsed disclosure, which is right for the
+page. After a reload the inputs are not in the accessibility tree, so `getByRole('checkbox', …)`
+reported "element(s) not found" while the input was in the DOM. Addressing the stored input by
+its name (`input[name="isPreview"]`) also makes the assertion independent of whether the panel
+is open. Lesson: for a persisted-value check, use the DOM selector; keep role locators for
+things a reader actually interacts with.
+
+The same run also showed that `getByLabel('Type')` matches "File type" too, so a select with a
+short label needs `{ exact: true }` in a form that also asks for a file MIME type.

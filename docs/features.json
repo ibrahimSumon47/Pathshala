@@ -1348,7 +1348,8 @@
       "evidence": [
         "the course details form has an https course preview video field; any other scheme is refused with one readable message on create and update",
         "the public course page plays an mp4, webm or ogg link inline and offers any other https link as a Watch the preview video button that opens in a new tab",
-        "packages/db/src/p22.integration.test.ts stores promoVideoUrl on a published course and reads it back from getCourseBySlug"
+        "packages/db/src/p22.integration.test.ts stores promoVideoUrl on a published course and reads it back from getCourseBySlug",
+        "e2e/studio-media.spec.ts saves an https mp4 preview video, finds the inline player under Inside the course on the published page, then replaces it with a page link and finds the Watch the preview video button pointing at it instead"
       ]
     },
     {
@@ -1359,7 +1360,8 @@
       "evidence": [
         "every lesson row in the studio curriculum opens a Video and preview disclosure with an https video link and a Free to preview checkbox",
         "updateLessonAction writes only that lesson's video slot and isPreview flag, scoped to the owning instructor or an admin",
-        "a lesson marked free already opens through the public preview route, so the flag here is what makes a preview reachable from the syllabus"
+        "a lesson marked free already opens through the public preview route, so the flag here is what makes a preview reachable from the syllabus",
+        "e2e/studio-media.spec.ts sets a lesson's video link and Free to preview flag from its curriculum row, opens the free lesson signed out from the public page, finds the Watch the video link in the learning room, then clears the flag and confirms both the public Preview link and the stored flag are gone"
       ]
     },
     {
