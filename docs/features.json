@@ -1349,7 +1349,8 @@
         "the course details form has an https course preview video field; any other scheme is refused with one readable message on create and update",
         "the public course page plays an mp4, webm or ogg link inline and offers any other https link as a Watch the preview video button that opens in a new tab",
         "packages/db/src/p22.integration.test.ts stores promoVideoUrl on a published course and reads it back from getCourseBySlug",
-        "e2e/studio-media.spec.ts saves an https mp4 preview video, finds the inline player under Inside the course on the published page, then replaces it with a page link and finds the Watch the preview video button pointing at it instead"
+        "e2e/studio-media.spec.ts saves an https mp4 preview video, finds the inline player under Inside the course on the published page, then replaces it with a page link and finds the Watch the preview video button pointing at it instead",
+        "e2e/studio-media.spec.ts also saves an https link, then submits an http link and a relative path through the same form, reads 'Preview video links need https.' from the page alert, and finds the stored field and a fresh studio render still holding the https link"
       ]
     },
     {

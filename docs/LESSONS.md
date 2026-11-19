@@ -430,3 +430,12 @@ which announces the new page title after the redirect. Both are correct accessib
 test was the thing to narrow. `p[role="alert"]` names the product's own feedback and stays
 independent of the framework's announcement. Lesson: after a redirect, a role query that the
 framework also uses is ambiguous; anchor it to the element the page renders.
+
+## 2026-11-19 — A second refusal lands on the same URL as the first
+
+The preview-video journey refuses an http link and then a relative path. Both failures redirect
+to the same `?error=Preview%20video…` URL with the same sentence, so asserting the URL and the
+alert after the second submit would pass even if nothing was posted a second time. The journey
+now navigates to the clean studio URL between the two attempts, which makes the redirect itself
+proof that the form ran. Lesson: an assertion about a repeated failure needs a starting state
+that differs from the failed one, or it only re-reads the first result.

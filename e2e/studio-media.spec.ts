@@ -175,6 +175,51 @@ test('the studio refuses a fake image and an oversized file, and keeps the cover
   await expect(page.locator(`img[src="${coverUrl}"]`)).toHaveCount(0);
 });
 
+test('the studio refuses a non-https preview video and keeps the link it already saved', async ({ page }) => {
+  const suffix = Date.now().toString(36);
+  const slug = `e2e-promo-refused-${suffix}`;
+  const title = `E2E Refused Video ${suffix}`;
+  const savedVideo = 'https://media.example.com/course-tour.mp4';
+
+  await signIn(page, accounts.instructor.email, accounts.instructor.password);
+  await page.goto('/en/studio');
+  await page.locator('#titleEn').fill(title);
+  await page.getByLabel('Subtitle (English)', { exact: true }).fill('A course that keeps its first preview video');
+  await page.getByLabel('Slug').fill(slug);
+  await page.getByLabel('Price (taka)').fill('500');
+  await page.getByRole('button', { name: 'Create draft' }).click();
+  await expect(page).toHaveURL(/\/en\/studio\/[a-f0-9]{24}$/);
+  const studioPath = new URL(page.url()).pathname;
+
+  // Save a link that works first, so the refusal has something real to leave alone.
+  await page.locator('#promoVideoUrl').fill(savedVideo);
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page).toHaveURL(/\?saved=1$/);
+  await expect(page.getByText('Changes saved.')).toBeVisible();
+  await loadUntil(page, studioPath, async () => (await page.locator('#promoVideoUrl').inputValue()) === savedVideo);
+
+  // A plain http link would be blocked as mixed content on the https site, so the studio
+  // refuses it instead of storing a player that never plays.
+  await page.locator('#promoVideoUrl').fill('http://media.example.com/course-tour.mp4');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  await expect(page.locator('p[role="alert"]')).toHaveText('Preview video links need https.');
+  await expect(page.locator('#promoVideoUrl')).toHaveValue(savedVideo);
+
+  // A relative path is not a video either. Start from the clean studio URL so the redirect
+  // below is evidence that this second submission really ran.
+  await page.goto(studioPath);
+  await page.locator('#promoVideoUrl').fill('/videos/course-tour.mp4');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page).toHaveURL(/\?error=/);
+  await expect(page.locator('p[role="alert"]')).toHaveText('Preview video links need https.');
+  await expect(page.locator('#promoVideoUrl')).toHaveValue(savedVideo);
+
+  // Read the stored course rather than the render that answered the refusal.
+  await page.goto(studioPath);
+  await expect(page.locator('#promoVideoUrl')).toHaveValue(savedVideo);
+});
+
 test('an instructor sets a preview video and a lesson video, and both reach the learner', async ({ page }) => {
   // Two studio saves, a public page, a preview lesson and the learning room outrun the 45s default.
   test.setTimeout(90_000);
