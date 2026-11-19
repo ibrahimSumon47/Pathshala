@@ -207,6 +207,36 @@
   white-space: nowrap;
 }
 
+.auditFilter {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) auto;
+  align-items: end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.filterActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-1);
+}
+
+.filterClear {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .auditFilter {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    padding-bottom: 0;
+  }
+}
+
 .subnav {
   display: flex;
   flex-wrap: wrap;

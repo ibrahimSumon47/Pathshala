@@ -24,7 +24,7 @@ test-mode checkout accepts `4242 4242 4242 4242`.
   schedule seat-capped Jitsi live rooms and read per-course revenue, sales, completion and
   attendance. A roster shows the real class, its progress, certificates, anonymous survey
   averages and written comment excerpts, with admin moderation, live-attendance CSV and a
-  filterable roster CSV.
+  filterable roster CSV; releasing a checked-in seat asks for confirmation first.
 - **Learning.** Free or paid enrolment, lesson completion with whole-number progress, quiz
   scoring on the server, private notes, lesson Q&A, reviews, a wishlist, saved searches that
   check themselves daily, a three-question completion survey, and a waitlist place when a live
@@ -33,14 +33,15 @@ test-mode checkout accepts `4242 4242 4242 4242`.
   note and a recent-cap marker when a learner reaches one, a Stripe test rail and PayBridge,
   a standalone sandbox gateway with signed webhooks, refunds, ledger splits and retryable
   deliveries. Fulfilment happens only after a verified webhook.
-- **Live classes.** Generated Jitsi rooms with seat caps and waitlists, audited seat release
-  and automatic stale-queue cleanup, one attendance row per learner, `.ics` downloads,
-  exact-session seat-opening notes and a min-heap reminder scheduler that delivers in-app
-  notifications.
+- **Live classes.** Generated Jitsi rooms with seat caps and waitlists, confirmed and audited
+  seat release, automatic stale-queue cleanup, one attendance row per learner, `.ics`
+  downloads, exact-session seat-opening notes that mark themselves read when the learner
+  claims the seat, a visible marker when a note opened the room, and a min-heap reminder
+  scheduler that delivers in-app notifications.
 - **Trust.** One public certificate per completed course, a QR code and a verification page
   that needs no login; admins approve courses, change instructor access, revoke or restore a
-  certificate, follow coupon redemptions, moderate survey comments and export an audit CSV that
-  cannot execute spreadsheet formulas.
+  certificate, follow coupon redemptions, moderate survey comments, and filter the audit trail
+  by action or export it as a CSV that cannot execute spreadsheet formulas.
 
 ![Course catalogue](docs/screenshots/courses-en-production-desktop.png)
 
@@ -113,7 +114,7 @@ pnpm audit           # production advisories
 node scripts/check-done.mjs
 ```
 
-Current results: **223 unit and integration tests** (12 tokens, 13 shared, 109 database,
+Current results: **224 unit and integration tests** (12 tokens, 13 shared, 110 database,
 72 web, 17 API), **38 Playwright flows against production**, **zero axe violations** on
 landing, catalogue, course detail, refund policy, sign-in, dashboard, settings, notes,
 wishlist, cart, notifications, saved searches, surveys, the operator desks and the teacher

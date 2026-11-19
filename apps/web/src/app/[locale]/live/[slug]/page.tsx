@@ -1,4 +1,5 @@
 import { getWaitlistPosition, hasCheckedIn, jitsiUrl, listCourseSessions } from '@pathshala/db';
+import { cn } from '@/lib/cn';
 import { getLearningCourse } from '@/lib/learning';
 import { type Locale } from '@pathshala/shared';
 import { notFound, redirect } from 'next/navigation';
@@ -25,6 +26,7 @@ const COPY = {
     room: 'ক্লাস রুম',
     join: 'ক্লাসে যোগ দিন',
     checked: 'উপস্থিতি নেওয়া হয়েছে।',
+    fromNote: 'বিজ্ঞপ্তি থেকে খোলা ক্লাস',
     checkIn: 'উপস্থিতি নিশ্চিত করুন',
     attended: 'আপনি উপস্থিত আছেন',
     calendar: 'ক্যালেন্ডারে যোগ করুন (.ics)',
@@ -48,6 +50,7 @@ const COPY = {
     room: 'Class room',
     join: 'Join the class',
     checked: 'Attendance recorded.',
+    fromNote: 'Session from your notification',
     checkIn: 'Confirm attendance',
     attended: 'You are marked present',
     calendar: 'Add to calendar (.ics)',
@@ -83,6 +86,8 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
   const sessions = [...upcoming, ...past];
   // A seat note names the exact session; fall back to the next class if it is gone.
   const next = upcoming.find((session) => session.id === sessionParam) ?? upcoming[0] ?? null;
+  // Only mark the room when the note's session is the one actually on screen.
+  const fromNote = Boolean(sessionParam && next && next.id === sessionParam);
   const checkedIn = next ? await hasCheckedIn(next.id, user.id) : false;
   const waitlistPosition = next ? await getWaitlistPosition(next.id, user.id) : null;
   const seatsFull = Boolean(next && next.capacity > 0 && next.attendanceCount >= next.capacity);
@@ -105,10 +110,13 @@ export default async function LivePage({ params, searchParams }: LivePageProps) 
           <div className={styles.layout}>
             <div className={styles.stack}>
               {next ? (
-                <Card className={styles.room}>
+                <Card className={cn(styles.room, fromNote ? styles.roomFromNote : undefined)}>
                   <div className={styles.roomHead}>
                     <div>
-                      <Badge tone="accent">{copy.room}</Badge>
+                      <div className={styles.roomBadges}>
+                        <Badge tone="accent">{copy.room}</Badge>
+                        {fromNote ? <Badge tone="success">{copy.fromNote}</Badge> : null}
+                      </div>
                       <h2>{next.title[language] || next.title.en || next.title.bn}</h2>
                       <p className={styles.meta}>
                         {new Date(next.startsAt).toLocaleString(locale)} · {next.durationMinutes} {copy.minutes} · {next.attendanceCount}

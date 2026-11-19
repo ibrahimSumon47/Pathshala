@@ -1,10 +1,11 @@
 # Project state
 
-Snapshot: 2026-11-17. The first ten phases are complete and the expansion slices are live:
+Snapshot: 2026-11-19. The first ten phases are complete and the expansion slices are live:
 course depth (P9), the learner account slice (P10, item 1), discovery (P11, item 2), the
-P12-P15 polish slices, the P16 studio/operations slice, P17's classroom/commerce slice and
-P18's waitlist/commerce follow-through, P19's teacher/data loop and the P20 polish round.
-113/113 features carry production evidence, the three apps run on Atlas and Vercel, and
+P12-P15 polish slices, the P16 studio/operations slice, P17's classroom/commerce slice,
+P18's waitlist/commerce follow-through, P19's teacher/data loop, the P20 polish round and
+P21's confirmation, notification-state and audit-filter round.
+117/117 features carry production evidence, the three apps run on Atlas and Vercel, and
 `node scripts/check-done.mjs` exits 0.
 
 ## Live deployment
@@ -46,6 +47,7 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 | P18 | Seat-opening notifications, leaving a waitlist, live attendance CSV, per-learner cap impact | done — 2026-11-17, 38/38 production journeys |
 | P19 | Studio seat release, stale waitlist cleanup, roster CSV, coupon cap note | done — 2026-11-17, 38/38 production journeys |
 | P20 | Exact-session notifications, seat-release audit, filtered roster CSV, recent cap marker | done — 2026-11-17, 38/38 production journeys |
+| P21 | Seat-release confirmation, seat-note read state, notification-linked session highlight, audit action filter | done — 2026-11-19, 38/38 production journeys |
 
 `docs/features.json` is authoritative; this table is the summary.
 
@@ -75,17 +77,18 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   same page.
 - Analytics and admin: `/studio` shows revenue, sales, students, completion, attendance and
   a per-course table. `/admin` reports operating counts, approves course status, grants or
-  revokes instructor access and lists the audit trail. The CSV export is quoted and
-  formula-safe.
+  revokes instructor access and lists the audit trail, filtered by one exact action with the
+  CSV following the same filter. The CSV export is quoted and formula-safe.
 - Live classes: the studio schedules a session with a generated Jitsi room and an optional
   seat cap; `/live/[slug]` embeds the next room with a new-tab fallback, checks a learner in
   while a seat remains and otherwise adds one waitlist row with a stable position. Learners
   see their place on the dashboard, can leave it in one click, and get an in-app note when
   the teacher raises the cap enough to reach them. The studio schedule shows
-  attendance/capacity/waiting, updates the cap in place and can release a seat; the next
-  learner is notified, and the release writes an audit row. Seat and reminder notes link to
-  the exact session. Queue rows for a started session are cleared on the next dashboard visit
-  and hidden from reads in the meantime. Attendance is one row per learner and `.ics`
+  attendance/capacity/waiting, updates the cap in place and can release a seat behind a
+  confirmation step; the next learner is notified, and the release writes an audit row. Seat
+  and reminder notes link to the exact session, the selected room says a note opened it, and
+  claiming the seat marks that note read. Queue rows for a started session are cleared on the
+  next dashboard visit and hidden from reads in the meantime. Attendance is one row per learner and `.ics`
   downloads are offered. A min-heap drains due
   reminders into in-app notifications; `pnpm reminders:dispatch` is the cron entry point and
   email needs `RESEND_API_KEY`.
@@ -151,12 +154,14 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
 - `scripts/cleanup-e2e.ts` (`pnpm db:cleanup-e2e`) removes the `e2e-` users, courses and
   their dependent rows, so the demo catalogue stays clean after a suite.
 
-## Verification recorded 2026-11-17 (production)
+## Verification recorded 2026-11-19 (production)
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (223 tests: 12 tokens, 13 shared, 109 database,
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (224 tests: 12 tokens, 13 shared, 110 database,
   72 web, 17 API) and `pnpm build` all exit 0 locally.
 - `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e`: **38/38 pass** on
-  2026-11-17 after the P20 slice. The teacher journey downloads both CSVs, applies the
+  2026-11-19 after the P21 slice. The admin journey filters the audit trail by `audit.export`
+  and checks the filtered CSV; the live journey opens the class by its session id and reads
+  the notification badge. The teacher journey downloads both CSVs, applies the
   completed/active roster filters and clears them; the promotions journey checks the At limit
   column. Earlier
   journeys cover an empty catalogue search saving and removing its search, a survey comment

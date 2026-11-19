@@ -24,6 +24,11 @@ export type AdminCourseRow = {
   updatedAt: string;
 };
 
+export type AuditFilters = {
+  /** One exact action such as `live.seat_release`; empty means every action. */
+  action?: string;
+};
+
 export type AuditRow = {
   id: string;
   actorName: string;
@@ -162,10 +167,20 @@ export async function listAdminCourses(): Promise<AdminCourseRow[]> {
   }));
 }
 
-/** Recent audit rows with the actor's display name resolved in one query. */
-export async function listAuditEvents(limit = 30): Promise<AuditRow[]> {
-  await connectToDatabase();
-  const rows = await AuditEvent.find().sort({ createdAt: -1 }).limit(Math.min(limit, 200)).lean();
+const AUDIT_ACTION = /^[a-z0-9_.-]{1,80}$/i;
+
+/** Turn a filter into a query only when it has the shape the app writes. */
+function auditFilterQuery(filters: AuditFilters): Record<string, unknown> {
+  const action = filters.action?.trim() ?? '';
+  return action && AUDIT_ACTION.test(action) ? { action } : {};
+}
+
+/** Shared audit read: newest first, actor names resolved in one query. */
+async function readAuditRows(limit: number, filters: AuditFilters): Promise<AuditRow[]> {
+  const rows = await AuditEvent.find(auditFilterQuery(filters))
+    .sort({ createdAt: -1 })
+    .limit(Math.min(limit, 2000))
+    .lean();
   const actors = await User.find({ _id: { $in: rows.map((row) => row.actor).filter(Boolean) } })
     .select('name')
     .lean();
@@ -179,6 +194,12 @@ export async function listAuditEvents(limit = 30): Promise<AuditRow[]> {
     metadata: (row.metadata ?? {}) as Record<string, unknown>,
     createdAt: row.createdAt.toISOString(),
   }));
+}
+
+/** Recent audit rows for the admin desk. */
+export async function listAuditEvents(limit = 30, filters: AuditFilters = {}): Promise<AuditRow[]> {
+  await connectToDatabase();
+  return readAuditRows(Math.min(limit, 200), filters);
 }
 
 /** Publish, unpublish or archive a course and leave an audit trail. */
@@ -231,9 +252,17 @@ export async function setInstructorAccess(
   return true;
 }
 
+/** The exact action values in the log, for the desk's filter choices. */
+export async function listAuditActions(): Promise<string[]> {
+  await connectToDatabase();
+  const actions = await AuditEvent.distinct('action');
+  return actions.filter((action): action is string => typeof action === 'string').sort();
+}
+
 /** Audit rows for CSV export, capped so one request cannot exhaust memory. */
-export async function getAuditRowsForExport(limit = 2000): Promise<AuditRow[]> {
-  return listAuditEvents(Math.min(limit, 2000));
+export async function getAuditRowsForExport(limit = 2000, filters: AuditFilters = {}): Promise<AuditRow[]> {
+  await connectToDatabase();
+  return readAuditRows(Math.min(limit, 2000), filters);
 }
 
 export type ModerationReviewRow = {

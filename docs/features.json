@@ -1269,6 +1269,50 @@
         "the promotions table shows a warning Reached badge with the timestamp in its title, while unlimited codes and codes with no recent hit show a dash",
         "packages/db/src/p19.integration.test.ts pays a capped code and asserts the note ref and the promotion row's recentCapAt"
       ]
+    },
+    {
+      "id": "p21.seat-release-confirm",
+      "phase": "P21",
+      "title": "Confirm a seat release before it happens",
+      "status": "done",
+      "evidence": [
+        "each checked-in row in the studio live-class block opens a native disclosure that names the learner and says the next person in line is told; only Confirm release submits releaseSeatAction",
+        "the confirm step is a <details> element, so it needs no client JavaScript and keeps keyboard and screen-reader behaviour",
+        "the release itself stays covered by packages/db/src/p19.integration.test.ts, including the audit row and the seat note"
+      ]
+    },
+    {
+      "id": "p21.seat-note-read",
+      "phase": "P21",
+      "title": "Taking the seat clears its note",
+      "status": "done",
+      "evidence": [
+        "markSeatNoteRead clears only the caller's unread seat_open note for that exact session; joinSession and checkInToSession both call it after attendance is written",
+        "claiming a seat therefore drops the unread badge without touching reminders or another room's note",
+        "packages/db/src/p19.integration.test.ts asserts the note starts unread, then reads it back after the waiting learner claims the released seat"
+      ]
+    },
+    {
+      "id": "p21.session-highlight",
+      "phase": "P21",
+      "title": "Show which session a notification opened",
+      "status": "done",
+      "evidence": [
+        "when ?session= names the selected upcoming class, its room card gets an accent border and a Session from your notification badge",
+        "the marker disappears when the linked class has started and the page falls back to the next session",
+        "e2e/learning.spec.ts reads the session id from the .ics link, opens /en/live/javascript-first-steps?session=<id> and asserts the badge"
+      ]
+    },
+    {
+      "id": "p21.audit-action-filter",
+      "phase": "P21",
+      "title": "Filter the audit desk by action",
+      "status": "done",
+      "evidence": [
+        "the admin audit desk offers one exact action from a select built from AuditEvent.distinct, with filtered-empty copy and a clear link",
+        "listAuditEvents accepts a validated action filter; getAuditRowsForExport applies the same query, so the CSV matches the screen and the export row records the filter",
+        "packages/db/src/p19.integration.test.ts checks filtered desk/export parity, and e2e/admin.spec.ts filters by audit.export and asserts the filtered CSV and link"
+      ]
     }
   ]
 }

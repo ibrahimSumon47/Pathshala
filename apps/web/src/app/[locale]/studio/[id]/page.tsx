@@ -361,15 +361,27 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
                   {attendance[index].map((row) => (
                     <li key={row.studentId}>
                       <span>{row.studentName}</span>
-                      <form action={releaseSeatAction}>
-                        <input type="hidden" name="locale" value={locale} />
-                        <input type="hidden" name="courseId" value={course.id} />
-                        <input type="hidden" name="sessionId" value={session.id} />
-                        <input type="hidden" name="studentId" value={row.studentId} />
-                        <Button type="submit" variant="secondary" size="sm">
+                      <details className={styles.releaseConfirm}>
+                        <summary className={styles.releaseSummary}>
                           {language === 'en' ? 'Release seat' : 'আসন ছাড়ান'}
-                        </Button>
-                      </form>
+                        </summary>
+                        <div className={styles.releaseBody}>
+                          <p className={styles.meta}>
+                            {language === 'en'
+                              ? `Free ${row.studentName}'s seat? The next learner in line is told when a seat is open.`
+                              : `${row.studentName}-এর আসনটি ছাড়বেন? আসন খালি হলে অপেক্ষার তালিকার পরের শিক্ষার্থীকে জানানো হবে।`}
+                          </p>
+                          <form action={releaseSeatAction}>
+                            <input type="hidden" name="locale" value={locale} />
+                            <input type="hidden" name="courseId" value={course.id} />
+                            <input type="hidden" name="sessionId" value={session.id} />
+                            <input type="hidden" name="studentId" value={row.studentId} />
+                            <Button type="submit" variant="secondary" size="sm">
+                              {language === 'en' ? 'Confirm release' : 'ছাড়া নিশ্চিত করুন'}
+                            </Button>
+                          </form>
+                        </div>
+                      </details>
                     </li>
                   ))}
                 </ul>

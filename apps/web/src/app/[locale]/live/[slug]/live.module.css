@@ -37,6 +37,17 @@
   padding: var(--space-5);
 }
 
+.roomFromNote {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.roomBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .roomHead {
   display: flex;
   align-items: flex-start;

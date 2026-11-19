@@ -1,10 +1,18 @@
 import { getTranslations } from 'next-intl/server';
 import type { UserRole } from '@pathshala/db';
-import { getAdminReport, listAdminCourses, listAuditEvents, listCategories, listModerationQueue } from '@pathshala/db';
+import {
+  getAdminReport,
+  listAdminCourses,
+  listAuditActions,
+  listAuditEvents,
+  listCategories,
+  listModerationQueue,
+} from '@pathshala/db';
 import { formatPaisa } from '@pathshala/shared';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonStyles } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
+import { Select } from '@/components/ui/select';
 import { Link } from '@/i18n/navigation';
 import { listAccounts } from '@/lib/auth/accounts';
 import { requireRole } from '@/lib/auth/guard';
@@ -18,22 +26,27 @@ import styles from './admin.module.css';
 
 type AdminPageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; audit?: string }>;
 };
 
 /** Admin-only overview: accounts, subject taxonomy and the moderation entry points. */
 export default async function AdminPage({ params, searchParams }: AdminPageProps) {
   const { locale } = await params;
-  const { error, saved } = await searchParams;
+  const { error, saved, audit } = await searchParams;
   const user = await requireRole('admin');
   const t = await getTranslations('Admin');
   const roles = await getTranslations('Roles');
-  const [accounts, categories, report, courses, audit, moderation] = await Promise.all([
+  const auditAction = typeof audit === 'string' ? audit.trim().slice(0, 80) : '';
+  const auditExportHref = auditAction
+    ? `/api/admin/audit/export?action=${encodeURIComponent(auditAction)}`
+    : '/api/admin/audit/export';
+  const [accounts, categories, report, courses, auditRows, auditActions, moderation] = await Promise.all([
     listAccounts(),
     listCategories(),
     getAdminReport(),
     listAdminCourses(),
-    listAuditEvents(20),
+    listAuditEvents(20, { action: auditAction }),
+    listAuditActions(),
     listModerationQueue(),
   ]);
   const roleLabel = (role: UserRole) => roles(role);
@@ -78,6 +91,11 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         revoke: 'Remove instructor',
         audit: 'Audit log',
         export: 'Export CSV',
+        filterAction: 'Filter by action',
+        allActions: 'All actions',
+        applyFilter: 'Apply filter',
+        clearFilter: 'Clear filter',
+        filteredEmpty: 'No audit events for this action yet.',
         when: 'When',
         actor: 'Actor',
         action: 'Action',
@@ -125,6 +143,11 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         revoke: 'প্রশিক্ষকত্ব সরান',
         audit: 'অডিট লগ',
         export: 'সিএসভি ডাউনলোড',
+        filterAction: 'কার্যক্রম দিয়ে ছাঁকুন',
+        allActions: 'সব কার্যক্রম',
+        applyFilter: 'ছাঁকনি লাগান',
+        clearFilter: 'ছাঁকনি সরান',
+        filteredEmpty: 'এই কার্যক্রমে এখনো কোনো অডিট ঘটনা নেই।',
         when: 'সময়',
         actor: 'ব্যবহারকারী',
         action: 'কার্যক্রম',
@@ -399,8 +422,30 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
         <section className={styles.section}>
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle}>{copy.audit}</h2>
-            <a href="/api/admin/audit/export" className={buttonStyles({ variant: 'secondary', size: 'sm' })}>{copy.export}</a>
+            <a href={auditExportHref} className={buttonStyles({ variant: 'secondary', size: 'sm' })}>{copy.export}</a>
           </div>
+          <form method="get" className={styles.auditFilter}>
+            <Select
+              id="auditAction"
+              name="audit"
+              label={copy.filterAction}
+              defaultValue={auditAction}
+              options={[
+                { value: '', label: copy.allActions },
+                ...auditActions.map((action) => ({ value: action, label: action })),
+              ]}
+            />
+            <div className={styles.filterActions}>
+              <Button type="submit" variant="secondary" size="sm">
+                {copy.applyFilter}
+              </Button>
+              {auditAction ? (
+                <Link href="/admin" className={styles.filterClear}>
+                  {copy.clearFilter}
+                </Link>
+              ) : null}
+            </div>
+          </form>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
@@ -412,7 +457,7 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
                 </tr>
               </thead>
               <tbody>
-                {audit.map((event) => (
+                {auditRows.map((event) => (
                   <tr key={event.id}>
                     <td>{new Date(event.createdAt).toLocaleString(locale)}</td>
                     <td>{event.actorName}</td>
@@ -422,7 +467,9 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
                 ))}
               </tbody>
             </table>
-            {audit.length === 0 ? <p className={styles.empty}>{copy.emptyAudit}</p> : null}
+            {auditRows.length === 0 ? (
+              <p className={styles.empty}>{auditAction ? copy.filteredEmpty : copy.emptyAudit}</p>
+            ) : null}
           </div>
         </section>
 

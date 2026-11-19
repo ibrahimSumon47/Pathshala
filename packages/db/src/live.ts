@@ -211,6 +211,20 @@ async function sessionForParticipant(
   return session as Doc<LiveSessionDoc>;
 }
 
+/**
+ * A learner who has taken the seat no longer needs the note that announced it. This is
+ * scoped to one session and one owner so a check-in cannot clear another room's note.
+ */
+export async function markSeatNoteRead(sessionId: string, userId: string): Promise<number> {
+  await connectToDatabase();
+  if (!Types.ObjectId.isValid(sessionId) || !Types.ObjectId.isValid(userId)) return 0;
+  const result = await Notification.updateMany(
+    { user: userId, session: sessionId, kind: 'seat_open', readAt: null },
+    { readAt: new Date() },
+  );
+  return result.modifiedCount ?? 0;
+}
+
 /** Record attendance once per enrolled student; staff may check in too. */
 export async function checkInToSession(
   sessionId: string,
@@ -223,6 +237,7 @@ export async function checkInToSession(
   const existing = await Attendance.findOne({ session: session._id, student: userId }).lean();
   if (existing) return { attendance: existing as Doc<AttendanceDoc>, already: true };
   const attendance = await Attendance.create({ session: session._id, course: session.course, student: userId, joinedAt: new Date() });
+  await markSeatNoteRead(String(session._id), userId);
   return { attendance: attendance.toObject() as Doc<AttendanceDoc>, already: false };
 }
 
@@ -266,6 +281,8 @@ export async function joinSession(
   await Attendance.create({ session: session._id, course: session.course, student: userId, joinedAt: new Date() });
   // A seat can open after someone waits, so a successful check-in leaves the queue.
   await LiveWaitlist.deleteOne({ session: session._id, student: userId });
+  // Taking the seat answers the note that pointed here; the dashboard badge clears too.
+  await markSeatNoteRead(String(session._id), userId);
   return { status: 'checked_in', already: false };
 }
 

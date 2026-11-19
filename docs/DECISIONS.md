@@ -638,3 +638,13 @@ The audit writer moved into `packages/db/src/audit.ts`. Releasing a seat needs t
 Roster filters are plain query parameters validated at the web boundary and handed to `getCourseRoster` as dates. The page and the CSV route share the parser, and the download link embeds the same normalized query, so the file cannot silently ignore the screen's filters. `to` includes the whole selected day.
 
 A recent cap marker needs structure, not a regex over notification text. Cap notes now store the coupon code in `Notification.ref`, and the promotions view reads the latest 30-day note per code. That keeps the marker cheap and lets the body wording change without breaking the lookup.
+
+## 2026-11-19 — P21 confirms, clears and filters without new infrastructure
+
+A seat release is destructive in a small way: the learner loses their place and the next person is told. The studio therefore uses a native `<details>` disclosure as the confirmation step instead of a second route or a modal. The summary names the action, the open panel names the learner and the consequence, and only the confirm button carries a form. It needs no client JavaScript, and the existing server action still owns ownership checks and the audit row.
+
+Read state follows the event, not the page view. `markSeatNoteRead` clears the caller's unread `seat_open` row for one session, and both check-in paths call it after attendance is written. Opening a notification link does not clear the badge, because reading about a seat is not taking it; claiming the seat is. The query includes the owner and the session, so it can never clear a reminder or another room's note.
+
+The live page already fell back to the next class when a linked session had started. The highlight therefore keys off the same resolved `next` object: the badge appears only when the selected room's id equals `?session=`, so a fallback never claims a notification opened a different class.
+
+An audit action filter is a read boundary like any other. The query accepts only the lowercase dotted shape the app writes (`live.seat_release`, `review.hide`), is capped at 80 characters, and both the desk and the CSV export share one query builder. The export records the filter in its own `audit.export` metadata, so an archived file can be traced to the view it came from. The desk's options come from `AuditEvent.distinct('action')` rather than a hand-maintained list, so a new action appears without another release.

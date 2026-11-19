@@ -344,3 +344,11 @@ A filtered table and an unfiltered CSV are a trust bug. Parse the query once, pa
 An audit helper is infrastructure, not an admin feature. Moving it into its own module made it usable from the live service without a circular import, while a re-export kept the public import path stable. Lesson: extract the dependency, not a copy.
 
 Notification text is presentation. When another screen needs to group by an event, add a stable `ref` field and index it; matching on body strings would break the first time the copy is translated or reworded.
+
+## 2026-11-19 — Confirm with a disclosure; clear on the event, not the glance
+
+A native `<details>` is enough for a one-step confirmation. It keeps the server action untouched, needs no client bundle, and still gives keyboard users a visible summary. The open panel has to name the person and the consequence, or the confirmation is just an extra click.
+
+Unread state should follow the action the note asked for. Clearing a seat note when the learner merely opens the live page would hide the prompt without freeing a seat; clearing it inside check-in makes the badge tell the truth. Scope the update by owner and session, then a shared helper cannot leak across rooms.
+
+A filter that is not on the export is a reporting bug waiting for an audit. The audit desk and its CSV now share one query builder, and the export row stores the action it filtered by. When the two reads are separate functions, compare them in a test; the parity assertion caught nothing here, but it will catch the next divergence.

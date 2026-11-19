@@ -39,4 +39,14 @@ test('an enrolled student sees the live class and attendance state', async ({ pa
   await page.goto('/en/live/javascript-first-steps');
   await expect(page.getByText(/Questions and answers/).first()).toBeVisible();
   await expect(page.locator('iframe')).toBeVisible();
+
+  // A note links to the exact session; the selected room says where it came from.
+  const calendarHref = await page
+    .getByRole('link', { name: 'Add to calendar (.ics)' })
+    .first()
+    .getAttribute('href');
+  const sessionId = calendarHref?.match(/\/api\/sessions\/([a-f0-9]{24})\/calendar/)?.[1];
+  expect(sessionId).toBeTruthy();
+  await page.goto(`/en/live/javascript-first-steps?session=${sessionId}`);
+  await expect(page.getByText('Session from your notification')).toBeVisible();
 });

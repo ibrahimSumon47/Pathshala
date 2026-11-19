@@ -1,6 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { listAuditEvents } from './admin';
+import { getAuditRowsForExport, listAuditActions, listAuditEvents } from './admin';
 import { createOrderForCourses, markOrderPaid } from './commerce';
 import { connectToDatabase, disconnectFromDatabase } from './connection';
 import {
@@ -99,7 +99,10 @@ describe('releasing a seat from the studio', () => {
     expect(await listAttendance(session.id)).toEqual([]);
     const notes = await listNotifications(studentBId);
     expect(notes[0]?.title.en).toBe('A seat opened in your live class');
+    expect(notes[0]?.readAt).toBeNull();
     expect(await joinSession(session.id, studentBId, ['student'])).toEqual({ status: 'checked_in', already: false });
+    // Claiming the seat answers the note that pointed here.
+    expect((await listNotifications(studentBId))[0]?.readAt).not.toBeNull();
     expect(
       await releaseAttendance({ sessionId: session.id, courseId, studentId: studentAId, actorId: instructorId }),
     ).toEqual({ released: false, notified: 0 });
@@ -111,6 +114,15 @@ describe('releasing a seat from the studio', () => {
       entityId: session.id,
     });
     expect(audit[0]?.metadata.studentId).toBe(studentAId);
+  });
+
+  it('filters the audit desk and its export by action', async () => {
+    const releases = await listAuditEvents(20, { action: 'live.seat_release' });
+    expect(releases.length).toBeGreaterThan(0);
+    expect(releases.every((row) => row.action === 'live.seat_release')).toBe(true);
+    expect(await listAuditEvents(20, { action: 'course.status' })).toEqual([]);
+    expect(await listAuditActions()).toContain('live.seat_release');
+    expect(await getAuditRowsForExport(20, { action: 'live.seat_release' })).toEqual(releases);
   });
 });
 
