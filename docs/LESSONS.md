@@ -545,3 +545,12 @@ which is the tell that the fix belonged in configuration the tool already reads 
 `package.json`'s `config.mongodbMemoryServer` block — rather than in a shell. Lesson: when a
 tool re-fetches something you know is cached, find how it resolves the path before exporting a
 variable, and prefer a checked-in config so every package and every terminal agrees.
+
+## 2026-11-20 — `process.loadEnvFile` keeps what the shell already set
+
+Node 24 loads a dotenv file without a dependency, and it does not overwrite a variable that is
+already in `process.env` (verified with one probe: a file value loses to an exported one). That
+ordering is exactly what a local script wants: `.env.local` fills the gaps for a developer,
+while CI and an explicit `MONGODB_URI=... pnpm db:seed` stay in charge, so one loader in
+`scripts/env.ts` serves the seed, the reminder cron and the e2e cleanup without a branch.
+Lesson: check the loader's precedence rule before adding “only if unset” logic around it.

@@ -811,4 +811,7 @@ raises the hook budget to 120 s only for the first run that has to fetch the bin
 argument applies to `MONGODB_URI`: `pnpm db:cleanup-e2e` now loads `.env.local` with Node's own
 `process.loadEnvFile` when the variable is unset, so the command works from a plain terminal and
 no value is copied into a script, a shell history or a chat message.
+That loader now lives in `scripts/env.ts` and is used by the seed, the reminder cron and the e2e
+cleanup, so the handover no longer carries a MONGODB_URI one-liner and no value has to be exported
+from a shell.
 Revisit: if tests move to a database container, or if a second cache location is ever needed.

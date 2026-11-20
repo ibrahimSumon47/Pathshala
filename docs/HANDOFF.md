@@ -142,15 +142,16 @@ for every remaining item. Replace the placeholder with the brief's sentence befo
 Nothing is blocked. If the demo data needs refreshing after a test run:
 
 ```bash
-export MONGODB_URI="$(node -e 'const fs=require("fs");const m=fs.readFileSync(".env.local","utf8").match(/^MONGODB_URI=(.*)$/m);process.stdout.write(m[1]??"")')"
 pnpm db:seed
-unset MONGODB_URI
 ```
 
 Playwright leaves one learner account and two `e2e-` courses (plus the media rows they
 uploaded) behind per run; `pnpm db:cleanup-e2e` removes all of it if the catalogue should look
-like the seed screenshot. `pnpm db:cleanup-e2e` reads `MONGODB_URI` from `.env.local` itself when
-the shell has none; `pnpm db:seed` still needs the export shown above. Then rerun
+like the seed screenshot. `pnpm db:seed`, `pnpm reminders:dispatch` and `pnpm db:cleanup-e2e` all
+load `.env.local` through `scripts/env.ts` when the shell has no `MONGODB_URI`, so none of them
+needs an exported variable; an export or a CI secret still takes precedence. Re-seeding rewrites
+the six demo courses' sections and lessons from `seed-content.ts`, which is what the script is
+for. Then rerun
 `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e` to confirm nothing drifted.
 
 ## Local commands

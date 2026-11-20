@@ -168,8 +168,10 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   when the lesson belongs to a published course and carries the preview flag.
 - `/refund-policy` states the 14-day, under-a-quarter rule the buy panel links to.
 - `scripts/cleanup-e2e.ts` (`pnpm db:cleanup-e2e`) removes the `e2e-` users, courses and
-  their dependent rows, so the demo catalogue stays clean after a suite. It reads `MONGODB_URI`
-  from `.env.local` when the shell has none, so it needs no exported variable.
+  their dependent rows, so the demo catalogue stays clean after a suite.
+- `scripts/env.ts` gives `pnpm db:seed`, `pnpm reminders:dispatch` and `pnpm db:cleanup-e2e` the
+  workspace's `.env.local` when the shell has no `MONGODB_URI`, so each runs from a plain
+  terminal; a variable already in the environment wins, matching CI and an explicit export.
 - The local gate needs no exported variables either: `package.json` tells
   mongodb-memory-server to keep its mongod binary in the one workspace cache
   (`node_modules/.cache/mongodb-memory-server`), so `pnpm test` reuses it instead of downloading

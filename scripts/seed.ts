@@ -20,6 +20,7 @@ import {
   Wishlist,
   connectToDatabase,
 } from '@pathshala/db';
+import { loadLocalEnv } from './env';
 import { SEED_CATEGORIES, SEED_COURSES, SEED_INSTRUCTORS } from './seed-content';
 
 /** Seeded covers live in the web app's public folder, so a demo course always has art. */
@@ -370,6 +371,7 @@ export async function seedDatabase(): Promise<void> {
 }
 
 if (process.argv[1]?.endsWith('seed.ts')) {
+  loadLocalEnv();
   void seedDatabase()
     .then(async () => {
       console.log('Seed complete');
