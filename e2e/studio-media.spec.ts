@@ -152,10 +152,12 @@ test('the studio refuses a fake image and an oversized file, and keeps the cover
   await expect(page.locator('figure img[alt="Cover image"]')).toHaveAttribute('src', coverUrl!);
   await expect(page.locator('section[aria-labelledby="course-media"] figure')).toHaveCount(1);
 
-  // Oversized: a real PNG header padded past the 1.5 MB limit, so the size check is what refuses it.
-  const oversized = Buffer.concat([PNG, Buffer.alloc(1_600_000)]);
+  // Oversized: a JPEG header padded past the 1.5 MB limit. The bytes do not decode, so the cover
+  // field cannot shrink the file and uploads it untouched, which is what the server's size cap
+  // sees; a picture the browser can decode arrives small and is accepted.
+  const oversized = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(1_600_000)]);
   expect(oversized.byteLength).toBeGreaterThan(1_572_864);
-  await page.setInputFiles('#course-cover', { name: 'huge.png', mimeType: 'image/png', buffer: oversized });
+  await page.setInputFiles('#course-cover', { name: 'huge.jpg', mimeType: 'image/jpeg', buffer: oversized });
   await page.getByRole('button', { name: 'Save cover' }).click();
   await expect(page).toHaveURL(/\?error=/);
   await expect(page.locator('p[role="alert"]')).toHaveText('Each image must be under 1.5 MB.');
@@ -166,7 +168,9 @@ test('the studio refuses a fake image and an oversized file, and keeps the cover
   await expect(page.locator('figure img[alt="Cover image"]')).toHaveAttribute('src', coverUrl!);
   const served = await page.request.get(coverUrl!);
   expect(served.status()).toBe(200);
-  expect(served.headers()['content-type']).toContain('image/png');
+  // The cover field re-encodes the picked picture in the browser, so the stored cover is the
+  // WebP the page's hero downloads rather than the PNG that was chosen.
+  expect(served.headers()['content-type']).toContain('image/webp');
 
   // Remove the cover so the course leaves no image rows behind for the cleanup script.
   await page.getByLabel('Remove cover').check();

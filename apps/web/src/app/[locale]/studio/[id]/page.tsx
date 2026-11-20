@@ -23,6 +23,7 @@ import {
   updateLiveCapacityAction,
 } from '../actions';
 import { studioCopy } from '../copy';
+import { CoverField } from '../cover-field';
 import styles from '../studio.module.css';
 
 type StudioCoursePageProps = {
@@ -278,19 +279,7 @@ export default async function StudioCoursePage({ params, searchParams }: StudioC
           <form action={updateCourseMediaAction} className={styles.form} encType="multipart/form-data">
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="courseId" value={course.id} />
-            <div className={styles.fileField}>
-              <label className={styles.fileLabel} htmlFor="course-cover">
-                {copy.coverImage}
-              </label>
-              <input
-                id="course-cover"
-                name="cover"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className={styles.file}
-              />
-              <p className={styles.meta}>{copy.coverHint}</p>
-            </div>
+            <CoverField label={copy.coverImage} hint={copy.coverHint} />
             {course.thumbnailUrl ? (
               <label className={styles.check}>
                 <input type="checkbox" name="removeCover" /> {copy.removeCover}

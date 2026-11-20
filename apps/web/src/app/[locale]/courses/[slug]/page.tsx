@@ -9,6 +9,7 @@ import { Button, buttonStyles } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Link } from '@/i18n/navigation';
+import { coverSources } from '@/lib/course-cover';
 import { getCourseReviews, getCourseViewerState } from '@/lib/learning';
 import { addToCartAction } from '../../cart/actions';
 import { startCheckoutAction } from '../../checkout/[orderNumber]/actions';
@@ -158,17 +159,6 @@ function pick(value: { bn?: string; en?: string } | null | undefined, language: 
 /** A direct video file can play inline; anything else is offered as a link. */
 function playableVideo(url: string): boolean {
   return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url);
-}
-
-/**
- * Seeded covers ship two WebP twins beside the JPEG, so a phone fetches roughly a third of the
- * bytes; uploaded media has no twin and keeps the single JPEG.
- */
-function coverSources(url: string): { phone: string; full: string } | null {
-  const match = /^\/images\/courses\/([a-z0-9-]+)\.jpg$/.exec(url);
-  if (!match) return null;
-  const base = `/images/courses/${match[1]}`;
-  return { phone: `${base}-1024.webp`, full: `${base}.webp` };
 }
 
 /** Dates follow the reader's locale, so Bangla shows Bangla digits. */

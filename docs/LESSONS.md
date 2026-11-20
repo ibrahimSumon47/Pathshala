@@ -517,3 +517,13 @@ optimizer transcode, which dropped the single-run desktop pass to 0.82–0.84 on
 Pre-built WebP twins in `public/` give the same weight class (~19 KB) with a static file and no
 runtime cost. Lesson: a build-time asset beats a runtime transform for the image that is painted
 first, and a single-run budget is sensitive to a first-hit cost a median would hide.
+
+## 2026-11-20 — The cheapest encoder for an upload is the one already in the browser
+
+Uploaded covers were stored as the teacher's original file, and no server-side option was cheap:
+`sharp` is not in the dependency tree, and the Next image optimizer cost 1.8–1.9 s on a cold
+transcode. The browser that picked the file can already decode and encode it, so the cover field
+now re-encodes the picture to a capped WebP before the form submit and leaves the original file
+in place when it cannot (undecodable bytes, no WebP encoder, JavaScript off). Lesson: before
+adding a server dependency for a transform, check whether the client that produced the input can
+do it, and always keep the untouched upload as the fallback path.

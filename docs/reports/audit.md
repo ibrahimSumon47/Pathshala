@@ -188,7 +188,18 @@ store is the fix when it matters.
 seeded covers now ship 1024 px and 1392 px WebP twins beside the JPEG (66.4 KB → 19.2 KB on a
 phone) and the page renders them through `<picture>`. Catalogue cards keep the plain `<img>`:
 their LCP is text, so re-encoding them would cost bytes and screenshots without moving the metric.
-Uploaded media is stored as the user provided it and has no twin.
+Uploaded covers are prepared in the browser instead: the cover field draws a picked picture inside the
+cover box and re-encodes it as a WebP before the form submits, so a stored cover is a capped WebP
+rather than the raw JPEG and the request path still does no image work. A file that cannot be
+decoded, a browser without a WebP encoder or an upload with JavaScript off falls back to the
+original, where the server's signature and size checks still apply. Covers uploaded before this
+change keep their JPEG until the teacher replaces them.
+
+The seeded side has a guard: `apps/web/src/lib/course-cover.test.ts` walks
+`apps/web/public/images/courses` and fails on a cover JPEG without both twins, on a twin that is
+not a real WebP or not smaller than its JPEG, on a cover whose `<source>` mapping no longer
+resolves, and on a twin left behind without its JPEG. The two lesson-body screenshots are the only
+files exempt, because they are never the hero.
 
 **m6 — pa11y scans public pages only.** Signed-in pages are covered by axe in Playwright;
 pa11y's session support would duplicate that with a second harness.

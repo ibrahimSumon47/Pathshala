@@ -778,3 +778,22 @@ run-to-run variance is larger than the ~320 ms the cover is worth and a higher g
 on a healthy cold run.
 Revisit: when the cold-start tail is addressed by splitting viewer state out of the course page,
 or when the variance between sessions drops enough for a median to mean something again.
+
+## 2026-11-20 — Uploaded covers are re-encoded in the browser, and the seeded twins are guarded
+
+Two gaps were left by the WebP-twin fix: an uploaded cover is served exactly as it arrived, and a
+new seeded cover could ship without twins and quietly go back to a 60 KB hero. Uploaded media has
+no server-side encoder — `sharp` is not installed, and a runtime transform measured 1.8–1.9 s on
+its first hit — but the browser already has one. The studio's cover field now draws the picked
+picture into a canvas inside the cover box, encodes WebP at quality 0.85 and submits that file
+instead, so the stored cover is a small WebP and the request path still does no image work. A
+file the browser cannot decode, a missing encoder (Safari can answer with a PNG) or JavaScript
+off falls back to the original upload, where the server's signature, MIME allow-list and 1.5 MB
+cap still decide — that cap now bites mainly on files the browser cannot decode, so a 5 MB photo
+uploads as a ~200 KB WebP instead of being refused outright. Covers stored before this keep their
+JPEG until they are replaced.
+On the seeded side a unit test is the guard, not a checklist: `course-cover.test.ts` requires a
+real 1024 px and full WebP twin for every cover JPEG in the public folder, a twin smaller than
+its JPEG, a `<source>` mapping that resolves, and no orphan twin.
+Revisit: if uploads move to object storage with an image pipeline, or if a covers folder ever
+holds images that are neither covers nor the two lesson screenshots.

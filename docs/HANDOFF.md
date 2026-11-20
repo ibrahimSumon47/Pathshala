@@ -52,7 +52,13 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   uploads a renamed HTML file and a PNG padded past 1.5 MB through the same form. It reads
   "Upload a PNG, JPEG or WebP image." and "Each image must be under 1.5 MB." from the page
   alert and proves the refusal changed nothing — the same cover URL on the page, one media
-  figure only, and the stored image still answering 200 `image/png` after a fresh load.
+  figure only, and the stored image still answering 200 `image/webp` after a fresh load (the
+  cover field re-encodes the pick in the browser before submitting).
+- A seeded cover cannot lose its twins silently: `apps/web/src/lib/course-cover.test.ts` walks
+  `apps/web/public/images/courses`, requires a real 1024 px and full WebP twin for every cover
+  JPEG (the two lesson-body screenshots are the only exemptions), checks each twin is smaller
+  than its JPEG, and resolves the course page's `<source>` mapping for every cover. Removing one
+  twin fails the run on the named file.
 - The same file refuses a bad preview video: after saving an https mp4 link, it submits an
   http link and a relative path, reads "Preview video links need https." from the alert each
   time, and finds the stored field plus a freshly loaded studio page still holding the https
