@@ -535,3 +535,13 @@ The cover guard opened with `expect(covers.length).toBe(6)`, which turned a legi
 "every cover has both twins and its `<source>` resolves"; a count is a snapshot of the data. The
 fixed number is gone; both runs — with six covers and with a seventh added and removed — pass.
 Lesson: assert the invariant, and let the data change shape around it.
+
+## 2026-11-20 — A tool's cache follows the working directory, not the repository
+
+The mongod binary was already on disk, yet the web suite tried to download it: mongodb-memory-server
+resolves its cache from the nearest package.json, and pnpm starts each package with its own
+directory. Exporting `MONGOMS_DOWNLOAD_DIR` made one terminal work and left the next one broken,
+which is the tell that the fix belonged in configuration the tool already reads — the root
+`package.json`'s `config.mongodbMemoryServer` block — rather than in a shell. Lesson: when a
+tool re-fetches something you know is cached, find how it resolves the path before exporting a
+variable, and prefer a checked-in config so every package and every terminal agrees.

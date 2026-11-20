@@ -149,7 +149,8 @@ unset MONGODB_URI
 
 Playwright leaves one learner account and two `e2e-` courses (plus the media rows they
 uploaded) behind per run; `pnpm db:cleanup-e2e` removes all of it if the catalogue should look
-like the seed screenshot. Then rerun
+like the seed screenshot. `pnpm db:cleanup-e2e` reads `MONGODB_URI` from `.env.local` itself when
+the shell has none; `pnpm db:seed` still needs the export shown above. Then rerun
 `E2E_BASE_URL=https://pathshala-web-eight.vercel.app pnpm test:e2e` to confirm nothing drifted.
 
 ## Local commands

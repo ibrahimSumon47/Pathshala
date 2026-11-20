@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=24.0.0"
   },
+  "config": {
+    "mongodbMemoryServer": {
+      "downloadDir": "node_modules/.cache/mongodb-memory-server"
+    }
+  },
   "scripts": {
     "dev": "pnpm --filter @pathshala/web dev",
     "build": "pnpm -r build",

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import {
   Certificate,
@@ -21,6 +23,16 @@ import {
   connectToDatabase,
   imageIdFromUrl,
 } from '@pathshala/db';
+
+/**
+ * Read the workspace's `.env.local` when the shell has no MONGODB_URI, so the cleanup runs from a
+ * plain terminal. A value already in the environment wins, and nothing is ever printed.
+ */
+function loadLocalEnv(): void {
+  if (process.env.MONGODB_URI) return;
+  const file = fileURLToPath(new URL('../.env.local', import.meta.url));
+  if (existsSync(file)) process.loadEnvFile(file);
+}
 
 /**
  * The production journeys own an `e2e-` namespace, so their rows can be removed without
@@ -85,6 +97,7 @@ export async function cleanupE2eData(): Promise<Record<string, number>> {
 }
 
 if (process.argv[1]?.endsWith('cleanup-e2e.ts')) {
+  loadLocalEnv();
   void cleanupE2eData()
     .then(async (removed) => {
       console.log('Removed test rows:', removed);

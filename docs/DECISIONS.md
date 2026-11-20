@@ -797,3 +797,18 @@ real 1024 px and full WebP twin for every cover JPEG in the public folder, a twi
 its JPEG, a `<source>` mapping that resolves, and no orphan twin.
 Revisit: if uploads move to object storage with an image pipeline, or if a covers folder ever
 holds images that are neither covers nor the two lesson screenshots.
+
+## 2026-11-20 — One mongod test binary for the workspace, and scripts read `.env.local`
+
+`mongodb-memory-server` picks its cache from the package.json nearest the working directory, and
+pnpm runs each package's tests with that package as the directory, so `apps/web` looked in
+`apps/web/node_modules/.cache`, found nothing and started a 380 MB download that blew the 10 s
+hook budget — even though the binary already sat in the root cache. Exporting `MONGOMS_DOWNLOAD_DIR`
+fixed one shell and not the next. The root `package.json` now carries
+`config.mongodbMemoryServer.downloadDir`, which the library finds while walking up from any
+package, so all five suites share `node_modules/.cache/mongodb-memory-server`; the web config
+raises the hook budget to 120 s only for the first run that has to fetch the binary. The same
+argument applies to `MONGODB_URI`: `pnpm db:cleanup-e2e` now loads `.env.local` with Node's own
+`process.loadEnvFile` when the variable is unset, so the command works from a plain terminal and
+no value is copied into a script, a shell history or a chat message.
+Revisit: if tests move to a database container, or if a second cache location is ever needed.
