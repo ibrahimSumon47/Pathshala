@@ -33,7 +33,8 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   a cover; rerun it after a fresh database.
 - Uploading is now a production journey: `e2e/studio-media.spec.ts` creates a course as the
   seeded instructor, uploads a real PNG cover and a preview PNG through the studio forms,
-  reads both `/api/media/<id>` URLs (200 `image/png`, immutable cache), finds the cover in the
+  reads both `/api/media/<id>` URLs (the cover `image/webp`, the preview `image/png`, both with
+  the immutable cache header), finds the cover in the
   published hero and the picture under Inside the course, removes the picture and asserts the
   page and a fresh media request both drop it, then clears the cover. The run adds about
   thirteen seconds.
@@ -58,7 +59,12 @@ account; every variable and the Stripe endpoint use the `-eight` host instead.
   `apps/web/public/images/courses`, requires a real 1024 px and full WebP twin for every cover
   JPEG (the two lesson-body screenshots are the only exemptions), checks each twin is smaller
   than its JPEG, and resolves the course page's `<source>` mapping for every cover. Removing one
-  twin fails the run on the named file.
+  twin fails the run on the named file. The guard no longer pins how many covers exist, so a new
+  seeded course with its twins keeps the suite green.
+- Verified on production on 2026-11-20: after deploying the cover field, the studio e2e ran
+  against `https://pathshala-web-eight.vercel.app`, uploaded a cover through the real form and
+  read it back from `/api/media/<id>` as 200 `image/webp`, while the undecodable oversized file
+  still produced "Each image must be under 1.5 MB."
 - The same file refuses a bad preview video: after saving an https mp4 link, it submits an
   http link and a relative path, reads "Preview video links need https." from the alert each
   time, and finds the stored field plus a freshly loaded studio page still holding the https

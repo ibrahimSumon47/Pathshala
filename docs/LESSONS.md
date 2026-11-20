@@ -527,3 +527,11 @@ now re-encodes the picture to a capped WebP before the form submit and leaves th
 in place when it cannot (undecodable bytes, no WebP encoder, JavaScript off). Lesson: before
 adding a server dependency for a transform, check whether the client that produced the input can
 do it, and always keep the untouched upload as the fallback path.
+
+## 2026-11-20 — A guard should assert the rule, not today's count
+
+The cover guard opened with `expect(covers.length).toBe(6)`, which turned a legitimate addition
+(one more seeded course with its twins) into a red suite and taught nobody anything. The rule is
+"every cover has both twins and its `<source>` resolves"; a count is a snapshot of the data. The
+fixed number is gone; both runs — with six covers and with a seventh added and removed — pass.
+Lesson: assert the invariant, and let the data change shape around it.

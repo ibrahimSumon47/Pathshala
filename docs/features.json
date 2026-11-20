@@ -1325,7 +1325,7 @@
         "the catalogue cards, the landing shelf, the studio list and the course hero render the cover at a 16:9 ratio with height auto",
         "e2e/public.spec.ts asserts six seeded covers on /en/courses, their box ratio and a 200 image/jpeg response, then the hero image on the course page",
         "e2e/studio-media.spec.ts signs in as the seeded instructor, creates a course, uploads a real PNG through the studio form, reads the returned /api/media/<id> URL with its immutable cache header, and finds it in the hero of the published course page before clearing it",
-        "apps/web/src/lib/course-cover.test.ts fails the unit suite when a cover JPEG has no -1024.webp and .webp twin, when a twin is not a smaller real WebP, or when the <source> mapping for a cover no longer resolves; the cover field re-encodes a picked picture in the browser as a WebP capped at 1392 px so an uploaded cover is not a raw JPEG"
+        "apps/web/src/lib/course-cover.test.ts fails the unit suite when a cover JPEG has no -1024.webp and .webp twin, when a twin is not a smaller real WebP, or when the <source> mapping for a cover no longer resolves (it does not pin the cover count, so a new seeded cover passes); the cover field re-encodes a picked picture in the browser as a WebP capped at 1392 px, and on 2026-11-20 e2e/studio-media.spec.ts against production stored a cover the media route answered as image/webp"
       ]
     },
     {

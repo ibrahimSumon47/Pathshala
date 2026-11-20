@@ -199,7 +199,12 @@ The seeded side has a guard: `apps/web/src/lib/course-cover.test.ts` walks
 `apps/web/public/images/courses` and fails on a cover JPEG without both twins, on a twin that is
 not a real WebP or not smaller than its JPEG, on a cover whose `<source>` mapping no longer
 resolves, and on a twin left behind without its JPEG. The two lesson-body screenshots are the only
-files exempt, because they are never the hero.
+files exempt, because they are never the hero. The guard asserts that rule rather than a cover count,
+so a new seeded course passes as soon as its twins are there.
+
+Checked on production, 2026-11-20: with the cover field deployed, `e2e/studio-media.spec.ts` ran
+against `https://pathshala-web-eight.vercel.app`, uploaded a cover through the studio form and read
+it back from `/api/media/<id>` as 200 `image/webp`.
 
 **m6 — pa11y scans public pages only.** Signed-in pages are covered by axe in Playwright;
 pa11y's session support would duplicate that with a second harness.

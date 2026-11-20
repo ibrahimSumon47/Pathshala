@@ -129,7 +129,9 @@ The plain `pathshala-web.vercel.app` name belongs to another account, so the web
   the browser as a WebP capped at a 1392 px longest edge before uploading, so a stored cover is
   not the raw JPEG; a browser that cannot encode falls back to the original file. The seeded
   covers ship 1024 px and 1392 px WebP twins, and `apps/web/src/lib/course-cover.test.ts` fails
-  the unit suite when a cover JPEG is missing either twin or its `<source>` no longer resolves.
+  the unit suite when a cover JPEG is missing either twin or its `<source>` no longer resolves
+  (it does not pin how many covers exist). Verified on production on 2026-11-20: a cover
+  uploaded through the studio form is served from `/api/media/<id>` as `image/webp`.
 - Studio operations: `/studio/[id]/roster` lists the real class with progress, completion,
   certificate links and survey answers, and downloads the course's live attendance/waitlist
   and full roster as two formula-safe CSVs. The roster filters by status and enrolment date,
