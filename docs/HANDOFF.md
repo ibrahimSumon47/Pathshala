@@ -170,6 +170,11 @@ node scripts/check-done.mjs
 Payment environment lives only in gitignored `.env.local` files. All local origins use
 `127.0.0.1`, not `localhost`, because session cookies are host-scoped.
 
+A machine that has never run the tests downloads the mongod binary once (about 380 MB) into
+`node_modules/.cache/mongodb-memory-server`; the first `pnpm test` there is slow but nothing needs
+exporting, because every suite that starts mongod (`apps/web`, `apps/api`, `packages/db`) allows
+120 s for its setup hook instead of the 10 s default in its own `vitest.config.mts`.
+
 ## Files worth knowing
 
 - `apps/web/src/lib/auth/registration.ts` — public learner registration.

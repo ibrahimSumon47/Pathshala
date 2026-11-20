@@ -806,8 +806,10 @@ pnpm runs each package's tests with that package as the directory, so `apps/web`
 hook budget — even though the binary already sat in the root cache. Exporting `MONGOMS_DOWNLOAD_DIR`
 fixed one shell and not the next. The root `package.json` now carries
 `config.mongodbMemoryServer.downloadDir`, which the library finds while walking up from any
-package, so all five suites share `node_modules/.cache/mongodb-memory-server`; the web config
-raises the hook budget to 120 s only for the first run that has to fetch the binary. The same
+package, so all five suites share `node_modules/.cache/mongodb-memory-server`; each suite that
+starts a mongod (`apps/web`, `apps/api`, `packages/db`) raises the hook budget to 120 s in its own
+`vitest.config.mts`, only for the first run that has to fetch the binary — a throwaway 12 s hook
+proved the budget lands in every one, where the 10 s default fails. The same
 argument applies to `MONGODB_URI`: `pnpm db:cleanup-e2e` now loads `.env.local` with Node's own
 `process.loadEnvFile` when the variable is unset, so the command works from a plain terminal and
 no value is copied into a script, a shell history or a chat message.

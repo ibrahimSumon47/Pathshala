@@ -554,3 +554,13 @@ ordering is exactly what a local script wants: `.env.local` fills the gaps for a
 while CI and an explicit `MONGODB_URI=... pnpm db:seed` stay in charge, so one loader in
 `scripts/env.ts` serves the seed, the reminder cron and the e2e cleanup without a branch.
 Lesson: check the loader's precedence rule before adding “only if unset” logic around it.
+
+## 2026-11-20 — Prove a timeout budget with a hook that outruns the old one
+
+`apps/api` and `packages/db` were still on Vitest's 10 s default while `apps/web` allowed 120 s, so
+a machine that had never run the tests would have failed its first run mid-download. Adding the
+same config is easy to get subtly wrong — wrong filename, wrong field, config not picked up — and a
+green suite on a warm machine proves nothing about it. A throwaway test whose `beforeAll` sleeps
+12 s settles it: it fails under the default and passes under the new budget, and the run reports the
+hook's real 12 015 ms. Deleted straight after; nothing about it belongs in the suite.
+Lesson: when the change is a limit or a budget, verify it with something that would fail without it.

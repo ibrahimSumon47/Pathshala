@@ -32,7 +32,7 @@
       "evidence": [
         "docs/PROJECT_STATE.md lists each CLI and version checked 2026-11-16",
         "gitleaks 8.30.1 installed at tools/gitleaks/ because winget has no package",
-        "the local gate runs from a plain shell (re-run on 2026-11-20 with MONGODB_URI and MONGOMS_DOWNLOAD_DIR unset): pnpm test passes 5 packages and 259 tests (tokens 12, shared 13, db 118, api 25, web 91) from the shared mongod cache in node_modules/.cache/mongodb-memory-server with no per-package cache written; pnpm db:seed prints Seed complete; pnpm reminders:dispatch prints 0 delivered in-app, 0 emailed (an earlier dispatch the same day delivered 31 and emailed 0, leaving nothing due); pnpm db:cleanup-e2e prints Removed test rows: {} — every one exits 0, the three scripts reading .env.local through scripts/env.ts"
+        "the local gate runs from a plain shell (re-run on 2026-11-20 with MONGODB_URI and MONGOMS_DOWNLOAD_DIR unset): pnpm test passes 5 packages and 259 tests (tokens 12, shared 13, db 118, api 25, web 91) from the shared mongod cache in node_modules/.cache/mongodb-memory-server with no per-package cache written; pnpm db:seed prints Seed complete; pnpm reminders:dispatch prints 0 delivered in-app, 0 emailed (an earlier dispatch the same day delivered 31 and emailed 0, leaving nothing due); pnpm db:cleanup-e2e prints Removed test rows: {} — every one exits 0, the three scripts reading .env.local through scripts/env.ts The same 120 s setup budget now lives in packages/db and apps/api vitest.config.mts (2026-11-20): a throwaway 12 s probe hook passed in both, and the full suites (db 15 files/118 tests, api 6 files/25 tests) pass from a plain shell with neither cache written per package."
       ]
     },
     {
